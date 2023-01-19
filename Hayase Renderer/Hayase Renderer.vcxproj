@@ -94,14 +94,14 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLFW_INCLUDE_NONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib</AdditionalDependencies>
+      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -110,7 +110,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLFW_INCLUDE_NONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -119,21 +119,21 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib</AdditionalDependencies>
+      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLFW_INCLUDE_NONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib</AdditionalDependencies>
+      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,7 +142,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GLFW_INCLUDE_NONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -151,11 +151,58 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib</AdditionalDependencies>
+      <AdditionalDependencies>GLFW\glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Libraries\include\imgui\imgui.cpp" />
+    <ClCompile Include="..\Libraries\include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\Libraries\include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\Libraries\include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Libraries\include\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Libraries\include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\Libraries\include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Core\Application.cpp" />
     <ClCompile Include="Core\Entry.cpp" />
+    <ClCompile Include="Core\Window.cpp" />
+    <ClCompile Include="IO\Gamepad.cpp" />
+    <ClCompile Include="IO\Keyboard.cpp" />
+    <ClCompile Include="IO\Mouse.cpp" />
+    <ClCompile Include="Libraries\glad.c" />
+    <ClCompile Include="Libraries\stb.cpp" />
+    <ClCompile Include="Rendering\Camera.cpp" />
+    <ClCompile Include="Rendering\Framebuffer.cpp" />
+    <ClCompile Include="Rendering\Mesh.cpp" />
+    <ClCompile Include="Rendering\OBJReader.cpp" />
+    <ClCompile Include="Rendering\Shader.cpp" />
+    <ClCompile Include="Rendering\Texture.cpp" />
+    <ClCompile Include="Scene Management\SceneFramework.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Libraries\include\imgui\imconfig.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imgui.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imgui_internal.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\Libraries\include\imgui\imstb_truetype.h" />
+    <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\Global.hpp" />
+    <ClInclude Include="Core\Window.h" />
+    <ClInclude Include="IO\Gamepad.h" />
+    <ClInclude Include="IO\Keyboard.h" />
+    <ClInclude Include="IO\Mouse.h" />
+    <ClInclude Include="Rendering\Camera.h" />
+    <ClInclude Include="Rendering\Framebuffer.h" />
+    <ClInclude Include="Rendering\Memory\UniformMemory.hpp" />
+    <ClInclude Include="Rendering\Memory\VertexMemory.hpp" />
+    <ClInclude Include="Rendering\Mesh.h" />
+    <ClInclude Include="Rendering\OBJReader.h" />
+    <ClInclude Include="Rendering\Shader.h" />
+    <ClInclude Include="Rendering\Texture.h" />
+    <ClInclude Include="Scene Management\SceneFramework.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
