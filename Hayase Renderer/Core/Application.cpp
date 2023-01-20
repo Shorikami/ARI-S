@@ -15,17 +15,27 @@ namespace Hayase
 
 	void Application::Run()
 	{
+	
+		scene = new Default(WindowInfo::windowWidth, WindowInfo::windowHeight);
+		scene->Init();
+
 		auto currTime = std::chrono::high_resolution_clock::now();
 
 		do
 		{
-			glfwPollEvents();
-
 			auto newTime = std::chrono::high_resolution_clock::now();
 			float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currTime).count();
 			currTime = newTime;
+
+			scene->ProcessInput(window.GetGLFWwindow(), frameTime);
+			scene->Display();
+
+
+			glfwSwapBuffers(window.GetGLFWwindow());
+			glfwPollEvents();
 		} 
 		while (window.ShouldClose());
-	
+		
+		glfwTerminate();
 	}
 }

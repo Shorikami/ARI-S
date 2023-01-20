@@ -177,6 +177,7 @@
     <ClCompile Include="Rendering\Shader.cpp" />
     <ClCompile Include="Rendering\Texture.cpp" />
     <ClCompile Include="Scene Management\SceneFramework.cpp" />
+    <ClCompile Include="Scene Management\Scenes\Default.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libraries\include\imgui\imconfig.h" />
@@ -203,6 +204,7 @@
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Rendering\Texture.h" />
     <ClInclude Include="Scene Management\SceneFramework.h" />
+    <ClInclude Include="Scene Management\Scenes\Default.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,7 +10,7 @@
 
 int Hayase::WindowInfo::windowWidth = 1600;
 int Hayase::WindowInfo::windowHeight = 900;
-std::string Hayase::Shader::defaultDirectory = "Materials/Shaders";
+std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
 
 int main()
 {

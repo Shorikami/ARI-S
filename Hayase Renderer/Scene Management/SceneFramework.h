@@ -9,13 +9,13 @@
 
 namespace Hayase
 {
-    class SceneFramework
+    class Scene
     {
 
     public:
-        SceneFramework();
-        SceneFramework(int windowWidth, int windowHeight);
-        virtual ~SceneFramework();
+        Scene();
+        Scene(int windowWidth, int windowHeight);
+        virtual ~Scene();
 
         // Public methods
 

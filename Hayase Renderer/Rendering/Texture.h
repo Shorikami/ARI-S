@@ -10,8 +10,11 @@ namespace Hayase
 	class Texture
 	{
 	public:
-		Texture(std::string name);
+		//Texture(std::string name);
 		Texture(std::string dir, std::string path);
+
+		Texture(GLuint width, GLuint height, GLenum intForm, GLenum dataForm, void* data = nullptr, GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT);
+		Texture(const std::string& path, GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT);
 
 		void Generate();
 		void Load(bool flip = true);
@@ -28,6 +31,11 @@ namespace Hayase
 		unsigned ID;
 		//aiTextureType type;
 		std::string dir, path, name;
+
+		//GLuint m_ID, m_BindPort;
+		GLuint m_Width, m_Height;
+		GLenum m_InternalFormat, m_DataFormat;
+		GLboolean m_IsLoaded;
 	};
 }
 

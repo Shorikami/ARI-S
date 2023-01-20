@@ -1,4 +1,5 @@
 #include "Framebuffer.h"
+#include "../Core/Global.hpp"
 
 #include <array>
 #include <iostream>
@@ -14,10 +15,11 @@ namespace Hayase
 	{
 		GLuint fbo = 0;
 		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
 		for (unsigned i = 0; i < cols.size(); ++i)
 		{
-			glFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0 + i, cols[i], 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, cols[i], 0);
 		}
 
 		std::array<GLenum, 32> drawBuffers;
@@ -27,21 +29,22 @@ namespace Hayase
 			drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
 		}
 
-		// Will this work?
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glDrawBuffers(cols.size(), drawBuffers.data());
 
-		if (depth != GL_NONE)
-		{
-			glFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, depth, 0);
-		}
+		unsigned int rbo;
+		glGenRenderbuffers(1, &rbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 2048, 2048);
 
-		if (glCheckFramebufferStatus(fbo) != GL_FRAMEBUFFER_COMPLETE)
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
 			std::cout << "Uh oh! Framebuffer incomplete!" << std::endl;
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 		return fbo;
 	}
 

@@ -2,18 +2,18 @@
 
 namespace Hayase
 {
-    SceneFramework::SceneFramework() : _windowWidth(100), _windowHeight(100)
+    Scene::Scene() : _windowWidth(100), _windowHeight(100)
     {
 
     }
 
-    SceneFramework::SceneFramework(int windowWidth, int windowHeight)
+    Scene::Scene(int windowWidth, int windowHeight)
     {
         _windowHeight = windowHeight;
         _windowWidth = windowWidth;
     }
 
-    SceneFramework::~SceneFramework()
+    Scene::~Scene()
     {
         CleanUp();
     }
@@ -21,56 +21,56 @@ namespace Hayase
     // Public methods
 
     // Init: called once when the scene is initialized
-    int SceneFramework::Init()
+    int Scene::Init()
     {
         return -1;
     }
 
     // LoadAllShaders: This is the placeholder for loading the shader files
-    void SceneFramework::LoadAllShaders()
+    void Scene::LoadAllShaders()
     {
         return;
     }
 
 
     // preRender : called to setup stuff prior to rendering the frame
-    int SceneFramework::preRender()
+    int Scene::preRender()
     {
         return -1;
     }
 
     // Render : per frame rendering of the scene
-    int SceneFramework::Render()
+    int Scene::Render()
     {
         return -1;
     }
 
     // postRender : Any updates to calculate after current frame
-    int SceneFramework::postRender()
+    int Scene::postRender()
     {
         return -1;
     }
 
     // ProcessInput : Update according to user input
-    void SceneFramework::ProcessInput(GLFWwindow* w, float dt)
+    void Scene::ProcessInput(GLFWwindow* w, float dt)
     {
         return;
     }
 
     // ProcessMouse : Update mouse (for the camera)
-    void SceneFramework::ProcessMouse(float x, float y)
+    void Scene::ProcessMouse(float x, float y)
     {
         return;
     }
 
     // CleanUp : clean up resources before destruction
-    void SceneFramework::CleanUp()
+    void Scene::CleanUp()
     {
         return;
     }
 
     // Display : Per-frame execution of the scene
-    int SceneFramework::Display()
+    int Scene::Display()
     {
         preRender();
         Render();

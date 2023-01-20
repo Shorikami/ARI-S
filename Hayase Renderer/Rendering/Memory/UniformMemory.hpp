@@ -23,12 +23,16 @@ namespace Hayase
 
 		void SetData()
 		{
-			glNamedBufferSubData(id, 0, sizeof(T), &data);
+			glBindBuffer(GL_UNIFORM_BUFFER, id);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(T), &data);
+			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		}
 
 		void UpdateData(GLintptr offset)
 		{
-			glNamedBufferSubData(id, offset, sizeof(T) - offset, static_cast<char*>(&data) + offset);
+			glBindBuffer(GL_UNIFORM_BUFFER, id);
+			glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(T) - offset, static_cast<char*>(&data) + offset);
+			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		}
 
 		T& GetData()
