@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
+#include <time.h>
 
 int Hayase::WindowInfo::windowWidth = 1600;
 int Hayase::WindowInfo::windowHeight = 900;
@@ -14,6 +15,7 @@ std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
 
 int main()
 {
+	srand((unsigned)time(NULL));
 	Hayase::Application app{ Hayase::WindowInfo::windowWidth, Hayase::WindowInfo::windowHeight };
 	
 	std::cout << "Hello, Hello World!" << std::endl;

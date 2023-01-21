@@ -67,7 +67,7 @@ namespace Hayase
 		}
 
 		// Ensure we can capture the escape key being pressed below
-		glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+		//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
 		// Initialize ImGUI
 		IMGUI_CHECKVERSION();

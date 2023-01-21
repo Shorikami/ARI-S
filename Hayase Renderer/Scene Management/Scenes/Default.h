@@ -52,27 +52,24 @@ namespace Hayase
 
         Camera m_Camera;
 
+        LocalLight localLights[32];
+
         UniformBuffer<World>* matrixData;
         UniformBuffer<Lights>* lightData;
+        UniformBuffer<LocalLight>* localLightData;
 
-        Mesh* loadedObj, * sphere[16], * sphereLine, * quadPlane, * skybox;
+        Mesh* loadedObj, * sphere[32], * sphereLine, * quadPlane, * skybox;
         OBJReader reader;
 
-
-        Shader *lineShader, *sphereShader[16];
-        Shader *geometryPass, *lightingPass, *localLight;
+        Shader *geometryPass, *lightingPass, *localLight, *flatShader;
 
         Shader *skyboxShader;
 
         std::vector<Texture*> gTextures;
+
         std::vector<std::pair<Texture*, std::string>> textures, skyboxTextures;
 
         Framebuffer* gBuffer;
-
-        // Framebuffer Info
-        GLuint gBuf;
-        GLuint gTex[6]; // gPosition, gNormal, gUVs, gAlbedo, gSpecular, gDepth
-        GLuint rbo;
 
         GLfloat   angleOfRotation;
 
@@ -80,7 +77,7 @@ namespace Hayase
         glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);
         glm::vec3 m_LightColor = glm::vec3(0.7f);
 
-        bool m_DisplayFaceNorms = false, m_DisplayVertNorms = false;
+        bool m_DisplayDebugRanges = false;
     };
 }
 

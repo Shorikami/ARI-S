@@ -56,9 +56,9 @@ namespace Hayase
 	class Lights
 	{
 	public:
-		glm::vec4 lightPos[16] = {};
-		glm::vec4 lightColor[16] = {};
-		glm::vec4 lightDir[16] = {};
+		glm::vec4 lightPos[32] = {};
+		glm::vec4 lightColor[32] = {};
+		glm::vec4 lightDir[32] = {};
 
 		glm::vec4 eyePos = {};
 		glm::vec4 emissive = {};
@@ -67,17 +67,25 @@ namespace Hayase
 
 		glm::vec4 fogColor = glm::vec4(1.0f);
 
-		glm::vec4 specular[16] = {};
-		glm::vec4 ambient[16] = {};
-		glm::vec4 diffuse[16] = {};
+		glm::vec4 specular[32] = {};
+		glm::vec4 ambient[32] = {};
+		glm::vec4 diffuse[32] = {};
 
-		glm::vec4 lightInfo[16] = {}; // x = inner, y = outer, z = falloff, w = type
+		glm::vec4 lightInfo[32] = {}; // x = inner, y = outer, z = falloff, w = type
 
 		glm::ivec4 modes = {}; // x = use gpu, y = use normals, z = UV calculation type
 
 		glm::vec3 attenuation = glm::vec3(0.5f, 0.37f, 0.2f); // x = c1, y = c2, z = c3
 		int numLights;
 		//float _pad; // std140 requires padding - vec4 = 16 bytes, vec3 + float == 12 + 4 = 16 bytes
+	};
+
+	class LocalLight
+	{
+	public:
+		glm::vec4 pos = glm::vec4(glm::vec3(0.0f), 1.0f); // xyz = pos, w = range
+		glm::vec4 color = glm::vec4(1.0f);
+		glm::vec3 options = glm::vec3(1.0f); // intensity, cutoff, max range
 	};
 }
 

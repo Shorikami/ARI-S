@@ -20,9 +20,9 @@ layout(std140, binding = 0) uniform World
 
 layout(std140, binding = 1) uniform Lights
 {
-  vec4 lightPos[16];
-  vec4 lightColor[16];
-  vec4 lightDir[16];
+  vec4 lightPos[32];
+  vec4 lightColor[32];
+  vec4 lightDir[32];
   
   vec4 eyePos;
   vec4 emissive;
@@ -31,12 +31,12 @@ layout(std140, binding = 1) uniform Lights
 
   vec4 fogColor;
   
-  vec4 specular[16];
-  vec4 ambient[16];
-  vec4 diffuse[16];
+  vec4 specular[32];
+  vec4 ambient[32];
+  vec4 diffuse[32];
   
   // x = inner, y = outer, z = falloff, w = type
-  vec4 lightInfo[16];
+  vec4 lightInfo[32];
   
   ivec4 modes;
  
@@ -188,9 +188,9 @@ vec3 LightCalc(int id)
 	
 	// specular
 	// correct?
-	vec3 eyePosition = (view * eyePos).xyz;
-	vec3 viewDir = normalize(eyePosition - viewPos);
-	//vec3 viewDir = normalize(eyePos.xyz - viewPos);
+	//vec3 eyePosition = (view * eyePos).xyz;
+	//vec3 viewDir = normalize(eyePosition - viewPos);
+	vec3 viewDir = normalize(eyePos.xyz - viewPos);
 	
 	vec3 reflectDir = reflect(dir, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
