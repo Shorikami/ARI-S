@@ -41,21 +41,16 @@ namespace Hayase
 
 
     private:
-
-        // member functions
         void initMembers();
 
         void RenderActualScene();
         void RenderLights(glm::mat4 view = glm::mat4(1.0f));
         void RenderSkybox(glm::mat4 view = glm::mat4(1.0f));
 
-        // This is the non-software engineered portion of the code
-        // Go ahead and modularize the VAO and VBO setup into
-        // BufferManagers and ShaderManagers
-        //void SetupBuffers();
+        GLuint quadVAO, quadVBO;
+        void RenderQuad();
 
         Camera m_Camera;
-        CS250_Camera m_CS250_Camera;
 
         UniformBuffer<World>* matrixData;
         UniformBuffer<Lights>* lightData;
@@ -63,11 +58,21 @@ namespace Hayase
         Mesh* loadedObj, * sphere[16], * sphereLine, * quadPlane, * skybox;
         OBJReader reader;
 
-        Shader* activeShader, *lineShader, *diffuseShader, *gouraudShader, *phongShader, *blinnShader, *sphereShader[16];
-        Shader* skyboxShader, *envMapShader;
-        std::vector<std::pair<Texture*, std::string>> textures, skyboxTextures, cameraTextures;
 
-        Framebuffer* enviroMapFBO[6];
+        Shader *lineShader, *sphereShader[16];
+        Shader *geometryPass, *lightingPass, *localLight;
+
+        Shader *skyboxShader;
+
+        std::vector<Texture*> gTextures;
+        std::vector<std::pair<Texture*, std::string>> textures, skyboxTextures;
+
+        Framebuffer* gBuffer;
+
+        // Framebuffer Info
+        GLuint gBuf;
+        GLuint gTex[6]; // gPosition, gNormal, gUVs, gAlbedo, gSpecular, gDepth
+        GLuint rbo;
 
         GLfloat   angleOfRotation;
 
@@ -76,10 +81,6 @@ namespace Hayase
         glm::vec3 m_LightColor = glm::vec3(0.7f);
 
         bool m_DisplayFaceNorms = false, m_DisplayVertNorms = false;
-        int envType = 0;
-        float refractIndex = 1.0003f;
-        float fresPower = 0.0f;
-        float fresConstant = 0.5f;
     };
 }
 

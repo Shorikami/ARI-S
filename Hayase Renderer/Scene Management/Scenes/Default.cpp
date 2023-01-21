@@ -12,11 +12,13 @@
 
 #include "stb/stb_image.h"
 
+#include "../../IO/Mouse.h"
+
 #define NUM_LIGHTS 1
 #define MAX_LIGHTS 16
 
 #define BUF_SIZE 512
-char m_ObjPath[BUF_SIZE] = "Materials/Models/cube2.obj";
+char m_ObjPath[BUF_SIZE] = "Materials/Models/g0.obj";
 
 int currLights = NUM_LIGHTS;
 float sphereLineRad = 3.0f;
@@ -73,20 +75,17 @@ namespace Hayase
         sphereLine->Cleanup();
 
         delete lineShader;
-        delete gouraudShader;
-        delete phongShader;
-        delete blinnShader;
+        delete geometryPass;
+        delete lightingPass;
+        delete localLight;
         delete skyboxShader;
-        delete envMapShader;
-        activeShader = nullptr;
+
+        // delete sphere shader?
 
         for (unsigned i = 0; i < 16; ++i)
             sphere[i]->Cleanup();
 
-        for (std::pair<Texture*, std::string> t : textures)
-        {
-            delete t.first;
-        }
+        // delete skybox texture?
     }
 
     //////////////////////////////////////////////////////
@@ -96,50 +95,70 @@ namespace Hayase
         // Create and compile our GLSL program from the shaders
         lineShader = new Shader(false, "LineShader.vert", "LineShader.frag");
 
-        gouraudShader = new Shader(false, "Assi2/Gouraud.vert", "Assi2/Gouraud.frag");
+        geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
+        lightingPass = new Shader(false, "Deferred/LightingPass.vert", "Deferred/LightingPass.frag");
+        localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
 
-        activeShader = phongShader = new Shader(false, "Assi2/Phong.vert", "Assi2/Phong.frag");
+        skyboxShader = new Shader(false, "Reflections/Skybox.vert", "Reflections/Skybox.frag");
 
-        blinnShader = new Shader(false, "Assi2/Blinn.vert", "Assi2/Blinn.frag");
-
-        skyboxShader = new Shader(false, "Assi3/Skybox.vert", "Assi3/Skybox.frag");
-
-        envMapShader = new Shader(false, "Assi3/EnvMap.vert", "Assi3/EnvMap.frag");
-
-        diffuseShader = new Shader(false, "DiffuseShader.vert", "DiffuseShader.frag");
-
-        textures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_diff_512x512.png"), "diffTex"));
+        // Object textures
+        textures.push_back(std::make_pair(new Texture("Materials/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png"), "diffTex"));
         textures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_spec_512x512.png"), "specTex"));
 
-        // 6 environment mapping textures
+        // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 6; ++i)
         {
-            cameraTextures.push_back(std::make_pair(
-                new Texture(_windowWidth, _windowHeight, GL_RGB8, GL_RGB, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE),
-                std::string("cubeTex[" + std::to_string(i) + "]")));
+            gTextures.push_back(new Texture(WindowInfo::windowWidth, WindowInfo::windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+                GL_NEAREST, GL_CLAMP_TO_EDGE));
         }
+        
+        // gBuffer FBO
+        gBuffer = new Framebuffer(Framebuffer::CreateFBO({ 
+            gTextures[0]->ID, gTextures[1]->ID, gTextures[2]->ID, gTextures[3]->ID, gTextures[4]->ID, gTextures[5]->ID }));
 
-        // 6 FBOs
-        for (unsigned i = 0; i < 6; ++i)
-        {
-            enviroMapFBO[i] = new Framebuffer(Framebuffer::CreateFBO({ cameraTextures[i].first->ID }));
-        }
+        //glGenFramebuffers(1, &gBuf);
+        //glBindFramebuffer(GL_FRAMEBUFFER, gBuf);
+        //
+        //// color buffers
+        //for (unsigned i = 0; i < 6; ++i)
+        //{
+        //    glGenTextures(1, &gTex[i]);
+        //    glBindTexture(GL_TEXTURE_2D, gTex[i]);
+        //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _windowWidth, _windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
+        //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, gTex[i], 0);
+        //}
+        //
+        //unsigned attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+        //GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+        //glDrawBuffers(6, attachments);
+        //
+        //// depth buffer
+        //glGenRenderbuffers(1, &rbo);
+        //glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _windowWidth, _windowHeight);
+        //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        //
+        //if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        //    std::cout << "Framebuffer not complete!" << std::endl;
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // skybox textures
-        {
-            std::string common = "Materials/Textures/skybox/skybox_";
+        //{
+        //    std::string common = "Materials/Textures/skybox/skybox_";
+        //
+        //    skyboxTextures.push_back(std::make_pair(new Texture(common + "right.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[0]"));
+        //    skyboxTextures.push_back(std::make_pair(new Texture(common + "left.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[1]"));
+        //    skyboxTextures.push_back(std::make_pair(new Texture(common + "top.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[2]"));
+        //    skyboxTextures.push_back(std::make_pair(new Texture(common + "bottom.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[3]"));
+        //    skyboxTextures.push_back(std::make_pair(new Texture(common + "front.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[4]"));
+        //    skyboxTextures.push_back(std::make_pair(new Texture(common + "back.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[5]"));
+        //}
 
-            skyboxTextures.push_back(std::make_pair(new Texture(common + "right.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[0]"));
-            skyboxTextures.push_back(std::make_pair(new Texture(common + "left.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[1]"));
-            skyboxTextures.push_back(std::make_pair(new Texture(common + "top.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[2]"));
-            skyboxTextures.push_back(std::make_pair(new Texture(common + "bottom.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[3]"));
-            skyboxTextures.push_back(std::make_pair(new Texture(common + "front.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[4]"));
-            skyboxTextures.push_back(std::make_pair(new Texture(common + "back.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[5]"));
-        }
-
-        loadedObj = new Mesh();
-        loadedObj->initData();
-        reader.ReadOBJFile(m_ObjPath, loadedObj);
+        loadedObj = new Mesh("Materials/Models/BA/Shiroko/Mesh/Shiroko_Original_Weapon.obj");
+        //loadedObj->initData();
+        //reader.ReadOBJFile(m_ObjPath, loadedObj);
 
         quadPlane = new Mesh();
         quadPlane->initData();
@@ -173,7 +192,7 @@ namespace Hayase
 
         for (unsigned i = 0; i < MAX_LIGHTS; ++i)
         {
-            lightUBO.lightColor[i] = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+            lightUBO.lightColor[i] = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
             lightUBO.ambient[i] = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
             lightUBO.diffuse[i] = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -195,7 +214,7 @@ namespace Hayase
         matrixData->GetData().nearFar = glm::vec2(0.1f, 20.0f);
         matrixData->SetData();
 
-        return Scene::Init();
+        return 0;
     }
 
     int Default::preRender()
@@ -217,31 +236,6 @@ namespace Hayase
                 reader.ReadOBJFile(m_ObjPath, loadedObj);
                 loadedObj->GenerateBuffers();
             }
-
-            ImGui::Text("Reflection Type");
-            const char* items[] = { "Reflect Only", "Refract Only", "Both" };
-            static const char* select = NULL;
-            if (ImGui::BeginCombo("##combo", select))
-            {
-                for (unsigned n = 0; n < IM_ARRAYSIZE(items); ++n)
-                {
-                    bool is_selected = (select == items[n]);
-                    if (ImGui::Selectable(items[n], is_selected))
-                    {
-                        select = items[n];
-                        envType = n;
-                    }
-                    if (is_selected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-
-            ImGui::SliderFloat("Refraction Index", &refractIndex, 1.0003f, 100.0f);
-            ImGui::SliderFloat("Fresnel Power", &fresPower, 0.0f, 1.0f);
-            ImGui::SliderFloat("Fresnel Constant", &fresConstant, 0.0f, 1.0f);
         }
 
         if (ImGui::CollapsingHeader("Normal Display Options"))
@@ -261,43 +255,10 @@ namespace Hayase
             ImGui::SliderInt("No. of Lights", &currLights, 1, 16);
             ImGui::SliderFloat("Orbit Radius", &sphereLineRad, 0.1f, 10.0f);
 
-            ImGui::Text("Shader");
-            const char* shaders[] = { "Gouraud", "Phong", "Blinn" };
-            static const char* shaderSelect = NULL;
-            if (ImGui::BeginCombo("##combo2", shaderSelect))
-            {
-                for (unsigned n = 0; n < IM_ARRAYSIZE(shaders); ++n)
-                {
-                    bool is_selected = (shaderSelect == shaders[n]);
-                    if (ImGui::Selectable(shaders[n], is_selected))
-                    {
-                        shaderSelect = shaders[n];
-
-                        switch (n)
-                        {
-                        case 0:
-                            activeShader = gouraudShader;
-                            break;
-                        case 1:
-                            activeShader = phongShader;
-                            break;
-                        case 2:
-                            activeShader = blinnShader;
-                            break;
-                        }
-                    }
-                    if (is_selected)
-                    {
-                        ImGui::SetItemDefaultFocus();
-                    }
-                }
-                ImGui::EndCombo();
-            }
-
             ImGui::Text("CPU or GPU?");
             const char* items[] = { "CPU", "GPU" };
             static const char* select = NULL;
-            if (ImGui::BeginCombo("##combo3", select))
+            if (ImGui::BeginCombo("##combo", select))
             {
                 for (unsigned n = 0; n < IM_ARRAYSIZE(items); ++n)
                 {
@@ -321,7 +282,7 @@ namespace Hayase
             static bool calculatedOnce = false;
             static int prev = -1;
 
-            if (ImGui::BeginCombo("##combo4", uvSelect))
+            if (ImGui::BeginCombo("##combo2", uvSelect))
             {
                 for (unsigned n = 0; n < IM_ARRAYSIZE(types); ++n)
                 {
@@ -413,15 +374,20 @@ namespace Hayase
                 }
                 ImGui::PopID();
             }
-
-            //ImGui::ColorPicker3("Light Color", (float*)((&m_LightColor)));
         }
         ImGui::End();
-
         ImGui::Render();
 
         lightUBO.eyePos = glm::vec4(m_Camera.cameraPos, 1.0f);
         lightData->SetData();
+
+        lightingPass->Activate();
+        lightingPass->SetInt("gPos", 0);
+        lightingPass->SetInt("gNorm", 1);
+        lightingPass->SetInt("gUVs", 2);
+        lightingPass->SetInt("gAlbedo", 3);
+        lightingPass->SetInt("gSpecular", 4);
+        lightingPass->SetInt("gDepth", 5);
 
         return 0;
     }
@@ -430,66 +396,65 @@ namespace Hayase
     //////////////////////////////////////////////////////
     int Default::Render()
     {
+        matrixData->GetData().proj = m_Camera.perspective();
+        matrixData->GetData().view = m_Camera.view();
+        matrixData->SetData();
 
-        for (auto& fbo : enviroMapFBO)
-        {
-            fbo->Clear(GL_COLOR, 0, glm::value_ptr(glm::vec4(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f)));
-            float clearDepth = 1.0f;
-            fbo->Clear(GL_DEPTH, 0, &clearDepth);
-        }
+        glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::vec3 pos = glm::vec3(glm::column(loadedObj->getModelMat(), 3));
+        gBuffer->Bind();
 
-        static glm::vec3 directionLookup[] =
-        {
-                {1.f, 0.f, 0.f},  // +x
-                {-1.f, 0.f, 0.f}, // -x
-                {0.f, 1.0f, 0.f}, // +y
-                {0.f, -1.0f, 0.f},// -y
-                {0.f, 0.f, 1.0f}, // +z
-                {0.f, 0.f, -1.0f} // -z
-        };
-        static glm::vec3 upLookup[] =
-        {
-                {0.f, -1.0f, 0.f},   // +x
-                {0.f, -1.0f, 0.f},   // -x
-                {0.f, 0.0f, 1.f},  // +y
-                {0.f, 0.0f, -1.f},   // -y
-                {0.f, -1.0f, 0.f},   // +z
-                {0.f, -1.0f, 0.f}    // -z
-        };
+        //glBindFramebuffer(GL_FRAMEBUFFER, gBuf);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
 
-        for (unsigned i = 0; i < 6; ++i)
-        {
-            enviroMapFBO[i]->Bind();
+        geometryPass->Activate();
 
-            glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-            glEnable(GL_DEPTH_TEST);
+        //std::vector<std::pair<Texture*, std::string>>()
 
-            matrixData->GetData().proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1000.0f);
-            matrixData->GetData().view = glm::lookAt(pos, directionLookup[i], -upLookup[i]);
-            matrixData->SetData();
+        loadedObj->Update(0.0f, glm::vec3(10.0f));
+        loadedObj->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective(), textures, GL_TRIANGLES,
+            m_DisplayVertNorms, m_DisplayFaceNorms, false);
 
-            RenderLights(glm::lookAt(pos, directionLookup[i], -upLookup[i]));
-            RenderSkybox(glm::lookAt(pos, directionLookup[i], -upLookup[i]));
-        }
+        loadedObj->Update(0.0f, glm::vec3(10.0f), glm::vec3(8.0f, 0.0f, 0.0f));
+        loadedObj->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective(), textures, GL_TRIANGLES,
+            m_DisplayVertNorms, m_DisplayFaceNorms, false);
+
+        loadedObj->Update(0.0f, glm::vec3(10.0f), glm::vec3(0.0f, 0.0f, 8.0f));
+        loadedObj->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective(), textures, GL_TRIANGLES,
+            m_DisplayVertNorms, m_DisplayFaceNorms, false);
+
+        loadedObj->Update(0.0f, glm::vec3(10.0f), glm::vec3(8.0f, 0.0f, 8.0f));
+        loadedObj->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective(), textures, GL_TRIANGLES,
+            m_DisplayVertNorms, m_DisplayFaceNorms, false);
 
         Framebuffer::Unbind();
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
 
-        matrixData->GetData().proj = m_Camera.perspective();
-        matrixData->GetData().view = m_Camera.view();
-        matrixData->SetData();
+        lightingPass->Activate();
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            //glBindTexture(GL_TEXTURE_2D, gTex[i]);
+            glBindTexture(GL_TEXTURE_2D, gTextures[i]->ID);
+        }
 
-        RenderActualScene();
+        lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
+        
+        RenderQuad();
+
+        // TODO: Local light pass
 
         return 0;
     }
@@ -498,8 +463,8 @@ namespace Hayase
     //////////////////////////////////////////////////////
     int Default::postRender()
     {
-        sphereLine->Update(angleOfRotation, glm::vec3(sphereLineRad));
-        sphereLine->Draw(lineShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
+        //sphereLine->Update(angleOfRotation, glm::vec3(sphereLineRad));
+        //sphereLine->Draw(lineShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         if (!stopRotation)
@@ -509,58 +474,78 @@ namespace Hayase
         return 0;
     }
 
+    void Default::RenderQuad()
+    {
+        if (quadVAO == 0)
+        {
+            float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+            };
+            // setup plane VAO
+            glGenVertexArrays(1, &quadVAO);
+            glGenBuffers(1, &quadVBO);
+            glBindVertexArray(quadVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        }
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindVertexArray(0);
+    }
+
     void Default::RenderActualScene()
     {
-        RenderLights(m_Camera.view());
-
-        glUseProgram(envMapShader->m_ID);
-        glUniform1i(glGetUniformLocation(envMapShader->m_ID, "refType"), envType);
-        glUniform1f(glGetUniformLocation(envMapShader->m_ID, "refractIdx"), refractIndex);
-        glUniform1f(glGetUniformLocation(envMapShader->m_ID, "fresPower"), fresPower);
-        glUniform1f(glGetUniformLocation(envMapShader->m_ID, "fresConstant"), fresConstant);
-        glUseProgram(0);
-
-        loadedObj->Update(0.0f);
-        loadedObj->Draw(envMapShader->m_ID, m_Camera.view(), m_Camera.perspective(), cameraTextures, GL_TRIANGLES,
-            m_DisplayVertNorms, m_DisplayFaceNorms, false);
-
-        //quadPlane->Update(3.14f / 2, glm::vec3(10.0f), glm::vec3(-0.5f, -0.5f, -0.2f), glm::vec3(-1.0f, 0.0f, 0.0f));
-        //quadPlane->Draw(currShader, m_Camera.view(), m_Camera.perspective(), {}, GL_TRIANGLES);
-
-        RenderSkybox(m_Camera.view());
+        //RenderLights(m_Camera.view());
+        //
+        //loadedObj->Update(0.0f);
+        //loadedObj->Draw(envMapShader->m_ID, m_Camera.view(), m_Camera.perspective(), cameraTextures, GL_TRIANGLES,
+        //    m_DisplayVertNorms, m_DisplayFaceNorms, false);
+        //
+        ////quadPlane->Update(3.14f / 2, glm::vec3(10.0f), glm::vec3(-0.5f, -0.5f, -0.2f), glm::vec3(-1.0f, 0.0f, 0.0f));
+        ////quadPlane->Draw(currShader, m_Camera.view(), m_Camera.perspective(), {}, GL_TRIANGLES);
+        //
+        //RenderSkybox(m_Camera.view());
     }
 
     void Default::RenderLights(glm::mat4 view)
     {
-        Lights& lightUBO = lightData->GetData();
-        for (unsigned i = 0; i < currLights; ++i)
-        {
-            // Passing in diffuse for current light
-            glUseProgram(diffuseShader->m_ID);
-            glm::vec3 value = glm::vec3(0.7f, 0.7f, 0.7f);
-            glUniform3fv(glGetUniformLocation(diffuseShader->m_ID, "lightColor"), 1, glm::value_ptr(glm::vec3(lightUBO.diffuse[i])));
-            glUseProgram(0);
-
-            sphere[i]->Update(angleOfRotation + (2 * 3.14f / currLights) * i, glm::vec3(1.0f), glm::vec3(0, 0, sphereLineRad));
-            sphere[i]->Draw(diffuseShader->m_ID, view, m_Camera.perspective(), {}, GL_TRIANGLES, m_DisplayVertNorms, m_DisplayFaceNorms);
-
-            glm::mat4 modelMat = sphere[i]->getModelMat();
-
-            lightUBO.lightPos[i] = glm::column(sphere[i]->getModelMat(), 3);
-            lightUBO.lightDir[i] = glm::normalize(glm::column(loadedObj->getModelMat(), 3) - lightUBO.lightPos[i]);
-        }
-        lightUBO.numLights = currLights;
-        lightData->SetData();
+        //Lights& lightUBO = lightData->GetData();
+        //for (unsigned i = 0; i < currLights; ++i)
+        //{
+        //    // Passing in diffuse for current light
+        //    glUseProgram(diffuseShader->m_ID);
+        //    glm::vec3 value = glm::vec3(0.7f, 0.7f, 0.7f);
+        //    glUniform3fv(glGetUniformLocation(diffuseShader->m_ID, "lightColor"), 1, glm::value_ptr(glm::vec3(lightUBO.diffuse[i])));
+        //    glUseProgram(0);
+        //
+        //    sphere[i]->Update(angleOfRotation + (2 * 3.14f / currLights) * i, glm::vec3(1.0f), glm::vec3(0, 0, sphereLineRad));
+        //    sphere[i]->Draw(diffuseShader->m_ID, view, m_Camera.perspective(), {}, GL_TRIANGLES, m_DisplayVertNorms, m_DisplayFaceNorms);
+        //
+        //    glm::mat4 modelMat = sphere[i]->getModelMat();
+        //
+        //    lightUBO.lightPos[i] = glm::column(sphere[i]->getModelMat(), 3);
+        //    lightUBO.lightDir[i] = glm::normalize(glm::column(loadedObj->getModelMat(), 3) - lightUBO.lightPos[i]);
+        //}
+        //lightUBO.numLights = currLights;
+        //lightData->SetData();
     }
 
     void Default::RenderSkybox(glm::mat4 view)
     {
-        glDepthFunc(GL_LEQUAL);
-
-        skybox->Update(0.0f, glm::vec3(50.0f), (m_Camera.cameraPos + skybox->getModelCentroid()) / glm::vec3(50.0f));
-        skybox->Draw(skyboxShader->m_ID, view, m_Camera.perspective(), skyboxTextures, GL_TRIANGLES);
-
-        glDepthFunc(GL_LESS);
+        //glDepthFunc(GL_LEQUAL);
+        //
+        //skybox->Update(0.0f, glm::vec3(50.0f), (m_Camera.cameraPos + skybox->getModelCentroid()) / glm::vec3(50.0f));
+        //skybox->Draw(skyboxShader->m_ID, view, m_Camera.perspective(), skyboxTextures, GL_TRIANGLES);
+        //
+        //glDepthFunc(GL_LESS);
     }
 
     void Default::ProcessInput(GLFWwindow* win, float dt)
@@ -575,6 +560,13 @@ namespace Hayase
                 m_Camera.UpdateCameraPos(CameraDirection::LEFT, dt);
             if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
                 m_Camera.UpdateCameraPos(CameraDirection::RIGHT, dt);
+        }
+
+        double dx = Mouse::GetDX(); double dy = Mouse::GetDY();
+        if (dx != 0 || dy != 0)
+        {
+            float sens = 1.f;
+            m_Camera.UpdateCameraDir(dx * sens, dy * sens);
         }
 
         if (glfwGetKey(win, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)

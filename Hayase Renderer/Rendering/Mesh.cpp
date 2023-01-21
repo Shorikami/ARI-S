@@ -8,8 +8,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <glm/gtx/hash.hpp>
+
+#include <unordered_map>
+#include <tinyobjloader/tiny_obj_loader.h>
+
 namespace Hayase
 {
+
+
     /*
   Description: Create a default mesh with no normal length
   and a default model matrix
@@ -18,6 +25,74 @@ namespace Hayase
         : normalLength(0.0f)
         , modelMat(glm::mat4(1.0f))
     {
+    }
+
+    Mesh::Mesh(std::string p, std::string m)
+        : normalLength(0.0f)
+        , modelMat(glm::mat4(1.0f))
+    {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string warn, err;
+
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, p.c_str(), m.c_str()))
+        {
+            throw std::runtime_error(warn + err);
+        }
+
+        vertexBuffer.clear();
+        vertexNormalDisplay.clear();
+        vertexIndices.clear();
+
+        std::unordered_map<glm::vec3, uint32_t> uniqueVerts{};
+
+        for (const auto& shape : shapes)
+        {
+            for (const auto& index : shape.mesh.indices)
+            {
+                Vertex v{};
+
+                if (index.vertex_index >= 0)
+                {
+                    v.position =
+                    {
+                        attrib.vertices[3 * index.vertex_index + 0],
+                        attrib.vertices[3 * index.vertex_index + 1],
+                        attrib.vertices[3 * index.vertex_index + 2],
+                    };
+                }
+
+                if (index.normal_index >= 0)
+                {
+                    v.normal =
+                    {
+                        attrib.normals[3 * index.normal_index + 0],
+                        attrib.normals[3 * index.normal_index + 1],
+                        attrib.normals[3 * index.normal_index + 2],
+                    };
+                }
+
+                if (index.texcoord_index >= 0)
+                {
+                    v.uv =
+                    {
+                        attrib.texcoords[2 * index.texcoord_index + 0],
+                        attrib.texcoords[2 * index.texcoord_index + 1],
+                    };
+                }
+
+                if (uniqueVerts.count(v.position) == 0)
+                {
+                    uniqueVerts[v.position] = static_cast<uint32_t>(vertexBuffer.size());
+                    vertexBuffer.push_back(v.position);
+                    vertexNormals.push_back(v.normal);
+                    vertexUVs.push_back(v.uv);
+                }
+
+                vertexIndices.push_back(uniqueVerts[v.position]);
+            }
+        }
     }
 
     /*
@@ -310,8 +385,8 @@ namespace Hayase
     {
         modelMat = glm::mat4(1.0f);
         modelMat = glm::rotate(modelMat, angle, angleOfRot)
-            * glm::scale(modelMat, scale)
-            * glm::translate(modelMat, centroid);
+            * glm::translate(modelMat, centroid)
+            * glm::scale(modelMat, scale);
     }
 
     /*
