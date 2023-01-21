@@ -16,7 +16,7 @@ layout(std140, binding = 2) uniform LocalLight
 {
   vec4 pos; // xyz = position, w = range
   vec4 color;
-  vec3 options; // x = intensity, y = cutoff, z = max range
+  vec4 options; // x = intensity, y = cutoff, z = max range
 };
 
 uniform vec3 eyePos;
@@ -25,6 +25,8 @@ vec3 LightCalc()
 {
 	vec3 gFragPos = texture(gPos, gl_FragCoord.xy / vec2(1600, 900)).rgb;
 	vec3 norm = texture(gNorm, gl_FragCoord.xy / vec2(1600, 900)).rgb;
+	vec3 diffTex = texture(gAlbedo, gl_FragCoord.xy / vec2(1600, 900)).rgb;
+	vec3 specTex = texture(gSpecular, gl_FragCoord.xy / vec2(1600, 900)).rgb;
 
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
@@ -37,7 +39,7 @@ vec3 LightCalc()
 	// diffuse
 	vec3 dir = normalize(L);
 	float nDotL = max(dot(norm, dir), 0.0);
-	vec3 finalDiff = options.x * nDotL * color.xyz;
+	vec3 finalDiff = options.x * nDotL * diffTex * color.xyz;
 	
 	// specular
 	// correct?
@@ -47,7 +49,7 @@ vec3 LightCalc()
 	
 	vec3 reflectDir = reflect(dir, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
-	vec3 finalSpec = options.x * color.xyz * sp;
+	vec3 finalSpec = options.x * color.xyz * sp * specTex;
 	
 	// attenuation
 	//float radius = pos.w;
@@ -58,7 +60,7 @@ vec3 LightCalc()
 	float d = max(dist - r, 0.0f);
 	
 	//float att = (1.0f / pow(dist, 2)) - (1.0f / pow(pos.w, 2));
-	float denom = (dist / r) + 1.0f;
+	float denom = (d / r) + 1.0f;
 	float att = 1.0f / pow(denom, 2.0f);
 	
 	att = (att - options.y) / (1.0f - options.y);

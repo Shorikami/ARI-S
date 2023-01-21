@@ -14,13 +14,12 @@
 
 #include "../../IO/Mouse.h"
 
-#define NUM_LIGHTS 32
-#define MAX_LIGHTS 32
-
 #define BUF_SIZE 512
 char m_ObjPath[BUF_SIZE] = "Materials/Models/g0.obj";
 
 int currLights = 1;
+int currLocalLights = NUM_LIGHTS;
+
 float sphereLineRad = 3.0f;
 bool stopRotation = true;
 
@@ -195,7 +194,7 @@ namespace Hayase
 
         // Local light pass UBO
         {
-            for (unsigned i = 0; i < NUM_LIGHTS; ++i)
+            for (unsigned i = 0; i < MAX_LIGHTS; ++i)
             {
                 float xPos = RandomNum(-4.0f, 10.0f);
                 float yPos = RandomNum(-1.f, 1.f);
@@ -203,18 +202,20 @@ namespace Hayase
                 float range = RandomNum(1.0f, 10.0f);
 
                 float intensity = RandomNum(1.0f, 10.0f);
+                float cutoff = RandomNum(0.05f, 0.1f);
 
                 float r = RandomNum(1.0f, 1.0f);
                 float g = RandomNum(1.0f, 1.0f);
                 float b = RandomNum(1.0f, 1.0f);
 
+
                 localLights[i].pos = glm::vec4(xPos, yPos, zPos, range);
                 localLights[i].color = glm::vec4(r, g, b, 1.0f);
 
-                float maxRange = range * (sqrtf(intensity / 0.01f) - 1.0f);
+                float maxRange = range * (sqrtf(intensity / cutoff) - 1.0f);
 
                 //localLights[i].options = glm::vec3(intensity, 0.01f, maxRange);
-                localLights[i].options = glm::vec3(2, 0.01f, 130);
+                localLights[i].options = glm::vec4(intensity, cutoff, maxRange, 1.0f);
             }
         }
 
@@ -243,6 +244,30 @@ namespace Hayase
             if (ImGui::BeginMenu("Scene Settings"))
             {
                 ImGui::Checkbox("Display Local Light Ranges", &m_DisplayDebugRanges);
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Local Lights"))
+            {
+                ImGui::SliderInt("No. of Local Lights", &currLocalLights, 1, MAX_LIGHTS);
+                ImGui::Separator();
+
+                for (unsigned i = 0; i < currLocalLights; ++i)
+                {
+                    ImGui::PushID(i);
+
+                    ImGui::SliderFloat3("Light Position", glm::value_ptr(localLights[i].pos), -20.0f, 20.0f);
+                    ImGui::SliderFloat("Light Range", &localLights[i].pos.w, 1.0f, 50.0f);
+                    ImGui::Separator();
+                    ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
+                    ImGui::Separator();
+                    ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
+                    ImGui::SliderFloat("Cutoff", &localLights[i].options.y, 0.05f, 0.1f);
+                    ImGui::Separator();
+                    ImGui::Text("Maximum Range: %f", localLights[i].options.z);
+
+                    ImGui::PopID();
+                }
+
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
@@ -340,8 +365,10 @@ namespace Hayase
         localLight->SetVec3("eyePos", m_Camera.cameraPos);
         glUseProgram(0);
 
-        for (unsigned i = 0; i < 1; ++i)
+        for (unsigned i = 0; i < currLocalLights; ++i)
         {
+            localLights[i].options.z = localLights[i].pos.w * (sqrtf(localLights[i].options.x / 0.01f) - 1.0f);
+
             localLightData->GetData().pos = localLights[i].pos;
             localLightData->GetData().color = localLights[i].color;
             localLightData->GetData().options = localLights[i].options;
@@ -355,7 +382,15 @@ namespace Hayase
             {
                 sphere[i]->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
             }
+        }
 
+        //glEnable(GL_CULL_FACE);
+        //glCullFace(GL_BACK);
+        //glEnable(GL_DEPTH_TEST);
+        //glDisable(GL_BLEND);
+
+        for (unsigned i = 0; i < currLocalLights; ++i)
+        {
             sphere[i]->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
             sphere[i]->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
         }
@@ -435,7 +470,7 @@ namespace Hayase
         //
         //    glm::mat4 modelMat = sphere[i]->getModelMat();
         //
-        //    lightUBO.lightPos[i] = glm::column(sphere[i]->getModelMat(), 3);
+        //    lightUBO.[i] = glm::column(sphere[i]->getModelMat(), 3);
         //    lightUBO.lightDir[i] = glm::normalize(glm::column(loadedObj->getModelMat(), 3) - lightUBO.lightPos[i]);
         //}
         //lightUBO.numLights = currLights;

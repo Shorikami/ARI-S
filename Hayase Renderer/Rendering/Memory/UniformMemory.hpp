@@ -4,6 +4,9 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
+#define NUM_LIGHTS 1
+#define MAX_LIGHTS 32 // breaks after going beyond 32 because ubo info is passed in correctly, pls fix later
+
 namespace Hayase
 {
 	template <typename T>
@@ -56,9 +59,9 @@ namespace Hayase
 	class Lights
 	{
 	public:
-		glm::vec4 lightPos[32] = {};
-		glm::vec4 lightColor[32] = {};
-		glm::vec4 lightDir[32] = {};
+		glm::vec4 lightPos[MAX_LIGHTS] = {};
+		glm::vec4 lightColor[MAX_LIGHTS] = {};
+		glm::vec4 lightDir[MAX_LIGHTS] = {};
 
 		glm::vec4 eyePos = {};
 		glm::vec4 emissive = {};
@@ -67,11 +70,11 @@ namespace Hayase
 
 		glm::vec4 fogColor = glm::vec4(1.0f);
 
-		glm::vec4 specular[32] = {};
-		glm::vec4 ambient[32] = {};
-		glm::vec4 diffuse[32] = {};
+		glm::vec4 specular[MAX_LIGHTS] = {};
+		glm::vec4 ambient[MAX_LIGHTS] = {};
+		glm::vec4 diffuse[MAX_LIGHTS] = {};
 
-		glm::vec4 lightInfo[32] = {}; // x = inner, y = outer, z = falloff, w = type
+		glm::vec4 lightInfo[MAX_LIGHTS] = {}; // x = inner, y = outer, z = falloff, w = type
 
 		glm::ivec4 modes = {}; // x = use gpu, y = use normals, z = UV calculation type
 
@@ -85,7 +88,7 @@ namespace Hayase
 	public:
 		glm::vec4 pos = glm::vec4(glm::vec3(0.0f), 1.0f); // xyz = pos, w = range
 		glm::vec4 color = glm::vec4(1.0f);
-		glm::vec3 options = glm::vec3(1.0f); // intensity, cutoff, max range
+		glm::vec4 options = glm::vec4(1.0f); // intensity, cutoff, max range
 	};
 }
 

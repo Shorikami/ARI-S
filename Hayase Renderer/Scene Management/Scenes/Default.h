@@ -52,13 +52,13 @@ namespace Hayase
 
         Camera m_Camera;
 
-        LocalLight localLights[32];
+        LocalLight localLights[MAX_LIGHTS];
 
         UniformBuffer<World>* matrixData;
         UniformBuffer<Lights>* lightData;
         UniformBuffer<LocalLight>* localLightData;
 
-        Mesh* loadedObj, * sphere[32], * sphereLine, * quadPlane, * skybox;
+        Mesh* loadedObj, * sphere[MAX_LIGHTS], * sphereLine, * quadPlane, * skybox;
         OBJReader reader;
 
         Shader *geometryPass, *lightingPass, *localLight, *flatShader;
