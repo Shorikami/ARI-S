@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #define NUM_LIGHTS 1
-#define MAX_LIGHTS 32 // breaks after going beyond 32 because ubo info is passed in correctly, pls fix later
+#define MAX_LIGHTS 200 // breaks after going beyond 32 because ubo info is passed in incorrectly, pls fix later
 
 namespace Hayase
 {

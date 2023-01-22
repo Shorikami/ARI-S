@@ -384,8 +384,9 @@ namespace Hayase
     void Mesh::Update(float angle, glm::vec3 scale, glm::vec3 centroid, glm::vec3 angleOfRot)
     {
         modelMat = glm::mat4(1.0f);
-        modelMat = glm::rotate(modelMat, angle, angleOfRot)
-            * glm::translate(modelMat, centroid)
+        
+        modelMat = glm::translate(modelMat, centroid)
+            * glm::rotate(modelMat, angle, angleOfRot)
             * glm::scale(modelMat, scale);
     }
 

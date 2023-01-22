@@ -13,7 +13,10 @@ namespace Hayase
 		//Texture(std::string name);
 		Texture(std::string dir, std::string path);
 
-		Texture(GLuint width, GLuint height, GLenum intForm, GLenum dataForm, void* data = nullptr, GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT);
+		Texture(GLuint width, GLuint height, 
+			GLenum intForm, GLenum dataForm, void* data = nullptr, 
+			GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT, GLenum type = GL_UNSIGNED_BYTE);
+
 		Texture(const std::string& path, GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT);
 
 		void Generate();
@@ -25,6 +28,8 @@ namespace Hayase
 
 		void Bind();
 		void Bind(GLuint slot);
+
+		void Unbind();
 
 		void Cleanup();
 

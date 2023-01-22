@@ -24,5 +24,5 @@ void main()
 
   vs_out.aPosition = aPos;
   
-  gl_Position = (proj * modelView * vec4(aPos, 1.0)).xyww;
+  gl_Position = (proj * view * vec4(aPos, 1.0)).xyww;
 }

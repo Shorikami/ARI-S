@@ -15,7 +15,7 @@ vec2 CubemapUV(vec3 v, out int idx)
 	float y = v.y;
 	float z = v.z;
 	
-	   float absX = abs(x);
+	float absX = abs(x);
 	float absY = abs(y);
 	float absZ = abs(z);
 

@@ -173,11 +173,12 @@
     <ClCompile Include="Rendering\Camera.cpp" />
     <ClCompile Include="Rendering\Framebuffer.cpp" />
     <ClCompile Include="Rendering\Mesh.cpp" />
+    <ClCompile Include="Rendering\Model.cpp" />
     <ClCompile Include="Rendering\OBJReader.cpp" />
     <ClCompile Include="Rendering\Shader.cpp" />
     <ClCompile Include="Rendering\Texture.cpp" />
     <ClCompile Include="Scene Management\SceneFramework.cpp" />
-    <ClCompile Include="Scene Management\Scenes\Default.cpp" />
+    <ClCompile Include="Scene Management\Scenes\Deferred.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libraries\include\imgui\imconfig.h" />
@@ -200,11 +201,12 @@
     <ClInclude Include="Rendering\Memory\UniformMemory.hpp" />
     <ClInclude Include="Rendering\Memory\VertexMemory.hpp" />
     <ClInclude Include="Rendering\Mesh.h" />
+    <ClInclude Include="Rendering\Model.h" />
     <ClInclude Include="Rendering\OBJReader.h" />
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Rendering\Texture.h" />
     <ClInclude Include="Scene Management\SceneFramework.h" />
-    <ClInclude Include="Scene Management\Scenes\Default.h" />
+    <ClInclude Include="Scene Management\Scenes\Deferred.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

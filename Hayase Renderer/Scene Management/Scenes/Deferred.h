@@ -1,5 +1,5 @@
-#ifndef DEFAULT_H
-#define DEFAULT_H
+#ifndef DEFERRED_H
+#define DEFERRED_H
 
 #include "../SceneFramework.h"
 #include "../../Rendering/Texture.h"
@@ -8,7 +8,7 @@
 #include "../../Rendering/Camera.h"
 #include "../../Rendering/Memory/UniformMemory.hpp"
 
-#include "../../Rendering/Mesh.h"
+#include "../../Rendering/Model.h"
 #include "../../Rendering/OBJReader.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -19,33 +19,31 @@
 
 namespace Hayase
 {
-    class Default : public Scene
+    class Deferred : public Scene
     {
 
     public:
-        Default() = default;
-        Default(int windowWidth, int windowHeight);
-        virtual ~Default();
+        Deferred() = default;
+        Deferred(int windowWidth, int windowHeight);
+        virtual ~Deferred();
 
 
     public:
         int Init() override;
         void CleanUp() override;
 
-        int preRender() override;
+        int preRender(float frame) override;
         int Render() override;
         int postRender() override;
 
         void ProcessInput(GLFWwindow* w, float dt) override;
         void ProcessMouse(float x, float y) override;
 
-
     private:
         void initMembers();
 
-        void RenderActualScene();
-        void RenderLights(glm::mat4 view = glm::mat4(1.0f));
-        void RenderSkybox(glm::mat4 view = glm::mat4(1.0f));
+        void RenderLocalLights();
+        void RenderSkybox();
 
         GLuint quadVAO, quadVBO;
         void RenderQuad();
@@ -58,7 +56,8 @@ namespace Hayase
         UniformBuffer<Lights>* lightData;
         UniformBuffer<LocalLight>* localLightData;
 
-        Mesh* loadedObj, * sphere[MAX_LIGHTS], * sphereLine, * quadPlane, * skybox;
+        Model *loadedObj[4], *quadPlane[3];
+        Mesh *sphereLine, *skybox, *sphere[MAX_LIGHTS];
         OBJReader reader;
 
         Shader *geometryPass, *lightingPass, *localLight, *flatShader;
@@ -67,7 +66,7 @@ namespace Hayase
 
         std::vector<Texture*> gTextures;
 
-        std::vector<std::pair<Texture*, std::string>> textures, skyboxTextures;
+        std::vector<std::pair<Texture*, std::string>> textures, groundTextures, skyboxTextures;
 
         Framebuffer* gBuffer;
 
@@ -77,7 +76,9 @@ namespace Hayase
         glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);
         glm::vec3 m_LightColor = glm::vec3(0.7f);
 
-        bool m_DisplayDebugRanges = false;
+        bool m_DisplayDebugRanges = false, m_DisplayLocalLights = true, m_DisplaySkybox = true;
+        
+        int m_RenderOption = 0, m_AttenuationCalc = 1;
     };
 }
 

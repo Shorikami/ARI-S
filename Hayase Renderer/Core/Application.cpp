@@ -15,21 +15,26 @@ namespace Hayase
 
 	void Application::Run()
 	{
-	
-		scene = new Default(WindowInfo::windowWidth, WindowInfo::windowHeight);
+		// VSync
+		//glfwSwapInterval(1);
+
+		scene = new Deferred(WindowInfo::windowWidth, WindowInfo::windowHeight);
 		scene->Init();
 
-		auto currTime = std::chrono::high_resolution_clock::now();
+		//auto currTime = std::chrono::high_resolution_clock::now();
+		unsigned int counter = 0;
+		float fps = 0.0f;
+		float currTime = 0.0f, prevTime = 0.0f, frameTime = 0.0f;
 
 		do
 		{
-			auto newTime = std::chrono::high_resolution_clock::now();
-			float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currTime).count();
-			currTime = newTime;
+			//auto newTime = std::chrono::high_resolution_clock::now();
+			currTime = glfwGetTime();
+			frameTime = currTime - prevTime;
+			prevTime = currTime;
 
 			scene->ProcessInput(window.GetGLFWwindow(), frameTime);
-			scene->Display();
-
+			scene->Display(1.0f / frameTime);
 
 			glfwSwapBuffers(window.GetGLFWwindow());
 			glfwPollEvents();

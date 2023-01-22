@@ -26,10 +26,10 @@ namespace Hayase
         virtual void LoadAllShaders();
 
         // Display : encapsulates per-frame behavior of the scene
-        virtual int Display();
+        virtual int Display(float frameTime = 0.0f);
 
         // preRender : called to setup stuff prior to rendering the frame
-        virtual int preRender();
+        virtual int preRender(float frame);
 
         // Render : per frame rendering of the scene
         virtual int Render();

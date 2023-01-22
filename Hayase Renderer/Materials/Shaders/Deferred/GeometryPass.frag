@@ -4,7 +4,7 @@ layout (location = 1) out vec3 gNorm;
 layout (location = 2) out vec2 gUVs;
 layout (location = 3) out vec3 gAlbedo;
 layout (location = 4) out vec3 gSpecular;
-layout (location = 5) out vec3 gDepth;
+layout (location = 5) out float gDepth;
 
 in vec3 outPos;
 in vec3 outNorm;
@@ -20,5 +20,5 @@ void main()
 	gUVs = outTexCoord;
 	gAlbedo = texture(diffTex, outTexCoord).rgb;
 	gSpecular = texture(specTex, outTexCoord).rrr;
-	gDepth = vec3(length(outPos));
+	gDepth = gl_FragCoord.z;
 }

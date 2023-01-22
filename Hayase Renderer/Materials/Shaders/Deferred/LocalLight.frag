@@ -20,6 +20,7 @@ layout(std140, binding = 2) uniform LocalLight
 };
 
 uniform vec3 eyePos;
+uniform int attCalc;
 
 vec3 LightCalc()
 {
@@ -30,7 +31,6 @@ vec3 LightCalc()
 
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
-	
 	L /= dist;
 
 	// ambient
@@ -56,16 +56,28 @@ vec3 LightCalc()
 	//float denom = dist / radius + 1.0f;
 	//float att = 1.0f / (denom * denom);
 	
-	float r = 1.0f;
-	float d = max(dist - r, 0.0f);
+	float att = 0.0f;
 	
-	//float att = (1.0f / pow(dist, 2)) - (1.0f / pow(pos.w, 2));
-	float denom = (d / r) + 1.0f;
-	float att = 1.0f / pow(denom, 2.0f);
+	// simple
+	if (attCalc == 0)
+	{
+		att = 1 / pow(dist, 2.0f) - 1 / pow(pos.w, 2.0f);
+	}
 	
-	att = (att - options.y) / (1.0f - options.y);
-	att = max(att, 0.0f);
-
+	// complex
+	else
+	{
+		float r = 1.0f;
+		float d = max(dist - r, 0.0f);
+		
+		//float att = (1.0f / pow(dist, 2)) - (1.0f / pow(pos.w, 2));
+		float denom = (d / r) + 1.0f;
+		att = 1.0f / pow(denom, 2.0f);
+		
+		att = (att - options.y) / (1.0f - options.y);
+		att = max(att, 0.0f);
+	}
+	
 	return att * (finalDiff + finalSpec);
 }
 

@@ -34,7 +34,7 @@ namespace Hayase
 
 
     // preRender : called to setup stuff prior to rendering the frame
-    int Scene::preRender()
+    int Scene::preRender(float frame)
     {
         return -1;
     }
@@ -70,9 +70,9 @@ namespace Hayase
     }
 
     // Display : Per-frame execution of the scene
-    int Scene::Display()
+    int Scene::Display(float frameTime)
     {
-        preRender();
+        preRender(frameTime);
         Render();
         postRender();
 

@@ -4,7 +4,7 @@
 #include "Window.h"
 
 #include "../Scene Management/SceneFramework.h"
-#include "../Scene Management/Scenes/Default.h"
+#include "../Scene Management/Scenes/Deferred.h"
 
 #include <memory>
 #include <vector>

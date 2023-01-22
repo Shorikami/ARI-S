@@ -18,7 +18,7 @@ namespace Hayase
 		Generate();
 	}
 
-	Texture::Texture(GLuint w, GLuint h, GLenum intForm, GLenum dataForm, void* data, GLenum filter, GLenum repeat)
+	Texture::Texture(GLuint w, GLuint h, GLenum intForm, GLenum dataForm, void* data, GLenum filter, GLenum repeat, GLenum type)
 		: m_Width(w)
 		, m_Height(h)
 	{
@@ -28,7 +28,8 @@ namespace Hayase
 		glGenTextures(1, &ID);
 		glBindTexture(GL_TEXTURE_2D, ID);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, intForm, w, h, 0, dataForm, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, intForm, w, h, 0, dataForm, type, NULL);
+
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
@@ -160,6 +161,11 @@ namespace Hayase
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_2D, ID);
+	}
+
+	void Texture::Unbind()
+	{
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	void Texture::Cleanup()

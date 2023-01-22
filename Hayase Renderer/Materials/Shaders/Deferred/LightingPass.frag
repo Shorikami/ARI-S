@@ -10,6 +10,7 @@ layout (binding = 4) uniform sampler2D gSpecular;
 layout (binding = 5) uniform sampler2D gDepth;
 
 uniform vec3 viewPos;
+uniform int renderOption;
 
 layout(std140, binding = 0) uniform World
 {
@@ -20,9 +21,9 @@ layout(std140, binding = 0) uniform World
 
 layout(std140, binding = 1) uniform Lights
 {
-  vec4 lightPos[32];
-  vec4 lightColor[32];
-  vec4 lightDir[32];
+  vec4 lightPos[200];
+  vec4 lightColor[200];
+  vec4 lightDir[200];
   
   vec4 eyePos;
   vec4 emissive;
@@ -31,12 +32,12 @@ layout(std140, binding = 1) uniform Lights
 
   vec4 fogColor;
   
-  vec4 specular[32];
-  vec4 ambient[32];
-  vec4 diffuse[32];
+  vec4 specular[200];
+  vec4 ambient[200];
+  vec4 diffuse[200];
   
   // x = inner, y = outer, z = falloff, w = type
-  vec4 lightInfo[32];
+  vec4 lightInfo[200];
   
   ivec4 modes;
  
@@ -176,6 +177,7 @@ vec3 LightCalc(int id)
 	vec3 norm = texture(gNorm, gl_FragCoord.xy / vec2(1600, 900)).rgb;
 	vec2 uv = texture(gUVs, gl_FragCoord.xy / vec2(1600, 900)).rg;
 	vec3 diff = texture(gAlbedo, gl_FragCoord.xy / vec2(1600, 900)).rgb;
+	vec3 specTex = texture(gSpecular, gl_FragCoord.xy / vec2(1600, 900)).rgb;
 	float spec = texture(gDepth, gl_FragCoord.xy / vec2(1600, 900)).r;
 
 	// ambient
@@ -194,23 +196,64 @@ vec3 LightCalc(int id)
 	
 	vec3 reflectDir = reflect(dir, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
-	vec3 finalSpec = lightColor[id].xyz * coefficients.z * sp * spec;
+	vec3 finalSpec = lightColor[id].xyz * coefficients.z * sp * spec * specTex;
 	
 	// attenuation
 	float dist = length(lightPos[id].xyz - fragPos);
 	float att = attValue(attenuation.x, attenuation.y, attenuation.z, dist);
 	
 	return att * amb + att * (finalDiff + finalSpec);
+	//return amb + (finalDiff + finalSpec);
 }
 
 void main()
 {
-	vec3 localLight = vec3(0.0f);
-	
-	for (int i = 0; i < numLights; ++i)
+	// positions
+	if (renderOption == 1)
 	{
-		localLight += LightCalc(i);
+		fragColor = texture(gPos, gl_FragCoord.xy / vec2(1600, 900));
 	}
 	
-	fragColor = vec4(localLight, 1.0f);
+	// normals
+	else if (renderOption == 2)
+	{
+		fragColor = texture(gNorm, gl_FragCoord.xy / vec2(1600, 900));
+	}
+	
+	// UVs
+	else if (renderOption == 3)
+	{
+		fragColor = texture(gUVs, gl_FragCoord.xy / vec2(1600, 900));
+	}
+	
+	// diffuse
+	else if (renderOption == 4)
+	{
+		fragColor = texture(gAlbedo, gl_FragCoord.xy / vec2(1600, 900));
+	}
+	
+	// specular
+	else if (renderOption == 5)
+	{
+		fragColor = texture(gSpecular, gl_FragCoord.xy / vec2(1600, 900));
+	}
+	
+	// depth
+	else if (renderOption == 6)
+	{
+		fragColor = texture(gDepth, gl_FragCoord.xy / vec2(1600, 900));
+	}
+	
+	// actual lighting FSQ
+	else
+	{
+		vec3 localLight = vec3(0.0f);
+	
+		for (int i = 0; i < numLights; ++i)
+		{
+			localLight += LightCalc(i);
+		}
+		
+		fragColor = vec4(localLight, 1.0f);
+	}
 }
