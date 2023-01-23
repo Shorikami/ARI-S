@@ -597,6 +597,7 @@ namespace Hayase
         glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // (-_windowWidth + (EditorInfo::leftSize + EditorInfo::rightSize)) + 
         // gBuffer pass
         gBuffer->Bind();
         glViewport(m_EditorMode ? EditorInfo::leftSize : 0, 
@@ -639,8 +640,15 @@ namespace Hayase
         lightingPass->SetInt("vWidth", _windowWidth);
         lightingPass->SetInt("vHeight", _windowHeight);
 
-        lightingPass->SetInt("editorOffsetX", m_EditorMode ? EditorInfo::leftSize + EditorInfo::rightSize : 0);
-        lightingPass->SetInt("editorOffsetY", m_EditorMode ? EditorInfo::bottomSize : 0);
+        //(_windowWidth - (EditorInfo::leftSize + EditorInfo::rightSize)) + 
+        int editX = (800) - _windowWidth
+        + EditorInfo::leftSize + EditorInfo::rightSize;
+
+        // higher number = squeeze; lower number = stretch
+        int editY = (700 - _windowHeight) + EditorInfo::bottomSize;
+
+        lightingPass->SetInt("editorOffsetX", m_EditorMode ? editX : 0);
+        lightingPass->SetInt("editorOffsetY", m_EditorMode ? editY : 0);
         
         RenderQuad();
 
@@ -739,9 +747,13 @@ namespace Hayase
         localLight->SetInt("vWidth", _windowWidth);
         localLight->SetInt("vHeight", _windowHeight);
 
-        // don't understand these values: will look into sometime
-        localLight->SetInt("editorOffsetX", m_EditorMode ? EditorInfo::leftSize + EditorInfo::rightSize : 0);
-        localLight->SetInt("editorOffsetY", m_EditorMode ? EditorInfo::bottomSize : 0);
+        int editX = (800) - _windowWidth
+            + EditorInfo::leftSize + EditorInfo::rightSize;
+
+        int editY = (700 - _windowHeight) + EditorInfo::bottomSize;
+
+        localLight->SetInt("editorOffsetX", m_EditorMode ? editX : 0);
+        localLight->SetInt("editorOffsetY", m_EditorMode ? editY : 0);
 
         glUseProgram(0);
 
