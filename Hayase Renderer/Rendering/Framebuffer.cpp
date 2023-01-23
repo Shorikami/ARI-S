@@ -28,11 +28,17 @@ namespace Hayase
 		{
 			drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
 		}
-		
+		glDrawBuffers(cols.size(), drawBuffers.data());
+
+
+		// If a depth texture is specified, use that for depth to texture rendering by attaching
+		// it as a 2D texture
 		if (depth != GL_NONE)
 		{
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 		}
+
+		// Otherwise, just generate a default render buffer and attach it
 		else
 		{
 			unsigned int rbo;
@@ -41,8 +47,6 @@ namespace Hayase
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WindowInfo::windowWidth, WindowInfo::windowHeight);
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 		}
-
-		glDrawBuffers(cols.size(), drawBuffers.data());
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{

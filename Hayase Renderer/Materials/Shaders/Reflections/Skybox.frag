@@ -109,5 +109,5 @@ vec3 SampleCubemap(vec3 v)
 void main()
 {
     vec3 color = SampleCubemap(fs_in.aPosition);
-	fragColor = vec4(color, 1.0);
+	fragColor = vec4(color, 1.0f);
 }

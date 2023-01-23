@@ -3,6 +3,8 @@
 #include "../IO/Mouse.h"
 #include "../IO/Keyboard.h"
 
+#include "Global.hpp"
+
 // Include ImGUI
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -72,7 +74,10 @@ namespace Hayase
 		// Initialize ImGUI
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiBackendFlags_HasMouseCursors;
+		io.ConfigWindowsResizeFromEdges = true;
+
 		ImGui::StyleColorsDark();
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 
@@ -87,5 +92,8 @@ namespace Hayase
 		wWindow->frameBufferResized = true;
 		wWindow->width = w;
 		wWindow->height = h;
+
+		WindowInfo::windowWidth = w;
+		WindowInfo::windowHeight = h;
 	}
 }

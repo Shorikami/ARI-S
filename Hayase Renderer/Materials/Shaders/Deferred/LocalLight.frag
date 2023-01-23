@@ -22,12 +22,21 @@ layout(std140, binding = 2) uniform LocalLight
 uniform vec3 eyePos;
 uniform int attCalc;
 
+uniform int vWidth;
+uniform int vHeight;
+
+uniform int editorOffsetX;
+uniform int editorOffsetY;
+
 vec3 LightCalc()
 {
-	vec3 gFragPos = texture(gPos, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	vec3 norm = texture(gNorm, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	vec3 diffTex = texture(gAlbedo, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	vec3 specTex = texture(gSpecular, gl_FragCoord.xy / vec2(1600, 900)).rgb;
+	vec2 fragUV = vec2((gl_FragCoord.x) / (editorOffsetX + vWidth), 
+	gl_FragCoord.y / (editorOffsetY + vHeight));
+	
+	vec3 gFragPos = texture(gPos, fragUV).rgb;
+	vec3 norm = texture(gNorm, fragUV).rgb;
+	vec3 diffTex = texture(gAlbedo, fragUV).rgb;
+	vec3 specTex = texture(gSpecular, fragUV).rgb;
 
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
@@ -83,7 +92,10 @@ vec3 LightCalc()
 
 void main()
 {
-	vec3 gFragPos = texture(gPos, gl_FragCoord.xy / vec2(1600, 900)).rgb;
+	vec2 fragUV = vec2((gl_FragCoord.x) / (editorOffsetX + vWidth), 
+	gl_FragCoord.y / (editorOffsetY + vHeight));
+
+	vec3 gFragPos = texture(gPos, fragUV).rgb;
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
 	

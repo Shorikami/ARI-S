@@ -12,6 +12,12 @@ layout (binding = 5) uniform sampler2D gDepth;
 uniform vec3 viewPos;
 uniform int renderOption;
 
+uniform int vWidth;
+uniform int vHeight;
+
+uniform int editorOffsetX;
+uniform int editorOffsetY;
+
 layout(std140, binding = 0) uniform World
 {
   mat4 proj;
@@ -173,12 +179,14 @@ float attValue(float c1, float c2, float c3, float dist)
 
 vec3 LightCalc(int id)
 {
-	vec3 fragPos = texture(gPos, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	vec3 norm = texture(gNorm, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	vec2 uv = texture(gUVs, gl_FragCoord.xy / vec2(1600, 900)).rg;
-	vec3 diff = texture(gAlbedo, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	vec3 specTex = texture(gSpecular, gl_FragCoord.xy / vec2(1600, 900)).rgb;
-	float spec = texture(gDepth, gl_FragCoord.xy / vec2(1600, 900)).r;
+	vec2 fragUV = vec2((gl_FragCoord.x) / (editorOffsetX + vWidth), gl_FragCoord.y / (editorOffsetY + vHeight));
+
+	vec3 fragPos = texture(gPos, fragUV).rgb;
+	vec3 norm = texture(gNorm, fragUV).rgb;
+	vec2 uv = texture(gUVs, fragUV).rg;
+	vec3 diff = texture(gAlbedo, fragUV).rgb;
+	vec3 specTex = texture(gSpecular, fragUV).rgb;
+	float spec = texture(gDepth, fragUV).r;
 
 	// ambient
 	vec3 amb = coefficients.x * (diff * 0.2f);
@@ -208,40 +216,43 @@ vec3 LightCalc(int id)
 
 void main()
 {
+	vec2 uv = vec2(gl_FragCoord.x / (editorOffsetX + vWidth), 
+					gl_FragCoord.y / (editorOffsetY + vHeight));
 	// positions
 	if (renderOption == 1)
 	{
-		fragColor = texture(gPos, gl_FragCoord.xy / vec2(1600, 900));
+		fragColor = texture(gPos, uv);
 	}
 	
 	// normals
 	else if (renderOption == 2)
 	{
-		fragColor = texture(gNorm, gl_FragCoord.xy / vec2(1600, 900));
+		fragColor = texture(gNorm, uv);
 	}
 	
 	// UVs
 	else if (renderOption == 3)
 	{
-		fragColor = texture(gUVs, gl_FragCoord.xy / vec2(1600, 900));
+		fragColor = texture(gUVs, uv);
 	}
 	
 	// diffuse
 	else if (renderOption == 4)
 	{
-		fragColor = texture(gAlbedo, gl_FragCoord.xy / vec2(1600, 900));
+		fragColor = texture(gAlbedo, uv);
 	}
 	
 	// specular
 	else if (renderOption == 5)
 	{
-		fragColor = texture(gSpecular, gl_FragCoord.xy / vec2(1600, 900));
+		fragColor = texture(gSpecular, uv);
 	}
 	
 	// depth
 	else if (renderOption == 6)
 	{
-		fragColor = texture(gDepth, gl_FragCoord.xy / vec2(1600, 900));
+		float depth = texture(gDepth, uv).r;
+		fragColor = vec4(vec3(depth), 1.0f);
 	}
 	
 	// actual lighting FSQ

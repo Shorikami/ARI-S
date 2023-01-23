@@ -18,6 +18,7 @@ namespace Hayase
 	{
 	public:
 		unsigned int m_ID;
+		std::string m_VertSrc, m_GeoSrc, m_FragSrc;
 
 		Shader();
 		Shader(bool includeDefaultHeader, const char* vertPath, const char* fragPath, const char* geoPath = nullptr);
@@ -26,7 +27,7 @@ namespace Hayase
 		void Activate();
 
 
-		GLuint Compile(bool includeDefaultHeader, const char* path, GLenum type);
+		GLuint Compile(bool includeDefaultHeader, const char* path, GLenum type, std::string& src);
 
 		void SetBool(const std::string& name, bool val);
 

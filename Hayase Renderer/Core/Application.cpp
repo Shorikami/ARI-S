@@ -18,17 +18,16 @@ namespace Hayase
 		// VSync
 		//glfwSwapInterval(1);
 
-		scene = new Deferred(WindowInfo::windowWidth, WindowInfo::windowHeight);
+		scene = new Deferred(WindowInfo::windowWidth,
+			WindowInfo::windowHeight);
 		scene->Init();
 
-		//auto currTime = std::chrono::high_resolution_clock::now();
 		unsigned int counter = 0;
 		float fps = 0.0f;
 		float currTime = 0.0f, prevTime = 0.0f, frameTime = 0.0f;
 
 		do
 		{
-			//auto newTime = std::chrono::high_resolution_clock::now();
 			currTime = glfwGetTime();
 			frameTime = currTime - prevTime;
 			prevTime = currTime;

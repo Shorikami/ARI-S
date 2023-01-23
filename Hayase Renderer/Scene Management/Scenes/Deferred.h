@@ -41,6 +41,9 @@ namespace Hayase
 
     private:
         void initMembers();
+        void ReloadShaders();
+
+        void GenerateLocalLights();
 
         void RenderLocalLights();
         void RenderSkybox();
@@ -56,12 +59,11 @@ namespace Hayase
         UniformBuffer<Lights>* lightData;
         UniformBuffer<LocalLight>* localLightData;
 
-        Model *loadedObj[4], *quadPlane[3];
-        Mesh *sphereLine, *skybox, *sphere[MAX_LIGHTS];
+        std::vector<Model*> models;
+        Mesh *cube, *sphere, *skybox;
         OBJReader reader;
 
         Shader *geometryPass, *lightingPass, *localLight, *flatShader;
-
         Shader *skyboxShader;
 
         std::vector<Texture*> gTextures;
@@ -76,9 +78,12 @@ namespace Hayase
         glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);
         glm::vec3 m_LightColor = glm::vec3(0.7f);
 
-        bool m_DisplayDebugRanges = false, m_DisplayLocalLights = true, m_DisplaySkybox = true;
+        float minX = -4.0f, maxX = 10.0f, minY = -1.f, maxY = 15.f, minZ = -4.0f, maxZ = 14.0f;
+
+        bool m_DisplayDebugRanges = false, m_DisplayLightPassLocations = true,
+            m_DisplayLocalLights = true, m_DisplaySkybox = true, m_EditorMode = false;
         
-        int m_RenderOption = 0, m_AttenuationCalc = 1;
+        int m_RenderOption = 0, m_AttenuationCalc = 1, m_SelectedModelIdx = 0;
     };
 }
 

@@ -6,6 +6,7 @@
 
 #define NUM_LIGHTS 1
 #define MAX_LIGHTS 200 // breaks after going beyond 32 because ubo info is passed in incorrectly, pls fix later
+// ^^ note: breaks when the shader ubo info is not correct, or goes beyond 16KB (16k bytes)
 
 namespace Hayase
 {

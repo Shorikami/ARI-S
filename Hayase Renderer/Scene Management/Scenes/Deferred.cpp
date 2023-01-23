@@ -14,22 +14,16 @@
 
 #include "../../IO/Mouse.h"
 
-#define BUF_SIZE 512
-char m_ObjPath[BUF_SIZE] = "Materials/Models/g0.obj";
-
 int currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
-float sphereLineRad = 3.0f;
-bool stopRotation = true;
-
-// Default camera vectors
-const glm::vec4 O = glm::vec4(0.0f, 1.5f, 0.0f, 1.0f),
-EY = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
-EZ = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-
 namespace Hayase
 {
+    float RandomNum(float min, float max)
+    {
+        return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
+    }
+
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
     Deferred::~Deferred()
@@ -65,38 +59,75 @@ namespace Hayase
     }
 #pragma clang diagnostic pop
 
-    //////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////
-    void Deferred::CleanUp()
+    void Deferred::ReloadShaders()
     {
-        sphereLine->Cleanup();
-
+        // gross, pls make a library or something
         delete geometryPass;
         delete lightingPass;
         delete localLight;
         delete flatShader;
         delete skyboxShader;
 
-        for (unsigned i = 0; i < 4; ++i)
-        {
-            delete loadedObj[i];
-        }
+        flatShader = new Shader(false, "FlatShader.vert", "FlatShader.frag");
 
-        for (unsigned i = 0; i < 3; ++i)
-        {
-            delete quadPlane[i];
-        }
+        geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
+        lightingPass = new Shader(false, "Deferred/LightingPass.vert", "Deferred/LightingPass.frag");
+        localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
 
+        skyboxShader = new Shader(false, "Reflections/Skybox.vert", "Reflections/Skybox.frag");
+    }
+
+    void Deferred::GenerateLocalLights()
+    {
         for (unsigned i = 0; i < MAX_LIGHTS; ++i)
         {
-            sphere[i]->Cleanup();
+            float xPos = RandomNum(minX, maxX);
+            float yPos = RandomNum(minY, maxY);
+            float zPos = RandomNum(minZ, maxZ);
+            float range = RandomNum(1.0f, 10.0f);
+
+            float intensity = RandomNum(1.0f, 10.0f);
+            float cutoff = RandomNum(0.05f, 0.1f);
+
+            float r = RandomNum(0.0f, 1.0f);
+            float g = RandomNum(0.0f, 1.0f);
+            float b = RandomNum(0.0f, 1.0f);
+
+
+            localLights[i].pos = glm::vec4(xPos, yPos, zPos, range);
+            localLights[i].color = glm::vec4(r, g, b, 1.0f);
+
+            float maxRange = range * (sqrtf(intensity / cutoff) - 1.0f);
+
+            //localLights[i].options = glm::vec3(intensity, 0.01f, maxRange);
+            localLights[i].options = glm::vec4(intensity, cutoff, maxRange, 1.0f);
         }
     }
 
-    float RandomNum(float min, float max)
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    void Deferred::CleanUp()
     {
-        return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
+        delete geometryPass;
+        delete lightingPass;
+        delete localLight;
+        delete flatShader;
+        delete skyboxShader;
+
+        for (unsigned i = 0; i < models.size(); ++i)
+        {
+            delete models[i];
+        }
+
+        cube->Cleanup();
+        sphere->Cleanup();
+        skybox->Cleanup();
+
+        delete cube;
+        delete sphere;
+        delete skybox;
     }
+
 
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
@@ -120,10 +151,10 @@ namespace Hayase
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
         {
-            gTextures.push_back(new Texture(WindowInfo::windowWidth, WindowInfo::windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
                 GL_NEAREST, GL_CLAMP_TO_EDGE));
         }
-        gTextures.push_back(new Texture(WindowInfo::windowWidth, WindowInfo::windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
 
         //for (unsigned i = 0; i < 6; ++i)
@@ -138,7 +169,7 @@ namespace Hayase
 
         // skybox textures
         {
-            std::string common = "Materials/Textures/skybox/skybox_";
+            std::string common = "Materials/Textures/Skyboxes/Day/skybox_";
         
             skyboxTextures.push_back(std::make_pair(new Texture(common + "right.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[0]"));
             skyboxTextures.push_back(std::make_pair(new Texture(common + "left.jpg", GL_NEAREST, GL_CLAMP_TO_EDGE), "cubeTexture[1]"));
@@ -165,43 +196,36 @@ namespace Hayase
 
         for (unsigned i = 0; i < 4; ++i)
         {
-            loadedObj[i] = new Model("Materials/Models/BA/Shiroko/Mesh/Shiroko_Original_Weapon.obj", positions[i],
-                glm::vec3(10.0f), 0.0f, Model::RotationAxis::yAxis, textures);
-            loadedObj[i]->Name(std::string("White Fang ") + std::to_string(i + 1));
+            models.push_back(new Model("Materials/Models/BA/Shiroko/Mesh/Shiroko_Original_Weapon.obj", positions[i],
+                glm::vec3(10.0f), 0.0f, Model::RotationAxis::yAxis, textures));
+            models[i]->Name(std::string("White Fang ") + std::to_string(i + 1));
         }
 
-        for (unsigned i = 0; i < 3; ++i)
+        for (unsigned i = 4; i < 7; ++i)
         {
-            quadPlane[i] = new Model("Materials/Models/Plane.obj", quadPositions[i].first, 
-                glm::vec3(20.0f), 0.0f, quadPositions[i].second, groundTextures);
-            quadPlane[i]->Name(std::string("Ground ") + std::to_string(i + 1));
+            models.push_back(new Model("Materials/Models/Plane.obj", quadPositions[i - 4].first,
+                glm::vec3(20.0f), 0.0f, quadPositions[i - 4].second, groundTextures));
+            models[i]->Name(std::string("Ground ") + std::to_string((i - 4) + 1));
         }
 
-        quadPlane[1]->Rotate(glm::pi<float>() / 2.0f);
-        quadPlane[2]->Rotate(glm::pi<float>() / 2.0f);
-        quadPlane[2]->InvertAxis(true);
+        // TODO: Map out model container?
+        models[5]->Rotate(glm::pi<float>() / 2.0f);
+        models[6]->Rotate(glm::pi<float>() / 2.0f);
+        models[6]->InvertAxis(true);
 
         skybox = new Mesh();
         skybox->initData();
         reader.ReadOBJFile("Materials/Models/cube.obj", skybox);
 
-        sphereLine = Mesh::CreateLine(1.0f, 30);
+        cube = new Mesh();
+        cube->initData();
+        reader.ReadOBJFile("Materials/Models/cube2.obj", cube);
 
-        sphere[0] = Mesh::CreateSphere(0.08f, 8);
-
-        for (unsigned i = 1; i < MAX_LIGHTS; ++i)
-        {
-            sphere[i] = sphere[0];
-        }
+        sphere = Mesh::CreateSphere(0.08f, 8);
 
         skybox->GenerateBuffers();
-
-        sphereLine->GenerateBuffers(false);
-
-        for (unsigned i = 0; i < MAX_LIGHTS; ++i)
-        {
-            sphere[i]->GenerateBuffers();
-        }
+        sphere->GenerateBuffers();
+        cube->GenerateBuffers();
 
         // Regular light UBO (Obsolete?)
         {
@@ -239,31 +263,7 @@ namespace Hayase
         }
 
         // Local light pass UBO
-        {
-            for (unsigned i = 0; i < MAX_LIGHTS; ++i)
-            {
-                float xPos = RandomNum(-4.0f, 10.0f);
-                float yPos = RandomNum(-1.f, 1.f);
-                float zPos = RandomNum(-4.0f, 10.0f);
-                float range = RandomNum(1.0f, 10.0f);
-
-                float intensity = RandomNum(1.0f, 10.0f);
-                float cutoff = RandomNum(0.05f, 0.1f);
-
-                float r = RandomNum(0.0f, 1.0f);
-                float g = RandomNum(0.0f, 1.0f);
-                float b = RandomNum(0.0f, 1.0f);
-
-
-                localLights[i].pos = glm::vec4(xPos, yPos, zPos, range);
-                localLights[i].color = glm::vec4(r, g, b, 1.0f);
-
-                float maxRange = range * (sqrtf(intensity / cutoff) - 1.0f);
-
-                //localLights[i].options = glm::vec3(intensity, 0.01f, maxRange);
-                localLights[i].options = glm::vec4(intensity, cutoff, maxRange, 1.0f);
-            }
-        }
+        GenerateLocalLights();
 
         localLightData->SetData();
 
@@ -277,128 +277,296 @@ namespace Hayase
     {
         Lights& lightUBO = lightData->GetData();
 
+        _windowWidth = m_EditorMode ? WindowInfo::windowWidth - EditorInfo::rightSize - EditorInfo::leftSize : WindowInfo::windowWidth;
+        _windowHeight = m_EditorMode ? WindowInfo::windowHeight - EditorInfo::bottomSize : WindowInfo::windowHeight;
+
+        // TODO: Move ImGui stuff to its own editor class
+        // TODO: Custom ImGui style colors (like the colors from blue archive's UI)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         
-        ImGui::Text("FPS: %.3f", frame);
+        ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
+        float height = ImGui::GetFrameHeight();
 
         if (ImGui::BeginMainMenuBar())
         {
+            bool modelsOpen = false;
+
+            if (m_EditorMode)
+            {
+                ImGui::SetNextWindowBgAlpha(1.0f);
+                if (ImGui::BeginViewportSideBar("##RightMenuBar", viewport, ImGuiDir_Right, 400, window_flags))
+                {
+                    if (ImGui::BeginTabBar("Tabs"))
+                    {
+                        if (ImGui::BeginTabItem("Debug Info"))
+                        {
+                            ImGui::Text("FPS: %.3f", frame);
+                            ImGui::Separator();
+                            ImGui::Text("Camera X: %.2f", m_Camera.cameraPos.x);
+                            ImGui::Text("Camera Y: %.2f", m_Camera.cameraPos.y);
+                            ImGui::Text("Camera Z: %.2f", m_Camera.cameraPos.z);
+                            ImGui::Separator();
+
+                            ImGui::Text("Welcome to the Hayase Renderer! A few things to note:");
+                            ImGui::Text("- Resizing the window somewhat breaks the viewport.");
+                            ImGui::Text("Fixing that is a high priority");
+                            ImGui::Text("- The FSQ textures appear like the way they do because");
+                            ImGui::Text("of the method I'm rendering them through glViewport.");
+                            ImGui::Text("A fix might happen in the future, but it's very low");
+                            ImGui::Text("priority since the textures can also be viewed under");
+                            ImGui::Text("the scene settings");
+                            ImGui::Text("- .obj files are being loaded via tinyobjloader, but");
+                            ImGui::Text("some objects are using the OBJReader class from the");
+                            ImGui::Text("CS300 Framework because they lack built-in normals");
+                            ImGui::Text("and UVs");
+                            ImGui::Text("- Credits to yochan.176 on Sketchfab for the Blue");
+                            ImGui::Text("Archive gun models that I used in this renderer.");
+                            ImGui::Text("I'm keeping them in because I'm a bit lazy to find");
+                            ImGui::Text("and test more complex models, but the guns were also");
+                            ImGui::Text("good for deferred and UV generation testing purposes");
+                            ImGui::Separator();
+
+                            ImGui::EndTabItem();
+                        }
             
-            ImGui::Text("Camera X: %.2f", m_Camera.cameraPos.x);
-            ImGui::Text("Camera Y: %.2f", m_Camera.cameraPos.y);
-            ImGui::Text("Camera Z: %.2f", m_Camera.cameraPos.z);
+                        if (ImGui::BeginTabItem("Scene Settings"))
+                        {
+                            if (ImGui::Button("Reload Shaders"))
+                            {
+                                ReloadShaders();
+                            }
+                            ImGui::Separator();
+            
+                            ImGui::SliderFloat("Camera Near", &m_Camera.n, 0.1f, 10.0f);
+                            ImGui::SliderFloat("Camera Far", &m_Camera.f, 10.0f, 500.0f);
+                            ImGui::Separator();
+            
+                            ImGui::Checkbox("Display Local Light Ranges", &m_DisplayDebugRanges);
+                            ImGui::Checkbox("Display Light Pass Locations", &m_DisplayLightPassLocations);
+                            ImGui::Checkbox("Display Local Lights", &m_DisplayLocalLights);
+                            ImGui::Checkbox("Display Skybox", &m_DisplaySkybox);
+                            ImGui::Separator();
+            
+                            ImGui::Text("Attenuation Calculation");
+                            {
+                                static int attenCalc = 0;
+                                attenCalc = m_AttenuationCalc;
+                                ImGui::RadioButton("Basic", &attenCalc, 0);
+                                ImGui::RadioButton("Advanced", &attenCalc, 1);
+                                m_AttenuationCalc = attenCalc;
+                            }
+                            ImGui::Separator();
+            
+                            ImGui::Text("FSQ Rendering");
+                            {
+                                static int renderWhat = 0;
+                                renderWhat = m_RenderOption;
+                                ImGui::RadioButton("Full Deferred", &renderWhat, 0);
+                                ImGui::RadioButton("Positions Only", &renderWhat, 1);
+                                ImGui::RadioButton("Normals Only", &renderWhat, 2);
+                                ImGui::RadioButton("UVs Only", &renderWhat, 3);
+                                ImGui::RadioButton("Diffuse Only", &renderWhat, 4);
+                                ImGui::RadioButton("Specular Only", &renderWhat, 5);
+                                ImGui::RadioButton("Depth Only", &renderWhat, 6);
+                                m_RenderOption = renderWhat;
+                            }
+                            ImGui::Separator();
+            
+                            ImGui::Text("Local Light Values");
+                            if (ImGui::Button("Randomize Lights"))
+                            {
+                                GenerateLocalLights();
+                            }
+            
+                            float speed = 1.0f;
 
-            if (ImGui::BeginMenu("Scene Settings"))
-            {
-                ImGui::Checkbox("Display Local Light Ranges", &m_DisplayDebugRanges);
-                ImGui::Checkbox("Display Local Lights", &m_DisplayLocalLights);
-                ImGui::Checkbox("Display Skybox", &m_DisplaySkybox);
-                ImGui::Separator();
+                            ImGui::PushItemWidth(100.0f);
+            
+                            ImGui::DragFloat("Min. X", &minX, speed, -50.0f, 50.0f);
+                            ImGui::SameLine(); ImGui::DragFloat("Max. X", &maxX, speed, -50.0f, 50.0f);
+            
+                            ImGui::DragFloat("Min. Y", &minY, speed, -50.0f, 50.0f);
+                            ImGui::SameLine(); ImGui::DragFloat("Max. Y", &maxY, speed, -50.0f, 50.0f);
+            
+                            ImGui::DragFloat("Min. Z", &minZ, speed, -50.0f, 50.0f);
+                            ImGui::SameLine(); ImGui::DragFloat("Max. Z", &maxZ, speed, -50.0f, 50.0f);
+            
+                            ImGui::PopItemWidth();
+                            ImGui::EndTabItem();
+                        }
+            
+                        if (ImGui::BeginTabItem("Models"))
+                        {
+                            modelsOpen = true;
 
-                ImGui::Text("Attenuation Calculation");
-                {
-                    static int attenCalc = 0;
-                    attenCalc = m_AttenuationCalc;
-                    ImGui::RadioButton("Basic", &attenCalc, 0);
-                    ImGui::RadioButton("Advanced", &attenCalc, 1);
-                    m_AttenuationCalc = attenCalc;
+                            static int selectedModel = 0;
+                            selectedModel = m_SelectedModelIdx;
+
+                            for (unsigned i = 0; i < models.size(); ++i)
+                            {
+                                ImGui::RadioButton(models[i]->Name().c_str(), &selectedModel, i);
+                            }
+                            m_SelectedModelIdx = selectedModel;
+
+                            ImGui::EndTabItem();
+                        }
+
+                        if (ImGui::BeginTabItem("Local Lights"))
+                        {
+                            ImGui::PushItemWidth(100.0f);
+                            ImGui::SliderInt("No. of Local Lights", &currLocalLights, 1, MAX_LIGHTS);
+                            ImGui::PopItemWidth();
+                            ImGui::Separator();
+
+                            for (unsigned i = 0; i < currLocalLights; ++i)
+                            {
+                                ImGui::PushID(i);
+
+                                ImGui::SliderFloat3("Light Position", glm::value_ptr(localLights[i].pos), -20.0f, 20.0f);
+                                ImGui::SliderFloat("Light Range", &localLights[i].pos.w, 1.0f, 50.0f);
+                                ImGui::Separator();
+                                ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
+                                ImGui::Separator();
+                                ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
+                                ImGui::SliderFloat("Cutoff", &localLights[i].options.y, 0.05f, 0.1f);
+                                ImGui::Separator();
+                                ImGui::Text("Maximum Range: %f", localLights[i].options.z);
+
+                                ImGui::PopID();
+                            }
+
+                            ImGui::EndTabItem();
+                        }
+
+                        ImGui::EndTabBar();
+                    }
+            
+                    ImGui::End();
                 }
-                ImGui::Separator();
-
-                ImGui::Text("FSQ Rendering");
+            
+                ImGui::SetNextWindowBgAlpha(1.0f);
+                if (ImGui::BeginViewportSideBar("##LeftMenuBar", viewport, ImGuiDir_Left, 400, window_flags))
                 {
-                    static int renderWhat = 0;
-                    renderWhat = m_RenderOption;
-                    ImGui::RadioButton("Full Deferred", &renderWhat, 0);
-                    ImGui::RadioButton("Positions Only", &renderWhat, 1);
-                    ImGui::RadioButton("Normals Only", &renderWhat, 2);
-                    ImGui::RadioButton("UVs Only", &renderWhat, 3);
-                    ImGui::RadioButton("Diffuse Only", &renderWhat, 4);
-                    ImGui::RadioButton("Specular Only", &renderWhat, 5);
-                    ImGui::RadioButton("Depth Only", &renderWhat, 6);
-                    m_RenderOption = renderWhat;
-                }
-                ImGui::Separator();
+                    if (ImGui::BeginTabBar("LeftTabs"))
+                    {
+                        if (ImGui::BeginTabItem("FSQ Textures 1"))
+                        {
+                            std::vector<std::string> texNames =
+                            {
+                                "Positions",
+                                "Normals",
+                                "UVs",
+                            };
 
-                ImGui::EndMenu();
+                            int imgWidth = 225;
+                            int imgHeight = 225;
+
+                            for (unsigned i = 0; i < 3; ++i)
+                            {
+                                ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
+                                ImGui::Image((void*)(intptr_t)gTextures[i]->ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
+                                ImGui::Text(texNames[i].c_str());
+                                ImGui::Separator();
+                            }
+                            ImGui::EndTabItem();
+                        }
+
+                        if (ImGui::BeginTabItem("FSQ Textures 2"))
+                        {
+                            std::vector<std::string> texNames =
+                            {
+                                "Diffuse",
+                                "Specular",
+                                "Depth",
+                            };
+
+                            int imgWidth = 225;
+                            int imgHeight = 225;
+
+                            for (unsigned i = 0; i < 3; ++i)
+                            {
+                                ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
+                                ImGui::Image((void*)(intptr_t)gTextures[i + 3]->ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
+                                ImGui::Text(texNames[i].c_str());
+                                ImGui::Separator();
+                            }
+                            ImGui::EndTabItem();
+                        }
+
+                        ImGui::EndTabBar();
+                    }
+
+                    ImGui::End();
+                }
+            
+                ImGui::SetNextWindowBgAlpha(1.0f);
+                if (ImGui::BeginViewportSideBar("##BottomMenuBar", viewport, ImGuiDir_Down, 200, window_flags))
+                {
+                    if (modelsOpen)
+                    {
+                        if (ImGui::BeginTabBar("ModelBar"))
+                        {
+                            if (ImGui::BeginTabItem("Transformation"))
+                            {
+                                ImGui::SliderFloat3("Position", glm::value_ptr(models[m_SelectedModelIdx]->Translation()), -20.0f, 20.0f);
+                                ImGui::Checkbox("Invert Axis?", &models[m_SelectedModelIdx]->AxisInverted());
+
+                                static int rotAxis = 0;
+                                rotAxis = static_cast<int>(models[m_SelectedModelIdx]->Rotation());
+                                ImGui::SameLine(); ImGui::RadioButton("X Axis", &rotAxis, 0);
+                                ImGui::SameLine(); ImGui::RadioButton("Y Axis", &rotAxis, 1);
+                                ImGui::SameLine(); ImGui::RadioButton("Z Axis", &rotAxis, 2);
+                                models[m_SelectedModelIdx]->Rotation() = static_cast<Model::RotationAxis>(rotAxis);
+
+                                ImGui::SliderAngle("Angle", &models[m_SelectedModelIdx]->Angle(), 0.0f, 360.0f);
+                                ImGui::SliderFloat3("Scale", glm::value_ptr(models[m_SelectedModelIdx]->Scale()), 0.1f, 20.0f);
+                                ImGui::EndTabItem();
+                            }
+
+                            if (ImGui::BeginTabItem("Properties"))
+                            {
+                                ImGui::EndTabItem();
+                            }
+
+                            ImGui::EndTabBar();
+                        }
+                    }
+
+                    ImGui::End();
+                }
             }
 
-            if (ImGui::BeginMenu("Models"))
+            if (ImGui::BeginMenu("Settings"))
             {
-                for (unsigned i = 0; i < 4; ++i)
-                {
-                    ImGui::PushID(i);
-
-                    ImGui::Text(loadedObj[i]->Name().c_str());
-                    ImGui::Separator();
-
-                    ImGui::SliderFloat3("Position", glm::value_ptr(loadedObj[i]->Translation()), -20.0f, 20.0f);
-                    ImGui::Checkbox("Invert Axis?", &loadedObj[i]->AxisInverted());
-
-                    static int rotAxis = 0;
-                    rotAxis = static_cast<int>(loadedObj[i]->Rotation());
-                    ImGui::RadioButton("X Axis", &rotAxis, 0);
-                    ImGui::RadioButton("Y Axis", &rotAxis, 1);
-                    ImGui::RadioButton("Z Axis", &rotAxis, 2);
-                    loadedObj[i]->Rotation() = static_cast<Model::RotationAxis>(rotAxis);
-
-                    ImGui::SliderFloat("Angle", &loadedObj[i]->Angle(), 0.0f, glm::pi<float>());
-                    ImGui::SliderFloat3("Scale", glm::value_ptr(loadedObj[i]->Scale()), 0.1f, 20.0f);
-
-                    ImGui::PopID();
-                }
-
-                for (unsigned i = 0; i < 3; ++i)
-                {
-                    ImGui::PushID(i + 4);
-
-                    ImGui::Text(quadPlane[i]->Name().c_str());
-                    ImGui::Separator();
-
-                    ImGui::SliderFloat3("Position", glm::value_ptr(quadPlane[i]->Translation()), -20.0f, 20.0f);
-                    ImGui::Checkbox("Invert Axis?", &quadPlane[i]->AxisInverted());
-
-                    static int rotAxis = 0;
-                    rotAxis = static_cast<int>(quadPlane[i]->Rotation());
-                    ImGui::RadioButton("X Axis", &rotAxis, 0);
-                    ImGui::RadioButton("Y Axis", &rotAxis, 1);
-                    ImGui::RadioButton("Z Axis", &rotAxis, 2);
-                    quadPlane[i]->Rotation() = static_cast<Model::RotationAxis>(rotAxis);
-
-                    ImGui::SliderFloat("Angle", &quadPlane[i]->Angle(), 0.0f, glm::pi<float>());
-                    ImGui::SliderFloat3("Scale", glm::value_ptr(quadPlane[i]->Scale()), 0.1f, 20.0f);
-
-                    ImGui::PopID();
-                }
+                ImGui::Checkbox("Editor Mode", &m_EditorMode);
                 ImGui::EndMenu();
             }
-
-            if (ImGui::BeginMenu("Local Lights"))
+            
+            if (ImGui::BeginMenu("Text Editor Test"))
             {
-                ImGui::SliderInt("No. of Local Lights", &currLocalLights, 1, MAX_LIGHTS);
-                ImGui::Separator();
-
-                for (unsigned i = 0; i < currLocalLights; ++i)
+                static ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue 
+                    | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CtrlEnterForNewLine;
+            
+                ImGui::CheckboxFlags("Read Only", (unsigned int*)&flags, ImGuiInputTextFlags_ReadOnly);
+                ImGui::CheckboxFlags("Enter Returns True", (unsigned int*)&flags, ImGuiInputTextFlags_EnterReturnsTrue);
+                ImGui::CheckboxFlags("Allow Tab Input", (unsigned int*)&flags, ImGuiInputTextFlags_AllowTabInput);
+                ImGui::CheckboxFlags("Ctrl + Enter for Newline", (unsigned int*)&flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
+            
+                int size = skyboxShader->m_VertSrc.length();
+                bool res = ImGui::InputTextMultiline("##source", const_cast<char*>(skyboxShader->m_VertSrc.c_str()),
+                    size * 16, ImVec2(400.0f, ImGui::GetTextLineHeight() * 16), flags);
+            
+                if (res)
                 {
-                    ImGui::PushID(i);
-
-                    ImGui::SliderFloat3("Light Position", glm::value_ptr(localLights[i].pos), -20.0f, 20.0f);
-                    ImGui::SliderFloat("Light Range", &localLights[i].pos.w, 1.0f, 50.0f);
-                    ImGui::Separator();
-                    ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
-                    ImGui::Separator();
-                    ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
-                    ImGui::SliderFloat("Cutoff", &localLights[i].options.y, 0.05f, 0.1f);
-                    ImGui::Separator();
-                    ImGui::Text("Maximum Range: %f", localLights[i].options.z);
-
-                    ImGui::PopID();
+                    std::cout << skyboxShader->m_VertSrc << std::endl;
                 }
-
+            
                 ImGui::EndMenu();
             }
+            
             ImGui::EndMainMenuBar();
         }
 
@@ -431,7 +599,8 @@ namespace Hayase
 
         // gBuffer pass
         gBuffer->Bind();
-        glViewport(0, 0, _windowWidth, _windowHeight);
+        glViewport(m_EditorMode ? EditorInfo::leftSize : 0, 
+            m_EditorMode ? EditorInfo::bottomSize : 0, _windowWidth, _windowHeight);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_CULL_FACE);
@@ -441,17 +610,10 @@ namespace Hayase
 
         geometryPass->Activate();
 
-        // hard-coded :)
-        for (unsigned i = 0; i < 4; ++i)
+        for (unsigned i = 0; i < models.size(); ++i)
         {
-            loadedObj[i]->Update();
-            loadedObj[i]->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective());
-        }
-
-        for (unsigned i = 0; i < 3; ++i)
-        {
-            quadPlane[i]->Update();
-            quadPlane[i]->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective());
+            models[i]->Update();
+            models[i]->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective());
         }
 
         Framebuffer::Unbind();
@@ -473,18 +635,44 @@ namespace Hayase
         
         lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
         lightingPass->SetInt("renderOption", m_RenderOption);
+
+        lightingPass->SetInt("vWidth", _windowWidth);
+        lightingPass->SetInt("vHeight", _windowHeight);
+
+        lightingPass->SetInt("editorOffsetX", m_EditorMode ? EditorInfo::leftSize + EditorInfo::rightSize : 0);
+        lightingPass->SetInt("editorOffsetY", m_EditorMode ? EditorInfo::bottomSize : 0);
         
         RenderQuad();
 
-        // Local light "pass" (it's being forward rendered)
-        
         // copy depth information from the gBuffer to the default framebuffer (for the skybox, so that it doesn't overlap the FSQ)
         // (also do it for the local lights so that they're not overlapped by the skybox)
+        // glBlitFramebuffer depends on whether or not editor mode is enabled because glViewport changes
+        // the dimensions of the FSQ
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
-        glBlitFramebuffer(0, 0, _windowWidth, _windowHeight, 0, 0, _windowWidth, _windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBlitFramebuffer(m_EditorMode ? 400 : 0, m_EditorMode ? 200 : 0, 
+            m_EditorMode ? 400 + _windowWidth : _windowWidth , m_EditorMode ? 200 + _windowHeight : _windowHeight,
+            m_EditorMode ? 400 : 0, m_EditorMode ? 200 : 0,
+            m_EditorMode ? 400 + _windowWidth : _windowWidth, m_EditorMode ? 200 + _windowHeight : _windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+        
+        Lights& lightUBO = lightData->GetData();
+        
+        // Render the locations of the lighting pass lights
+        if (m_DisplayLightPassLocations)
+        {
+            for (unsigned i = 0; i < currLights; ++i)
+            {
+                // flat shader relies on local light ubo; might change this
+                localLightData->GetData().color = lightUBO.diffuse[i];
+                localLightData->SetData();
+        
+                cube->Update(0.0f, glm::vec3(0.2f), glm::vec3(lightUBO.lightPos[i]));
+                cube->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
+            }
+        }
+        
+        // Local light "pass" (it's being forward rendered)
         if (m_DisplayLocalLights)
         {
             RenderLocalLights();
@@ -495,7 +683,7 @@ namespace Hayase
         {
             RenderSkybox();
         }
-
+        
         return 0;
     }
 
@@ -503,14 +691,7 @@ namespace Hayase
     //////////////////////////////////////////////////////
     int Deferred::postRender()
     {
-        //sphereLine->Update(angleOfRotation, glm::vec3(sphereLineRad));
-        //sphereLine->Draw(lineShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
-
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        if (!stopRotation)
-        {
-            angleOfRotation += 0.0006f;
-        }
         return 0;
     }
 
@@ -555,6 +736,13 @@ namespace Hayase
         localLight->SetVec3("eyePos", m_Camera.cameraPos);
         localLight->SetInt("attCalc", m_AttenuationCalc);
 
+        localLight->SetInt("vWidth", _windowWidth);
+        localLight->SetInt("vHeight", _windowHeight);
+
+        // don't understand these values: will look into sometime
+        localLight->SetInt("editorOffsetX", m_EditorMode ? EditorInfo::leftSize + EditorInfo::rightSize : 0);
+        localLight->SetInt("editorOffsetY", m_EditorMode ? EditorInfo::bottomSize : 0);
+
         glUseProgram(0);
 
         for (unsigned i = 0; i < currLocalLights; ++i)
@@ -566,20 +754,20 @@ namespace Hayase
             localLightData->GetData().options = localLights[i].options;
             localLightData->SetData();
 
-            sphere[i]->Update(0.0f, glm::vec3(localLights[i].options.z), glm::vec3(localLights[i].pos));
+            sphere->Update(0.0f, glm::vec3(localLights[i].options.z), glm::vec3(localLights[i].pos));
 
-            sphere[i]->Draw(localLight->m_ID, m_Camera.view(), m_Camera.perspective());
+            sphere->Draw(localLight->m_ID, m_Camera.view(), m_Camera.perspective());
 
             if (m_DisplayDebugRanges)
             {
-                sphere[i]->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
+                sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
             }
         }
 
-        //glEnable(GL_CULL_FACE);
-        //glCullFace(GL_BACK);
-        //glEnable(GL_DEPTH_TEST);
-        //glDisable(GL_BLEND);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
 
         for (unsigned i = 0; i < currLocalLights; ++i)
         {
@@ -587,8 +775,8 @@ namespace Hayase
             localLightData->GetData().color = localLights[i].color;
             localLightData->SetData();
 
-            sphere[i]->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
-            sphere[i]->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
+            sphere->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
+            sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
         }
     }
 

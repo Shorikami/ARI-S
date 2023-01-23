@@ -11,6 +11,11 @@
 
 int Hayase::WindowInfo::windowWidth = 1600;
 int Hayase::WindowInfo::windowHeight = 900;
+
+int Hayase::EditorInfo::leftSize = 400;
+int Hayase::EditorInfo::rightSize = 400;
+int Hayase::EditorInfo::bottomSize = 200;
+
 std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
 
 int main()

@@ -9,6 +9,14 @@ namespace Hayase
 		static int windowWidth;
 		static int windowHeight;
 	};
+
+	class EditorInfo
+	{
+	public:
+		static int leftSize;
+		static int rightSize;
+		static int bottomSize;
+	};
 }
 
 #endif

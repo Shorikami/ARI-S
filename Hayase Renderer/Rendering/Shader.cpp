@@ -2,11 +2,19 @@
 
 namespace Hayase
 {
+	// Should not have an empty shader
 	Shader::Shader()
+		: m_ID(-1)
+		, m_VertSrc(std::string())
+		, m_GeoSrc(std::string())
+		, m_FragSrc(std::string())
 	{
 	}
 
 	Shader::Shader(bool include, const char* vPath, const char* fPath, const char* gPath)
+		: m_VertSrc(std::string())
+		, m_GeoSrc(std::string())
+		, m_FragSrc(std::string())
 	{
 		Generate(include, vPath, fPath, gPath);
 	}
@@ -16,13 +24,13 @@ namespace Hayase
 		int success;
 		char infoLog[512];
 
-		GLuint vShader = Compile(include, vPath, GL_VERTEX_SHADER);
-		GLuint fShader = Compile(include, fPath, GL_FRAGMENT_SHADER);
+		GLuint vShader = Compile(include, vPath, GL_VERTEX_SHADER, m_VertSrc);
+		GLuint fShader = Compile(include, fPath, GL_FRAGMENT_SHADER, m_FragSrc);
 
 		GLuint gShader = 0;
 		if (gPath)
 		{
-			gShader = Compile(include, gPath, GL_GEOMETRY_SHADER);
+			gShader = Compile(include, gPath, GL_GEOMETRY_SHADER, m_GeoSrc);
 		}
 
 		m_ID = glCreateProgram();
@@ -97,13 +105,14 @@ namespace Hayase
 		return res;
 	}
 
-	GLuint Shader::Compile(bool include, const char* path, GLenum type)
+	GLuint Shader::Compile(bool include, const char* path, GLenum type, std::string& source)
 	{
 		int success;
 		char infoLog[512];
 
 		GLuint res = glCreateShader(type);
 		std::string src = LoadShaderSrc(include, path);
+		source = src;
 		const GLchar* shader = src.c_str();
 
 		glShaderSource(res, 1, &shader, NULL);

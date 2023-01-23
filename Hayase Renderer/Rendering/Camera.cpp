@@ -10,7 +10,7 @@ namespace Hayase
 		, speed(2.5f)
 		, zoom(45.0f)
 		, front(glm::vec3(0.0f, 0.0f, -1.0f))
-		, n(0.1f)
+		, n(0.5f)
 		, f(100.0f)
 	{
 		UpdateCameraVectors();

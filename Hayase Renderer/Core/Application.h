@@ -5,6 +5,7 @@
 
 #include "../Scene Management/SceneFramework.h"
 #include "../Scene Management/Scenes/Deferred.h"
+#include "../Scene Management/Scenes/DepthBuffer.h"
 
 #include <memory>
 #include <vector>
