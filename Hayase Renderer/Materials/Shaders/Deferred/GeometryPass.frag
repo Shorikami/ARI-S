@@ -1,4 +1,4 @@
-#version 410 core
+#version 430 core
 layout (location = 0) out vec3 gPos;
 layout (location = 1) out vec3 gNorm;
 layout (location = 2) out vec2 gUVs;
