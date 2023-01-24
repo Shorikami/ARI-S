@@ -39,16 +39,20 @@ vec3 LightCalc()
 	vec3 specTex = texture(gSpecular, fragUV).rgb;
 
 	vec3 L = pos.xyz - gFragPos;
-	float dist = length(L);
+	float dist = distance(gFragPos, pos.xyz);
 	L /= dist;
 
 	// ambient
 	//vec3 amb = (diff * 0.2f);
 	
 	// diffuse
-	vec3 dir = normalize(L);
-	float nDotL = max(dot(norm, dir), 0.0);
-	vec3 finalDiff = options.x * nDotL * diffTex * color.xyz;
+	float nDotL = max(dot(norm, L), 0.0);
+	vec3 finalDiff = nDotL * diffTex * color.xyz;
+	
+	if (attCalc == 1)
+	{
+		finalDiff *= options.x;
+	}
 	
 	// specular
 	// correct?
@@ -56,9 +60,14 @@ vec3 LightCalc()
 	//vec3 viewDir = normalize(eyePosition - viewPos);
 	vec3 viewDir = normalize(eyePos - fragPos);
 	
-	vec3 reflectDir = reflect(dir, norm);
+	vec3 reflectDir = reflect(L, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
-	vec3 finalSpec = options.x * color.xyz * sp * specTex;
+	vec3 finalSpec = color.xyz * sp * specTex;
+	
+	if (attCalc == 1)
+	{
+		finalSpec *= options.x;
+	}
 	
 	// attenuation
 	//float radius = pos.w;
@@ -70,21 +79,28 @@ vec3 LightCalc()
 	// simple
 	if (attCalc == 0)
 	{
-		att = 1 / pow(dist, 2.0f) - 1 / pow(pos.w, 2.0f);
+		att = (1.0f / (dist * dist)) - (1.0f / (pos.w * pos.w));
 	}
 	
-	// complex
+	// advanced
 	else
 	{
-		float r = 1.0f;
-		float d = max(dist - r, 0.0f);
+		float r = pos.w;
+		//float d = max(dist - r, 0.0f);
+		
+		float test = (dist / r);
 		
 		//float att = (1.0f / pow(dist, 2)) - (1.0f / pow(pos.w, 2));
-		float denom = (d / r) + 1.0f;
+		float denom = (test) + 1.0f;
 		att = 1.0f / pow(denom, 2.0f);
 		
 		att = (att - options.y) / (1.0f - options.y);
 		att = max(att, 0.0f);
+		
+		if (test >= pos.w)
+		{
+			att = 0.0f;
+		}
 	}
 	
 	return att * (finalDiff + finalSpec);
@@ -99,7 +115,7 @@ void main()
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
 	
-	if (dist > options.z)
+	if (dist > pos.w)
 	{
 		discard;
 	}

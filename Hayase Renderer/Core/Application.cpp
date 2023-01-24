@@ -5,7 +5,6 @@
 namespace Hayase
 {
 	Application::Application(int windowWidth, int windowHeight)
-		: window(windowWidth, windowHeight, "Hayase Renderer", 4, 0)
 	{
 	}
 
@@ -18,9 +17,8 @@ namespace Hayase
 		// VSync
 		//glfwSwapInterval(1);
 
-		scene = new Deferred(WindowInfo::windowWidth,
-			WindowInfo::windowHeight);
-		scene->Init();
+		activeScene = new Deferred(WindowInfo::windowWidth, WindowInfo::windowHeight);
+		activeScene->Init();
 
 		unsigned int counter = 0;
 		float fps = 0.0f;
@@ -32,13 +30,13 @@ namespace Hayase
 			frameTime = currTime - prevTime;
 			prevTime = currTime;
 
-			scene->ProcessInput(window.GetGLFWwindow(), frameTime);
-			scene->Display(1.0f / frameTime);
+			activeScene->ProcessInput(activeScene->window.GetGLFWwindow(), frameTime);
+			activeScene->Display(1.0f / frameTime);
 
-			glfwSwapBuffers(window.GetGLFWwindow());
+			glfwSwapBuffers(activeScene->window.GetGLFWwindow());
 			glfwPollEvents();
 		} 
-		while (window.ShouldClose());
+		while (activeScene->window.ShouldClose());
 		
 		glfwTerminate();
 	}

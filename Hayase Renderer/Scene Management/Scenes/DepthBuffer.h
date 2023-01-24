@@ -32,12 +32,11 @@ namespace Hayase
         int Init() override;
         void CleanUp() override;
 
-        int preRender(float frame) override;
+        int PreRender(float frame) override;
         int Render() override;
-        int postRender() override;
+        int PostRender() override;
 
         void ProcessInput(GLFWwindow* w, float dt) override;
-        void ProcessMouse(float x, float y) override;
 
     private:
         void initMembers();

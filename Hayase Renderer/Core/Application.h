@@ -1,8 +1,6 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include "Window.h"
-
 #include "../Scene Management/SceneFramework.h"
 #include "../Scene Management/Scenes/Deferred.h"
 #include "../Scene Management/Scenes/DepthBuffer.h"
@@ -24,8 +22,7 @@ namespace Hayase
 		void Run();
 
 	private:
-		Window window;
-		Scene* scene;
+		Scene* activeScene;
 	};
 }
 

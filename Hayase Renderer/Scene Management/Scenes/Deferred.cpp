@@ -84,7 +84,7 @@ namespace Hayase
             float xPos = RandomNum(minX, maxX);
             float yPos = RandomNum(minY, maxY);
             float zPos = RandomNum(minZ, maxZ);
-            float range = RandomNum(1.0f, 10.0f);
+            float range = RandomNum(minRange, maxRange);
 
             float intensity = RandomNum(1.0f, 10.0f);
             float cutoff = RandomNum(0.05f, 0.1f);
@@ -156,12 +156,6 @@ namespace Hayase
         }
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
-
-        //for (unsigned i = 0; i < 6; ++i)
-        //{
-        //    gTextures.push_back(new Texture(WindowInfo::windowWidth, WindowInfo::windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
-        //        GL_NEAREST, GL_CLAMP_TO_EDGE, GL_FLOAT));
-        //}
         
         // gBuffer FBO
         gBuffer = new Framebuffer(Framebuffer::CreateFBO({ 
@@ -273,7 +267,7 @@ namespace Hayase
         return 0;
     }
 
-    int Deferred::preRender(float frame)
+    int Deferred::PreRender(float frame)
     {
         Lights& lightUBO = lightData->GetData();
 
@@ -311,13 +305,16 @@ namespace Hayase
                             ImGui::Separator();
 
                             ImGui::Text("Welcome to the Hayase Renderer! A few things to note:");
+                            ImGui::Text("- The program crashes if you minimize the window because");
+                            ImGui::Text("the camera perspective function divides by zero");
+                            ImGui::Text("I'm planning on reworking the way this editor is created");
+                            ImGui::Text("since I don't want to create hacky solutions to some of");
+                            ImGui::Text("the below problems. I'll start on the rework after I");
+                            ImGui::Text("submit this project");
                             ImGui::Text("- Resizing the window somewhat breaks the viewport.");
                             ImGui::Text("Fixing that is a high priority");
                             ImGui::Text("- The FSQ textures appear like the way they do because");
-                            ImGui::Text("of the method I'm rendering them through glViewport.");
-                            ImGui::Text("A fix might happen in the future, but it's very low");
-                            ImGui::Text("priority since the textures can also be viewed under");
-                            ImGui::Text("the scene settings");
+                            ImGui::Text("of the method I'm rendering them through glViewport");
                             ImGui::Text("- .obj files are being loaded via tinyobjloader, but");
                             ImGui::Text("some objects are using the OBJReader class from the");
                             ImGui::Text("CS300 Framework because they lack built-in normals");
@@ -393,6 +390,8 @@ namespace Hayase
             
                             ImGui::DragFloat("Min. Z", &minZ, speed, -50.0f, 50.0f);
                             ImGui::SameLine(); ImGui::DragFloat("Max. Z", &maxZ, speed, -50.0f, 50.0f);
+                            ImGui::DragFloat("Min. Range", &minRange, speed, 1.0f, 10.0f);
+                            ImGui::SameLine(); ImGui::DragFloat("Max. Range", &maxRange, speed, 1.0f, 10.0f);
             
                             ImGui::PopItemWidth();
                             ImGui::EndTabItem();
@@ -653,7 +652,8 @@ namespace Hayase
         glBlitFramebuffer(m_EditorMode ? 400 : 0, m_EditorMode ? 200 : 0, 
             m_EditorMode ? 400 + _windowWidth : _windowWidth , m_EditorMode ? 200 + _windowHeight : _windowHeight,
             m_EditorMode ? 400 : 0, m_EditorMode ? 200 : 0,
-            m_EditorMode ? 400 + _windowWidth : _windowWidth, m_EditorMode ? 200 + _windowHeight : _windowHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+            m_EditorMode ? 400 + _windowWidth : _windowWidth, m_EditorMode ? 200 + _windowHeight : _windowHeight, 
+            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
         Lights& lightUBO = lightData->GetData();
@@ -689,7 +689,7 @@ namespace Hayase
 
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
-    int Deferred::postRender()
+    int Deferred::PostRender()
     {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         return 0;
@@ -754,7 +754,14 @@ namespace Hayase
             localLightData->GetData().options = localLights[i].options;
             localLightData->SetData();
 
-            sphere->Update(0.0f, glm::vec3(localLights[i].options.z), glm::vec3(localLights[i].pos));
+            if (m_AttenuationCalc == 1)
+            {
+                sphere->Update(0.0f, glm::vec3(localLights[i].options.z), glm::vec3(localLights[i].pos));
+            }
+            else
+            {
+                sphere->Update(0.0f, glm::vec3(localLights[i].pos.w), glm::vec3(localLights[i].pos));
+            }
 
             sphere->Draw(localLight->m_ID, m_Camera.view(), m_Camera.perspective());
 
@@ -821,10 +828,5 @@ namespace Hayase
 
         if (glfwGetKey(win, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
             m_Camera.rotateCamera = !m_Camera.rotateCamera;
-    }
-
-    void Deferred::ProcessMouse(float x, float y)
-    {
-        m_Camera.UpdateCameraDir(x, y);
     }
 }

@@ -88,28 +88,6 @@ namespace Hayase
         glReadBuffer(GL_NONE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        //depthTexture = new Texture(WindowInfo::windowWidth, WindowInfo::windowHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, nullptr,
-        //    GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
-        //
-        //// gBuffer FBO
-        //depthBuffer = new Framebuffer(Framebuffer::CreateFBO({}, depthTexture->ID));
-        //depthBuffer->Bind();
-        //
-        //glDrawBuffer(GL_NONE);
-        //glReadBuffer(GL_NONE);
-        //
-        ////GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
-        ////glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-        ////
-        ////// Always check that our framebuffer is ok
-        ////if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        ////{
-        ////    std::cout << "Uh oh! Framebuffer still incomplete!" << std::endl;
-        ////    return false;
-        ////}
-        //
-        //Framebuffer::Unbind();
-
         // skybox textures
         {
             std::string common = "Materials/Textures/skybox/skybox_";
@@ -172,7 +150,7 @@ namespace Hayase
         return 0;
     }
 
-    int DepthBuffer::preRender(float frame)
+    int DepthBuffer::PreRender(float frame)
     {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -289,7 +267,7 @@ namespace Hayase
 
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
-    int DepthBuffer::postRender()
+    int DepthBuffer::PostRender()
     {
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         return 0;
@@ -299,7 +277,8 @@ namespace Hayase
     {
         if (quadVAO == 0)
         {
-            float quadVertices[] = {
+            float quadVertices[] = 
+            {
                 // positions        // texture Coords
                 -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
                 -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -363,10 +342,5 @@ namespace Hayase
 
         if (glfwGetKey(win, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
             m_Camera.rotateCamera = !m_Camera.rotateCamera;
-    }
-
-    void DepthBuffer::ProcessMouse(float x, float y)
-    {
-        m_Camera.UpdateCameraDir(x, y);
     }
 }

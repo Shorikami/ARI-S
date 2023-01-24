@@ -60,6 +60,8 @@ namespace Hayase
 		glfwSetKeyCallback(window, Keyboard::KeyCallback);
 		glfwSetCursorPosCallback(window, Mouse::CursorPosCallback);
 		glfwSetScrollCallback(window, Mouse::MouseWheelCallback);
+
+		// Set a default resize callback
 		glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback);
 
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -84,6 +86,11 @@ namespace Hayase
 		std::string version = std::string("#version ") + std::to_string(major) + std::to_string(minor) + std::string("0");
 
 		ImGui_ImplOpenGL3_Init(version.c_str());
+	}
+
+	void Window::SetResizeCallback(void(*func)(GLFWwindow* window, int w, int h))
+	{
+		glfwSetFramebufferSizeCallback(window, func);
 	}
 
 	void Window::FramebufferResizeCallback(GLFWwindow* window, int w, int h)

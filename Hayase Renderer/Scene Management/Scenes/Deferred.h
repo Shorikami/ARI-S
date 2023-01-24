@@ -32,13 +32,11 @@ namespace Hayase
         int Init() override;
         void CleanUp() override;
 
-        int preRender(float frame) override;
+        int PreRender(float frame) override;
         int Render() override;
-        int postRender() override;
+        int PostRender() override;
 
         void ProcessInput(GLFWwindow* w, float dt) override;
-        void ProcessMouse(float x, float y) override;
-
     private:
         void initMembers();
         void ReloadShaders();
@@ -78,7 +76,7 @@ namespace Hayase
         glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);
         glm::vec3 m_LightColor = glm::vec3(0.7f);
 
-        float minX = -4.0f, maxX = 10.0f, minY = -1.f, maxY = 15.f, minZ = -4.0f, maxZ = 14.0f;
+        float minX = -4.0f, maxX = 10.0f, minY = -1.f, maxY = 15.f, minZ = -4.0f, maxZ = 14.0f, minRange = 1.0f, maxRange = 10.0f;
 
         bool m_DisplayDebugRanges = false, m_DisplayLightPassLocations = true,
             m_DisplayLocalLights = true, m_DisplaySkybox = true, m_EditorMode = false;

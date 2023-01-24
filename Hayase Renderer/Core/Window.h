@@ -24,6 +24,8 @@ namespace Hayase
 
 		GLFWwindow* GetGLFWwindow() { return window; }
 
+		void SetResizeCallback(void(*func)(GLFWwindow* window, int w, int h));
+
 	private:
 		static void FramebufferResizeCallback(GLFWwindow* window, int w, int h);
 		void InitWindow(int major, int minor);
