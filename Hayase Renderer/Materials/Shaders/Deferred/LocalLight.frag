@@ -16,11 +16,10 @@ layout(std140, binding = 2) uniform LocalLight
 {
   vec4 pos; // xyz = position, w = range
   vec4 color;
-  vec4 options; // x = intensity, y = cutoff, z = max range
+  vec2 options; // x = intensity, y = range multiplier
 };
 
 uniform vec3 eyePos;
-uniform int attCalc;
 
 uniform int vWidth;
 uniform int vHeight;
@@ -48,13 +47,7 @@ vec3 LightCalc()
 	// diffuse
 	float nDotL = max(dot(norm, L), 0.0);
 	vec3 finalDiff = options.x * nDotL * diffTex * color.xyz;
-  //finalDiff = vec3(1.0f);
-	
-	if (attCalc == 1)
-	{
-		finalDiff *= options.x;
-	}
-	
+
 	// specular
 	// correct?
 	//vec3 eyePosition = (view * eyePos).xyz;
@@ -64,33 +57,9 @@ vec3 LightCalc()
 	vec3 reflectDir = reflect(L, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
 	vec3 finalSpec = options.x * color.xyz * sp * specTex;
-	
-	if (attCalc == 1)
-	{
-		finalSpec *= options.x;
-	}
-	
+
 	// attenuation
-	float att = 0.0f;
-	
-	// simple
-	if (attCalc == 0)
-	{
-		att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08 * pos.w, 2)));
-		//att = 1.0f / (1.0f + 1.0f * d + 1.0f * pow(d, 2.0f));
-	}
-	
-	// advanced
-	else
-	{
-		float r = 0.08f * options.z;
-		float d = max(dist - r, 0.0f);
-		float denom = (d / r) + 1.0f;
-		att = options.x / pow(denom, 2.0f);
-		
-		att = (att - options.y) / (options.x - options.y);
-		att = max(att, 0.0f);
-	}
+	float att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08 * pos.w * options.y, 2)));
 	
 	return att * (finalDiff + finalSpec);
 }
@@ -104,12 +73,10 @@ void main()
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
 	
-  // arbitrary scale for the distance check because the
-  // influence sphere scales based on the original radius
-  // (in this case it's 0.08f)
-  float comp = attCalc == 1 ? options.z : pos.w;
-  
-	if (dist > comp * 0.08f)
+    // arbitrary scale for the distance check because the
+    // influence sphere scales based on the original radius
+    // (in this case it's 0.08f)
+	if (dist > 0.08f * (pos.w * options.y))
 	{
 		discard;
 	}

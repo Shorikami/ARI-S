@@ -85,22 +85,18 @@ namespace Hayase
             float yPos = RandomNum(minY, maxY);
             float zPos = RandomNum(minZ, maxZ);
             float range = RandomNum(minRange, maxRange);
+            float mult = RandomNum(5.0f, 5.0f);
 
             float intensity = RandomNum(1.0f, 10.0f);
-            float cutoff = RandomNum(0.05f, 0.1f);
 
             float r = RandomNum(0.0f, 1.0f);
             float g = RandomNum(0.0f, 1.0f);
             float b = RandomNum(0.0f, 1.0f);
 
-
             localLights[i].pos = glm::vec4(xPos, yPos, zPos, range);
             localLights[i].color = glm::vec4(r, g, b, 1.0f);
-
-            float maxRange = range * (sqrtf(intensity / cutoff) - 1.0f);
-
-            //localLights[i].options = glm::vec3(intensity, 0.01f, maxRange);
-            localLights[i].options = glm::vec4(intensity, cutoff, maxRange, 1.0f);
+            localLights[i].options.x = intensity;
+            localLights[i].options.y = mult;
         }
     }
 
@@ -347,16 +343,6 @@ namespace Hayase
                             ImGui::Checkbox("Display Skybox", &m_DisplaySkybox);
                             ImGui::Separator();
             
-                            ImGui::Text("Attenuation Calculation");
-                            {
-                                static int attenCalc = 0;
-                                attenCalc = m_AttenuationCalc;
-                                ImGui::RadioButton("Basic", &attenCalc, 0);
-                                ImGui::RadioButton("Advanced", &attenCalc, 1);
-                                m_AttenuationCalc = attenCalc;
-                            }
-                            ImGui::Separator();
-            
                             ImGui::Text("FSQ Rendering");
                             {
                                 static int renderWhat = 0;
@@ -430,17 +416,14 @@ namespace Hayase
                                 ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
                                 ImGui::Separator();
                                 ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
-                                ImGui::SliderFloat("Cutoff", &localLights[i].options.y, 0.05f, 0.1f);
+                                ImGui::SliderFloat("Range Multiplier", &localLights[i].options.y, 1.0f, 5.0f);
                                 ImGui::Separator();
-                                float display = m_AttenuationCalc == 1 ? localLights[i].options.z : localLights[i].pos.w;
-                                ImGui::Text("Maximum Range: %f", 0.08f * display);
+                                ImGui::Text("Total Range: %f", 0.08f * localLights[i].pos.w * localLights[i].options.y);
 
                                 ImGui::PopID();
                             }
-
                             ImGui::EndTabItem();
                         }
-
                         ImGui::EndTabBar();
                     }
             
@@ -743,7 +726,6 @@ namespace Hayase
 
         localLight->Activate();
         localLight->SetVec3("eyePos", m_Camera.cameraPos);
-        localLight->SetInt("attCalc", m_AttenuationCalc);
 
         localLight->SetInt("vWidth", _windowWidth);
         localLight->SetInt("vHeight", _windowHeight);
@@ -760,28 +742,14 @@ namespace Hayase
 
         for (unsigned i = 0; i < currLocalLights; ++i)
         {
-            localLights[i].options.z = localLights[i].pos.w * (sqrtf(localLights[i].options.x / localLights[i].options.y) - 1.0f);
-
             localLightData->GetData().pos = localLights[i].pos;
             localLightData->GetData().color = localLights[i].color;
             localLightData->GetData().options = localLights[i].options;
             localLightData->SetData();
 
-            if (m_AttenuationCalc == 1)
-            {
-                sphere->Update(0.0f, glm::vec3(localLights[i].options.z), glm::vec3(localLights[i].pos));
-            }
-            else
-            {
-                sphere->Update(0.0f, glm::vec3(localLights[i].pos.w), glm::vec3(localLights[i].pos));
-            }
+            sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
 
             sphere->Draw(localLight->m_ID, m_Camera.view(), m_Camera.perspective());
-
-            if (m_DisplayDebugRanges)
-            {
-                sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
-            }
         }
 
         glEnable(GL_CULL_FACE);
@@ -797,6 +765,12 @@ namespace Hayase
 
             sphere->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
             sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
+
+            if (m_DisplayDebugRanges)
+            {
+                sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
+                sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
+            }
         }
     }
 

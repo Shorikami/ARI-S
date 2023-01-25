@@ -81,7 +81,7 @@ namespace Hayase
         bool m_DisplayDebugRanges = false, m_DisplayLightPassLocations = true,
             m_DisplayLocalLights = true, m_DisplaySkybox = true, m_EditorMode = false;
         
-        int m_RenderOption = 0, m_AttenuationCalc = 1, m_SelectedModelIdx = 0;
+        int m_RenderOption = 0,  m_SelectedModelIdx = 0;
     };
 }
 

@@ -89,7 +89,7 @@ namespace Hayase
 	public:
 		glm::vec4 pos = glm::vec4(glm::vec3(0.0f), 1.0f); // xyz = pos, w = range
 		glm::vec4 color = glm::vec4(1.0f);
-		glm::vec4 options = glm::vec4(1.0f); // intensity, cutoff, max range
+		glm::vec2 options = glm::vec2(1.0f); // x = intensity, y = extra range multiplier
 	};
 }
 
