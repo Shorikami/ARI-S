@@ -47,7 +47,8 @@ vec3 LightCalc()
 	
 	// diffuse
 	float nDotL = max(dot(norm, L), 0.0);
-	vec3 finalDiff = nDotL * diffTex * color.xyz;
+	vec3 finalDiff = options.x * nDotL * diffTex * color.xyz;
+  //finalDiff = vec3(1.0f);
 	
 	if (attCalc == 1)
 	{
@@ -62,7 +63,7 @@ vec3 LightCalc()
 	
 	vec3 reflectDir = reflect(L, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
-	vec3 finalSpec = color.xyz * sp * specTex;
+	vec3 finalSpec = options.x * color.xyz * sp * specTex;
 	
 	if (attCalc == 1)
 	{
@@ -70,37 +71,25 @@ vec3 LightCalc()
 	}
 	
 	// attenuation
-	//float radius = pos.w;
-	//float denom = dist / radius + 1.0f;
-	//float att = 1.0f / (denom * denom);
-	
 	float att = 0.0f;
 	
 	// simple
 	if (attCalc == 0)
 	{
-		att = (1.0f / (dist * dist)) - (1.0f / (pos.w * pos.w));
+		att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08 * pos.w, 2)));
+		//att = 1.0f / (1.0f + 1.0f * d + 1.0f * pow(d, 2.0f));
 	}
 	
 	// advanced
 	else
 	{
-		float r = pos.w;
-		//float d = max(dist - r, 0.0f);
+		float r = 0.08f * options.z;
+		float d = max(dist - r, 0.0f);
+		float denom = (d / r) + 1.0f;
+		att = options.x / pow(denom, 2.0f);
 		
-		float test = (dist / r);
-		
-		//float att = (1.0f / pow(dist, 2)) - (1.0f / pow(pos.w, 2));
-		float denom = (test) + 1.0f;
-		att = 1.0f / pow(denom, 2.0f);
-		
-		att = (att - options.y) / (1.0f - options.y);
+		att = (att - options.y) / (options.x - options.y);
 		att = max(att, 0.0f);
-		
-		if (test >= pos.w)
-		{
-			att = 0.0f;
-		}
 	}
 	
 	return att * (finalDiff + finalSpec);
@@ -115,7 +104,12 @@ void main()
 	vec3 L = pos.xyz - gFragPos;
 	float dist = length(L);
 	
-	if (dist > pos.w)
+  // arbitrary scale for the distance check because the
+  // influence sphere scales based on the original radius
+  // (in this case it's 0.08f)
+  float comp = attCalc == 1 ? options.z : pos.w;
+  
+	if (dist > comp * 0.08f)
 	{
 		discard;
 	}

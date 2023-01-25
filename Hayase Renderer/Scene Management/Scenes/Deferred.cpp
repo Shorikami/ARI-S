@@ -215,7 +215,7 @@ namespace Hayase
         cube->initData();
         reader.ReadOBJFile("Materials/Models/cube2.obj", cube);
 
-        sphere = Mesh::CreateSphere(0.08f, 8);
+        sphere = Mesh::CreateSphere(0.08f, 16);
 
         skybox->GenerateBuffers();
         sphere->GenerateBuffers();
@@ -432,7 +432,8 @@ namespace Hayase
                                 ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
                                 ImGui::SliderFloat("Cutoff", &localLights[i].options.y, 0.05f, 0.1f);
                                 ImGui::Separator();
-                                ImGui::Text("Maximum Range: %f", localLights[i].options.z);
+                                float display = m_AttenuationCalc == 1 ? localLights[i].options.z : localLights[i].pos.w;
+                                ImGui::Text("Maximum Range: %f", 0.08f * display);
 
                                 ImGui::PopID();
                             }
@@ -759,7 +760,7 @@ namespace Hayase
 
         for (unsigned i = 0; i < currLocalLights; ++i)
         {
-            localLights[i].options.z = localLights[i].pos.w * (sqrtf(localLights[i].options.x / 0.01f) - 1.0f);
+            localLights[i].options.z = localLights[i].pos.w * (sqrtf(localLights[i].options.x / localLights[i].options.y) - 1.0f);
 
             localLightData->GetData().pos = localLights[i].pos;
             localLightData->GetData().color = localLights[i].color;
