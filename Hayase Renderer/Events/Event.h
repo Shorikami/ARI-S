@@ -20,11 +20,11 @@ namespace Hayase
 	enum EventCategory
 	{
 		None = -1,
-		Application = 1 << 0,
-		Input = 1 << 1,
-		Keyboard = 1 << 2,
+		CategoryApplication = 1 << 0,
+		CategoryInput = 1 << 1,
+		CategoryKeyboard = 1 << 2,
 		CategoryMouse = 1 << 3,
-		MouseButton = 1 << 4,
+		CategoryMouseButton = 1 << 4,
 	};
 
 #define EVENT_CLASS_TYPE(type) static EventType GetStaticType() { return EventType::type; }\

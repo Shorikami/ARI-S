@@ -25,7 +25,7 @@ namespace Hayase
 		}
 
 		EVENT_CLASS_TYPE(WindowResize)
-		EVENT_CLASS_CATEGORY(Application)
+		EVENT_CLASS_CATEGORY(CategoryApplication)
 
 	private:
 		unsigned m_Width, m_Height;
@@ -37,7 +37,7 @@ namespace Hayase
 		WindowCloseEvent() = default;
 
 		EVENT_CLASS_TYPE(WindowClose)
-		EVENT_CLASS_CATEGORY(Application)
+		EVENT_CLASS_CATEGORY(CategoryApplication)
 	};
 
 	class AppTickEvent : public Event
@@ -46,7 +46,7 @@ namespace Hayase
 		AppTickEvent() = default;
 
 		EVENT_CLASS_TYPE(AppTick)
-			EVENT_CLASS_CATEGORY(Application)
+			EVENT_CLASS_CATEGORY(CategoryApplication)
 	};
 
 	class AppUpdateEvent : public Event
@@ -55,7 +55,7 @@ namespace Hayase
 		AppUpdateEvent() = default;
 
 		EVENT_CLASS_TYPE(AppUpdate)
-			EVENT_CLASS_CATEGORY(Application)
+			EVENT_CLASS_CATEGORY(CategoryApplication)
 	};
 
 	class AppRenderEvent : public Event
@@ -64,7 +64,7 @@ namespace Hayase
 		AppRenderEvent() = default;
 
 		EVENT_CLASS_TYPE(AppRender)
-			EVENT_CLASS_CATEGORY(Application)
+			EVENT_CLASS_CATEGORY(CategoryApplication)
 	};
 }
 

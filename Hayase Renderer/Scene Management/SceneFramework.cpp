@@ -5,7 +5,6 @@ namespace Hayase
     Scene::Scene() 
         : _windowWidth(100)
         , _windowHeight(100)
-        , window(_windowWidth, _windowHeight, "Hayase Renderer")
     {
 
     }
@@ -13,7 +12,6 @@ namespace Hayase
     Scene::Scene(int windowWidth, int windowHeight)
         : _windowWidth(windowWidth)
         , _windowHeight(windowHeight)
-        , window(windowWidth, windowHeight, "Hayase Renderer")
     {
     }
 

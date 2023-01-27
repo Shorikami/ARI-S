@@ -31,9 +31,6 @@ namespace Hayase
 
     protected:
         int _windowHeight, _windowWidth;
-        Window window;
-
-        friend class Application;
     };
 }
 

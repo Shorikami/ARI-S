@@ -11,7 +11,7 @@ namespace Hayase
 	public:
 		KeyCode GetKeyCode() const { return m_KeyCode; }
 
-		EVENT_CLASS_CATEGORY(Keyboard | Input)
+		EVENT_CLASS_CATEGORY(CategoryKeyboard | CategoryInput)
 	protected:
 		KeyEvent(const KeyCode keycode)
 			: m_KeyCode(keycode) {}

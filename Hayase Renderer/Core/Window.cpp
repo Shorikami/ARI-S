@@ -1,106 +1,192 @@
 #include "Window.h"
+#include "../Events/AppEvent.h"
+#include "../Events/KeyEvent.h"
+#include "../Events/MouseEvent.h"
 
-#include "../IO/Mouse.h"
-#include "../IO/Keyboard.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-#include "Global.hpp"
-
-// Include ImGUI
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-
+#include <algorithm>
 #include <stdexcept>
 
 namespace Hayase
 {
+	static unsigned s_WindowCount = 0;
 
-	Window::Window(int w, int h, std::string name, int glfwVerMajor, int glfwVerMinor)
-		: width(w)
-		, height(h)
-		, windowName(name)
+	WindowBase* WindowBase::Generate(const WindowProperties& info)
 	{
-		InitWindow(glfwVerMajor, glfwVerMinor);
+		return new Window(info);
+	}
+
+	Window::Window(const WindowProperties& info)
+	{
+		Init(info);
 	}
 
 	Window::~Window()
 	{
-		glfwDestroyWindow(window);
-		glfwTerminate();
+		Shutdown();
 	}
 
-	void Window::InitWindow(int major, int minor)
+	void Window::Init(const WindowProperties& info)
 	{
+		m_Data.s_Width = info.s_Width;
+		m_Data.s_Height = info.s_Height;
+		m_Data.s_Title = info.s_Title;
+
 		if (!glfwInit())
 		{
 			throw std::runtime_error("Failed to initialize GLFW!");
 		}
 		
 		glfwWindowHint(GLFW_SAMPLES, 1); // change for anti-aliasing
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, major);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, minor);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, info.s_MajorVer);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, info.s_MinorVer);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		
 		//glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		//glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-		window = glfwCreateWindow(width, height, windowName.c_str(), nullptr, nullptr);
+		m_Window = glfwCreateWindow((int)info.s_Width, (int)info.s_Width, m_Data.s_Title.c_str(), nullptr, nullptr);
+		
 
-		if (window == nullptr)
+		if (m_Window == nullptr)
 		{
 			glfwTerminate();
 			throw std::runtime_error(std::string("Failed to create window! Is your GPU compatible with " 
-				+ std::to_string(major) + "." + std::to_string(minor) + "?").c_str());
+				+ std::to_string(info.s_MajorVer) + "." + std::to_string(info.s_MinorVer) + "?").c_str());
 		}
 
-		glfwMakeContextCurrent(window);
-		glfwSetWindowUserPointer(window, this);
+		++s_WindowCount;
 
-		glfwSetKeyCallback(window, Keyboard::KeyCallback);
-		glfwSetCursorPosCallback(window, Mouse::CursorPosCallback);
-		glfwSetScrollCallback(window, Mouse::MouseWheelCallback);
-
-		// Set a default resize callback
-		glfwSetFramebufferSizeCallback(window, FramebufferResizeCallback);
-
+		glfwMakeContextCurrent(m_Window);
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 		{
 			glfwTerminate();
 			throw std::runtime_error("Failed to initialize GLAD!");
 		}
 
-		// Ensure we can capture the escape key being pressed below
-		//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+		glfwSetWindowUserPointer(m_Window, &m_Data);
 
-		// Initialize ImGUI
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO();
-		io.ConfigFlags |= ImGuiBackendFlags_HasMouseCursors;
-		io.ConfigWindowsResizeFromEdges = true;
+		SetVSync(1);
 
-		ImGui::StyleColorsDark();
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
-
-		std::string version = std::string("#version ") + std::to_string(major) + std::to_string(minor) + std::string("0");
-
-		ImGui_ImplOpenGL3_Init(version.c_str());
+		glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int code, int action, int mods)
+		{
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		
+			switch (action)
+			{
+				case GLFW_PRESS:
+				{
+					KeyPressedEvent event(key);
+					data.s_EventCB(event);
+					break;
+				}
+		
+				case GLFW_REPEAT:
+				{
+					KeyPressedEvent event(key, true);
+					data.s_EventCB(event);
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					KeyPressedEvent event(key);
+					data.s_EventCB(event);
+					break;
+				}
+			}
+		});
+		
+		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned code)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		
+				KeyTypedEvent event(code);
+				data.s_EventCB(event);
+			});
+		
+		//glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
+		//	{
+		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		//
+		//		switch (action)
+		//		{
+		//			case GLFW_PRESS:
+		//			{
+		//				MouseButtonPressedEvent event(button);
+		//				data.s_EventCB(event);
+		//				break;
+		//			}
+		//			case GLFW_RELEASE:
+		//			{
+		//				MouseButtonReleasedEvent event(button);
+		//				data.s_EventCB(event);
+		//				break;
+		//			}
+		//		}
+		//	});
+		//
+		//glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
+		//	{
+		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		//
+		//		MouseScrolledEvent event((float)xOffset, (float)yOffset);
+		//		data.s_EventCB(event);
+		//	});
+		//
+		//glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
+		//	{
+		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		//
+		//		MouseMovedEvent event((float)xPos, (float)yPos);
+		//		data.s_EventCB(event);
+		//	});
+		//
+		//glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
+		//	{
+		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		//		data.s_Width = width;
+		//		data.s_Height = height;
+		//
+		//		WindowResizeEvent event(width, height);
+		//		data.s_EventCB(event);
+		//	});
+		//
+		//glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
+		//	{
+		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		//		WindowCloseEvent event;
+		//		data.s_EventCB(event);
+		//	});
 	}
 
-	void Window::SetResizeCallback(void(*func)(GLFWwindow* window, int w, int h))
+	void Window::Shutdown()
 	{
-		glfwSetFramebufferSizeCallback(window, func);
+		glfwDestroyWindow(m_Window);
+		--s_WindowCount;
+
+		if (s_WindowCount == 0)
+		{
+			glfwTerminate();
+		}
 	}
 
-	void Window::FramebufferResizeCallback(GLFWwindow* window, int w, int h)
+	void Window::Update()
 	{
-		auto wWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-		wWindow->frameBufferResized = true;
-		wWindow->width = w;
-		wWindow->height = h;
+		glfwPollEvents();
+		glfwSwapBuffers(m_Window);
+	}
 
-		WindowInfo::windowWidth = w;
-		WindowInfo::windowHeight = h;
+	void Window::SetVSync(bool b)
+	{
+		glfwSwapInterval(b ? 1 : 0);
+		m_Data.s_VSync = b;
+	}
+
+	bool Window::IsVSync() const
+	{
+		return m_Data.s_VSync;
 	}
 }

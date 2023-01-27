@@ -23,7 +23,7 @@ namespace Hayase
 		}
 
 		EVENT_CLASS_TYPE(MouseMoved)
-			EVENT_CLASS_CATEGORY(CategoryMouse | Input)
+			EVENT_CLASS_CATEGORY(CategoryMouse | CategoryInput)
 	private:
 		float m_MouseX, m_MouseY;
 	};
@@ -45,7 +45,7 @@ namespace Hayase
 		}
 
 		EVENT_CLASS_TYPE(MouseScrolled)
-		EVENT_CLASS_CATEGORY(CategoryMouse | Input)
+		EVENT_CLASS_CATEGORY(CategoryMouse | CategoryInput)
 	private:
 		float m_XOffset, m_YOffset;
 	};
@@ -55,7 +55,7 @@ namespace Hayase
 	public:
 		MouseCode GetMouseButton() const { return m_Button; }
 
-		EVENT_CLASS_CATEGORY(CategoryMouse | Input | MouseButton)
+		EVENT_CLASS_CATEGORY(CategoryMouse | CategoryInput | CategoryMouseButton)
 	protected:
 		MouseButtonEvent(const MouseCode button)
 			: m_Button(button) {}
