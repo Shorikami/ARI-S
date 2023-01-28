@@ -91,7 +91,7 @@ namespace Hayase
 				}
 				case GLFW_RELEASE:
 				{
-					KeyPressedEvent event(key);
+					KeyReleasedEvent event(key);
 					data.s_EventCB(event);
 					break;
 				}
@@ -174,8 +174,8 @@ namespace Hayase
 
 	void Window::Update()
 	{
-		glfwPollEvents();
 		glfwSwapBuffers(m_Window);
+		glfwPollEvents();
 	}
 
 	void Window::SetVSync(bool b)

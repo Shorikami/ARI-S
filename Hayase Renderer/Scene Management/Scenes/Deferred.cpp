@@ -14,8 +14,6 @@
 
 #include "stb_image.h"
 
-#include "Mouse.h"
-
 int currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
@@ -35,6 +33,24 @@ namespace Hayase
 
     void Deferred::OnAttach()
     {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
         Init();
     }
 
@@ -48,10 +64,15 @@ namespace Hayase
         float time = dt.GetSeconds();
 
         // update first...
-        ProcessInput(static_cast<GLFWwindow*>(Application::Get().GetWindow().GetWindow()), time);
+        m_Camera.Update(dt);
 
         // ... then render
         Display();
+    }
+
+    void Deferred::OnEvent(Event& e)
+    {
+        m_Camera.OnEvent(e);
     }
 
     void Deferred::OnImGuiRender()
@@ -564,10 +585,6 @@ namespace Hayase
     {
         Lights& lightUBO = lightData->GetData();
 
-        _windowWidth = m_EditorMode ? WindowInfo::windowWidth - EditorInfo::rightSize - EditorInfo::leftSize : WindowInfo::windowWidth;
-        _windowHeight = m_EditorMode ? WindowInfo::windowHeight - EditorInfo::bottomSize : WindowInfo::windowHeight;
-
-
         lightUBO.eyePos = glm::vec4(m_Camera.cameraPos, 1.0f);
         lightData->SetData();
 
@@ -596,8 +613,7 @@ namespace Hayase
         // (-_windowWidth + (EditorInfo::leftSize + EditorInfo::rightSize)) + 
         // gBuffer pass
         gBuffer->Bind();
-        glViewport(m_EditorMode ? EditorInfo::leftSize : 0, 
-            m_EditorMode ? EditorInfo::bottomSize : 0, _windowWidth, _windowHeight);
+        glViewport(0, 0, _windowWidth, _windowHeight);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_CULL_FACE);
@@ -635,16 +651,6 @@ namespace Hayase
 
         lightingPass->SetInt("vWidth", _windowWidth);
         lightingPass->SetInt("vHeight", _windowHeight);
-
-        //(_windowWidth - (EditorInfo::leftSize + EditorInfo::rightSize)) + 
-        int editX = (800) - _windowWidth
-        + EditorInfo::leftSize + EditorInfo::rightSize;
-
-        // higher number = squeeze; lower number = stretch
-        int editY = (700 - _windowHeight) + EditorInfo::bottomSize;
-
-        lightingPass->SetInt("editorOffsetX", m_EditorMode ? editX : 0);
-        lightingPass->SetInt("editorOffsetY", m_EditorMode ? editY : 0);
         
         RenderQuad();
 
@@ -654,10 +660,7 @@ namespace Hayase
         // the dimensions of the FSQ
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
-        glBlitFramebuffer(m_EditorMode ? 400 : 0, m_EditorMode ? 200 : 0, 
-            m_EditorMode ? 400 + _windowWidth : _windowWidth , m_EditorMode ? 200 + _windowHeight : _windowHeight,
-            m_EditorMode ? 400 : 0, m_EditorMode ? 200 : 0,
-            m_EditorMode ? 400 + _windowWidth : _windowWidth, m_EditorMode ? 200 + _windowHeight : _windowHeight, 
+        glBlitFramebuffer(0, 0,  _windowWidth,_windowHeight, 0, 0, _windowWidth, _windowHeight, 
             GL_DEPTH_BUFFER_BIT, GL_NEAREST);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         
@@ -701,26 +704,6 @@ namespace Hayase
 
     void Deferred::RenderQuad()
     {
-        if (quadVAO == 0)
-        {
-            float quadVertices[] = {
-                // positions        // texture Coords
-                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-                 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-                 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-            };
-            // setup plane VAO
-            glGenVertexArrays(1, &quadVAO);
-            glGenBuffers(1, &quadVBO);
-            glBindVertexArray(quadVAO);
-            glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        }
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glBindVertexArray(0);
@@ -741,14 +724,6 @@ namespace Hayase
 
         localLight->SetInt("vWidth", _windowWidth);
         localLight->SetInt("vHeight", _windowHeight);
-
-        int editX = (800) - _windowWidth
-            + EditorInfo::leftSize + EditorInfo::rightSize;
-
-        int editY = (700 - _windowHeight) + EditorInfo::bottomSize;
-
-        localLight->SetInt("editorOffsetX", m_EditorMode ? editX : 0);
-        localLight->SetInt("editorOffsetY", m_EditorMode ? editY : 0);
 
         glUseProgram(0);
 
@@ -802,30 +777,5 @@ namespace Hayase
        skybox->Draw(skyboxShader->m_ID, glm::mat4(glm::mat3(m_Camera.view())), m_Camera.perspective(), skyboxTextures, GL_TRIANGLES);
        
        glDepthFunc(GL_LESS);
-    }
-
-    void Deferred::ProcessInput(GLFWwindow* win, float dt)
-    {
-        if (!ImGui::IsItemActive())
-        {
-            if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
-                m_Camera.UpdateCameraPos(CameraDirection::FORWARD, dt);
-            if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS)
-                m_Camera.UpdateCameraPos(CameraDirection::BACKWARDS, dt);
-            if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
-                m_Camera.UpdateCameraPos(CameraDirection::LEFT, dt);
-            if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
-                m_Camera.UpdateCameraPos(CameraDirection::RIGHT, dt);
-        }
-
-        double dx = Mouse::GetDX(); double dy = Mouse::GetDY();
-        if (dx != 0 || dy != 0)
-        {
-            float sens = 1.f;
-            m_Camera.UpdateCameraDir(dx * sens, dy * sens);
-        }
-
-        if (glfwGetKey(win, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
-            m_Camera.rotateCamera = !m_Camera.rotateCamera;
     }
 }

@@ -1,6 +1,10 @@
 #include <hyspch.h>
 
+#include "Event.h"
 #include "Camera.h"
+#include "InputPoll.h"
+#include "Tools.h"
+
 #include <cmath>
 
 namespace Hayase
@@ -14,8 +18,34 @@ namespace Hayase
 		, front(glm::vec3(0.0f, 0.0f, -1.0f))
 		, n(0.5f)
 		, f(100.0f)
+		, lastX(0.0f)
+		, lastY(0.0f)
+		, firstMouse(true)
 	{
 		UpdateCameraVectors();
+	}
+
+	void Camera::Update(DeltaTime dt)
+	{
+		double time = static_cast<double>(dt.GetSeconds());
+
+		if (InputPoll::IsKeyPressed(KeyTags::W))
+			UpdateCameraPos(CameraDirection::FORWARD, time);
+		if (InputPoll::IsKeyPressed(KeyTags::S))
+			UpdateCameraPos(CameraDirection::BACKWARDS, time);
+		if (InputPoll::IsKeyPressed(KeyTags::A))
+			UpdateCameraPos(CameraDirection::LEFT, time);
+		if (InputPoll::IsKeyPressed(KeyTags::D))
+			UpdateCameraPos(CameraDirection::RIGHT, time);			
+	}
+
+	void Camera::OnEvent(Event& e)
+	{
+		EventDispatcher dispatcher(e);
+
+		dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT_FUNC(Camera::OnKeyPressed));
+		dispatcher.Dispatch<MouseMovedEvent>(BIND_EVENT_FUNC(Camera::OnMouseMoved));
+		dispatcher.Dispatch<MouseScrolledEvent>(BIND_EVENT_FUNC(Camera::OnMouseScrolled));
 	}
 
 	void Camera::UpdateCameraDir(double dx, double dy)
@@ -87,152 +117,38 @@ namespace Hayase
 		up = glm::normalize(glm::cross(right, front));
 	}
 
-
-	//----------------------------------
-	//----------------------------------
-	// CS250 CAMERA
-	//----------------------------------
-	//----------------------------------
-
-	CS250_Camera::CS250_Camera(void)
+	bool Camera::OnKeyPressed(KeyPressedEvent& e)
 	{
-		eye_point = glm::vec4(glm::vec3(0.0f), 1.0f);
-
-		right_vector = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		back_vector = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-		up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-
-		vp_distance = 5.0f;
-		vp_width = 2.0f * vp_distance * tanf((90.0f / 2.0f) * (glm::pi<float>() / 180.0f));
-		vp_height = vp_width / 1.0f;
-
-		near_distance = 0.1f;
-		far_distance = 10.0f;
+		if (e.GetKeyCode() == KeyTags::GraveAccent && !e.IsRepeat())
+		{
+			rotateCamera = !rotateCamera;
+		}
+		return 0;
 	}
 
-	CS250_Camera::CS250_Camera(const glm::vec4& E, const glm::vec4& look, const glm::vec4& rel, float fov, float aspect, float N, float F)
-		: eye_point(E)
-		, back_vector(glm::normalize(look * -1.0f))
-		, right_vector(glm::normalize(glm::vec4(glm::cross(glm::vec3(look), glm::vec3(rel)), 0.0f)))
-		, up_vector(glm::normalize(rel))
-		, near_distance(N)
-		, far_distance(F)
-		, vp_distance(N)
+	bool Camera::OnMouseMoved(MouseMovedEvent& e)
 	{
-		float rad = glm::radians(fov / 2.0f);
-		vp_width = tanf(rad) * vp_distance * 2.0f;
-		vp_height = vp_width / aspect;
+		float sens = 1.f;
+		
+		if (firstMouse)
+		{
+			lastX = e.GetX();
+			lastY = e.GetY();
+			firstMouse = false;
+		}
+
+		UpdateCameraDir((e.GetX() - lastX) * sens, (lastY - e.GetY()) * sens);
+
+		lastX = e.GetX();
+		lastY = e.GetY();
+
+		return 0;
 	}
 
-	glm::vec4 CS250_Camera::viewport(void) const
+	bool Camera::OnMouseScrolled(MouseScrolledEvent& e)
 	{
-		return glm::vec4(vp_width, vp_height, vp_distance, 0.0f);
-	}
+		UpdateCameraZoom(e.GetYOffset());
 
-	CS250_Camera& CS250_Camera::zoom(float factor)
-	{
-		vp_width *= factor;
-		vp_height *= factor;
-		return *this;
-	}
-
-	CS250_Camera& CS250_Camera::forward(float distance)
-	{
-		eye_point -= back_vector * distance;
-		return *this;
-	}
-
-	CS250_Camera& CS250_Camera::yaw(float angle)
-	{
-		right_vector = rotate(angle, up_vector) * right_vector;
-		back_vector = rotate(angle, up_vector) * back_vector;
-		return *this;
-	}
-
-	CS250_Camera& CS250_Camera::pitch(float angle)
-	{
-		up_vector = rotate(angle, right_vector) * up_vector;
-		back_vector = rotate(angle, right_vector) * back_vector;
-		return *this;
-	}
-
-	CS250_Camera& CS250_Camera::roll(float angle)
-	{
-		right_vector = rotate(angle, back_vector) * right_vector;
-		up_vector = rotate(angle, back_vector) * up_vector;
-		return *this;
-	}
-
-	glm::mat4 CS250_Camera::rotate(float deg, const glm::vec4& v)
-	{
-		glm::mat3 outerProduct = { {v.x * v.x, v.y * v.x, v.z * v.x},
-							  {v.x * v.y, v.y * v.y, v.z * v.y},
-							  {v.x * v.z, v.y * v.z, v.z * v.z} };
-		glm::mat3 crossProduct = { {0, v.z, -v.y},
-								  {-v.z, 0, v.x},
-								  {v.y, -v.x, 0} };
-
-		float vecMag = sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
-
-		float cosDeg = cos(glm::radians(deg));
-		float sinDeg = sin(glm::radians(deg));
-
-		glm::mat3 result = (cosDeg * glm::mat3(1)) +
-			((1 - cosDeg) / (vecMag * vecMag)) * outerProduct +
-			(sinDeg / vecMag) * crossProduct;
-
-		return glm::mat4(result);
-	}
-
-	glm::mat4 CS250_Camera::affine(const glm::vec4& Lx, const glm::vec4& Ly, const glm::vec4& Lz, const glm::vec4& C)
-	{
-		glm::mat4 result = { Lx, Ly, Lz, C };
-
-		return result;
-	}
-
-	glm::mat4 CS250_Camera::affineInv(const glm::mat4& A)
-	{
-		glm::mat3 linearTransformation = glm::mat3(A);
-		glm::vec3 translation = glm::vec3(A[3]);
-
-		linearTransformation = glm::inverse(linearTransformation);
-		translation *= -1.0f;
-
-		glm::mat4 result = glm::mat4(linearTransformation);
-		result[3] = glm::vec4(linearTransformation * translation, 1.0f);
-
-		return result;
-	}
-
-	glm::mat4 CS250_Camera::model()
-	{
-		return affine(right_vector, up_vector, back_vector, eye_point);
-	}
-
-	glm::mat4 CS250_Camera::view()
-	{
-		return affineInv(model());
-	}
-
-	glm::mat4 CS250_Camera::perspective()
-	{
-		float W = vp_width;
-		float H = vp_height;
-		float D = vp_distance;
-
-		// Identity
-		glm::mat4 matrix(1);
-
-
-		matrix[0][0] = (2 * D) / W;
-		matrix[1][1] = (2 * D) / H;
-		matrix[2][2] = (near_distance + far_distance) / (near_distance - far_distance);
-		matrix[3][3] = 0;
-
-		matrix[2][3] = -1;
-		matrix[3][2] = (2 * near_distance * far_distance) / (near_distance - far_distance);
-
-		return matrix;
+		return 0;
 	}
 }

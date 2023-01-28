@@ -6,14 +6,14 @@
 #include "Empty.h"
 #include "Deferred.h"
 
+#include "Tools.h"
+
 #include "../Editor/Editor.h"
 
 #include <glad/glad.h>
 
 namespace Hayase
 {
-#define BIND_EVENT_FUNC(x) std::bind(&x, this, std::placeholders::_1)
-
 	Application* Application::m_Instance = nullptr;
 
 	Application::Application(int windowWidth, int windowHeight)
@@ -96,7 +96,7 @@ namespace Hayase
 				l->OnImGuiRender();
 			}
 			m_Editor->End();
-
+			
 			m_Window->Update();
 		}
 	}

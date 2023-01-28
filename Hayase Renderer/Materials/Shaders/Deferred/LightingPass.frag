@@ -15,9 +15,6 @@ uniform int renderOption;
 uniform int vWidth;
 uniform int vHeight;
 
-uniform int editorOffsetX;
-uniform int editorOffsetY;
-
 layout(std140, binding = 0) uniform World
 {
   mat4 proj;
@@ -179,7 +176,7 @@ float attValue(float c1, float c2, float c3, float dist)
 
 vec3 LightCalc(int id)
 {
-	vec2 fragUV = vec2((gl_FragCoord.x) / (editorOffsetX + vWidth), gl_FragCoord.y / (editorOffsetY + vHeight));
+	vec2 fragUV = vec2(gl_FragCoord.x / vWidth, gl_FragCoord.y / vHeight);
 
 	vec3 fragPos = texture(gPos, fragUV).rgb;
 	vec3 norm = texture(gNorm, fragUV).rgb;
@@ -216,8 +213,8 @@ vec3 LightCalc(int id)
 
 void main()
 {
-	vec2 uv = vec2(gl_FragCoord.x / (editorOffsetX + vWidth), 
-					gl_FragCoord.y / (editorOffsetY + vHeight));
+	vec2 uv = vec2(gl_FragCoord.x / vWidth, 
+					gl_FragCoord.y / vHeight);
 	// positions
 	if (renderOption == 1)
 	{

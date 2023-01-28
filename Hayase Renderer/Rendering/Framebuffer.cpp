@@ -1,7 +1,7 @@
 #include <hyspch.h>
 
 #include "Framebuffer.h"
-#include "Global.hpp"
+#include "Application.h"
 
 namespace Hayase
 {
@@ -40,10 +40,12 @@ namespace Hayase
 		// Otherwise, just generate a default render buffer and attach it
 		else
 		{
+			WindowBase& window = Application::Get().GetWindow();
+
 			unsigned int rbo;
 			glGenRenderbuffers(1, &rbo);
 			glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, WindowInfo::windowWidth, WindowInfo::windowHeight);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window.GetWidth(), window.GetHeight());
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 		}
 

@@ -1,7 +1,6 @@
 #include <hyspch.h>
 
 #include "Application.h"
-#include "Global.hpp"
 
 #include "Shader.h"
 
@@ -11,21 +10,13 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h> 
 
-int Hayase::WindowInfo::windowWidth = 1600;
-int Hayase::WindowInfo::windowHeight = 900;
-
-int Hayase::EditorInfo::leftSize = 400;
-int Hayase::EditorInfo::rightSize = 400;
-int Hayase::EditorInfo::bottomSize = 200;
-
 std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
-
 
 
 int main()
 {
 	srand((unsigned)time(NULL));
-	Hayase::Application app{ Hayase::WindowInfo::windowWidth, Hayase::WindowInfo::windowHeight };
+	Hayase::Application app{ 1600, 900 };
 	
 	std::cout << "Hello, Hello World!" << std::endl;
 	

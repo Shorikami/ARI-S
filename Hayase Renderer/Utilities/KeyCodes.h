@@ -5,7 +5,7 @@ namespace Hayase
 {
 	using KeyCode = unsigned;
 
-	namespace Key
+	namespace KeyTags
 	{
 		enum : KeyCode
 		{

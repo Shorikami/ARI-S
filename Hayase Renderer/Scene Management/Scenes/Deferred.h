@@ -33,6 +33,7 @@ namespace Hayase
         void OnDetach() override;
         void Update(DeltaTime dt) override;
         void OnImGuiRender() override;
+        void OnEvent(Event& e) override;
 
     public:
         int Init() override;
@@ -42,7 +43,6 @@ namespace Hayase
         int Render() override;
         int PostRender() override;
 
-        void ProcessInput(GLFWwindow* w, float dt) override;
     private:
         void initMembers();
         void ReloadShaders();

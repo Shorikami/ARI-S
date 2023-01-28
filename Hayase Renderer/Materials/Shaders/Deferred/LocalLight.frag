@@ -24,13 +24,10 @@ uniform vec3 eyePos;
 uniform int vWidth;
 uniform int vHeight;
 
-uniform int editorOffsetX;
-uniform int editorOffsetY;
-
 vec3 LightCalc()
 {
-	vec2 fragUV = vec2((gl_FragCoord.x) / (editorOffsetX + vWidth), 
-	gl_FragCoord.y / (editorOffsetY + vHeight));
+	vec2 fragUV = vec2(gl_FragCoord.x / vWidth, 
+	gl_FragCoord.y / vHeight);
 	
 	vec3 gFragPos = texture(gPos, fragUV).rgb;
 	vec3 norm = texture(gNorm, fragUV).rgb;
@@ -66,8 +63,8 @@ vec3 LightCalc()
 
 void main()
 {
-	vec2 fragUV = vec2((gl_FragCoord.x) / (editorOffsetX + vWidth), 
-	gl_FragCoord.y / (editorOffsetY + vHeight));
+	vec2 fragUV = vec2(gl_FragCoord.x / vWidth, 
+	gl_FragCoord.y / vHeight);
 
 	vec3 gFragPos = texture(gPos, fragUV).rgb;
 	vec3 L = pos.xyz - gFragPos;

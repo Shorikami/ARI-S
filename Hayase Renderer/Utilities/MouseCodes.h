@@ -5,7 +5,7 @@ namespace Hayase
 {
 	using MouseCode = unsigned;
 
-	namespace Mouse
+	namespace MouseTags
 	{
 		enum : MouseCode
 		{
