@@ -1,3 +1,5 @@
+#include <hyspch.h>
+
 #include "Camera.h"
 #include <cmath>
 

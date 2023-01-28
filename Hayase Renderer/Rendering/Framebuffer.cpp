@@ -1,8 +1,7 @@
-#include "Framebuffer.h"
-#include "../Core/Global.hpp"
+#include <hyspch.h>
 
-#include <array>
-#include <iostream>
+#include "Framebuffer.h"
+#include "Global.hpp"
 
 namespace Hayase
 {

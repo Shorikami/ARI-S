@@ -1,3 +1,5 @@
+#include <hyspch.h>
+
 #include "Shader.h"
 
 namespace Hayase

@@ -2,7 +2,7 @@
 #define MOUSEEVENT_H
 
 #include "Event.h"
-#include "../Utilities/MouseCodes.h"
+#include "MouseCodes.h"
 
 namespace Hayase
 {

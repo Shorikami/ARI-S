@@ -1,3 +1,4 @@
+#include <hyspch.h>
 #include "Model.h"
 
 namespace Hayase

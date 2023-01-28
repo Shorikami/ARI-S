@@ -1,7 +1,6 @@
 #ifndef GAMEPAD_H
 #define GAMEPAD_H
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 // analog input button values                   //      PS      |       XBOX

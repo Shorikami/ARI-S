@@ -7,7 +7,7 @@
 
 // for OpenGL datatypes
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 #include "Mesh.h"
 

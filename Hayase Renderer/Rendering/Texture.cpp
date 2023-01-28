@@ -1,7 +1,8 @@
+#include <hyspch.h>
+
 #include "Texture.h"
 
-#include <iostream>
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 namespace Hayase
 {

@@ -2,7 +2,7 @@
 #define KEYEVENT_H
 
 #include "Event.h"
-#include "../Utilities/KeyCodes.h"
+#include "KeyCodes.h"
 
 namespace Hayase
 {

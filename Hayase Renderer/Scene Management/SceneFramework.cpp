@@ -1,3 +1,5 @@
+#include <hyspch.h>
+
 #include "SceneFramework.h"
 
 namespace Hayase

@@ -1,3 +1,5 @@
+#include <hyspch.h>
+
 #include "Gamepad.h"
 
 namespace Hayase

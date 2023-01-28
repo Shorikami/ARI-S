@@ -2,7 +2,7 @@
 #define UNIFORMMEMORY_HPP
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 #define NUM_LIGHTS 1
 #define MAX_LIGHTS 200 // breaks after going beyond 32 because ubo info is passed in incorrectly, pls fix later

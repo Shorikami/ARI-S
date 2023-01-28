@@ -1,10 +1,10 @@
-#include <iostream>
+#include <hyspch.h>
+
 #include <cstring>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/vec3.hpp>
+#include <vec3.hpp>
 #include <cfloat>
 #include <chrono>
-#include <set>
 #include "OBJReader.h"
 
 namespace Hayase

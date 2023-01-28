@@ -1,13 +1,12 @@
-#include "Window.h"
-#include "../Events/AppEvent.h"
-#include "../Events/KeyEvent.h"
-#include "../Events/MouseEvent.h"
+#include <hyspch.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <algorithm>
-#include <stdexcept>
+#include "Window.h"
+#include "AppEvent.h"
+#include "KeyEvent.h"
+#include "MouseEvent.h"
 
 namespace Hayase
 {
@@ -48,7 +47,7 @@ namespace Hayase
 		//glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		//glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-		m_Window = glfwCreateWindow((int)info.s_Width, (int)info.s_Width, m_Data.s_Title.c_str(), nullptr, nullptr);
+		m_Window = glfwCreateWindow(info.s_Width, info.s_Height, m_Data.s_Title.c_str(), nullptr, nullptr);
 		
 
 		if (m_Window == nullptr)
@@ -107,59 +106,59 @@ namespace Hayase
 				data.s_EventCB(event);
 			});
 		
-		//glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
-		//	{
-		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		//
-		//		switch (action)
-		//		{
-		//			case GLFW_PRESS:
-		//			{
-		//				MouseButtonPressedEvent event(button);
-		//				data.s_EventCB(event);
-		//				break;
-		//			}
-		//			case GLFW_RELEASE:
-		//			{
-		//				MouseButtonReleasedEvent event(button);
-		//				data.s_EventCB(event);
-		//				break;
-		//			}
-		//		}
-		//	});
-		//
-		//glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
-		//	{
-		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		//
-		//		MouseScrolledEvent event((float)xOffset, (float)yOffset);
-		//		data.s_EventCB(event);
-		//	});
-		//
-		//glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
-		//	{
-		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		//
-		//		MouseMovedEvent event((float)xPos, (float)yPos);
-		//		data.s_EventCB(event);
-		//	});
-		//
-		//glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
-		//	{
-		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		//		data.s_Width = width;
-		//		data.s_Height = height;
-		//
-		//		WindowResizeEvent event(width, height);
-		//		data.s_EventCB(event);
-		//	});
-		//
-		//glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
-		//	{
-		//		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		//		WindowCloseEvent event;
-		//		data.s_EventCB(event);
-		//	});
+		glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		
+				switch (action)
+				{
+					case GLFW_PRESS:
+					{
+						MouseButtonPressedEvent event(button);
+						data.s_EventCB(event);
+						break;
+					}
+					case GLFW_RELEASE:
+					{
+						MouseButtonReleasedEvent event(button);
+						data.s_EventCB(event);
+						break;
+					}
+				}
+			});
+		
+		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		
+				MouseScrolledEvent event((float)xOffset, (float)yOffset);
+				data.s_EventCB(event);
+			});
+		
+		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+		
+				MouseMovedEvent event((float)xPos, (float)yPos);
+				data.s_EventCB(event);
+			});
+		
+		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				data.s_Width = width;
+				data.s_Height = height;
+		
+				WindowResizeEvent event(width, height);
+				data.s_EventCB(event);
+			});
+		
+		glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window)
+			{
+				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+				WindowCloseEvent event;
+				data.s_EventCB(event);
+			});
 	}
 
 	void Window::Shutdown()

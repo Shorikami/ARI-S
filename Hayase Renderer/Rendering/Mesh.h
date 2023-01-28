@@ -3,11 +3,11 @@
 
 #include <vector>
 
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
-#include "../Rendering/Memory/VertexMemory.hpp"
-#include "../Rendering/Memory/UniformMemory.hpp"
-#include "../Rendering/Texture.h"
+#include "Memory/VertexMemory.hpp"
+#include "Memory/UniformMemory.hpp"
+#include "Texture.h"
 
 namespace Hayase
 {

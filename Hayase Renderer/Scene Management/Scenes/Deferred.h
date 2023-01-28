@@ -1,20 +1,20 @@
 #ifndef DEFERRED_H
 #define DEFERRED_H
 
-#include "../SceneFramework.h"
-#include "../../Rendering/Texture.h"
-#include "../../Rendering/Framebuffer.h"
-#include "../../Rendering/Shader.h"
-#include "../../Rendering/Camera.h"
+#include "SceneFramework.h"
+#include "Texture.h"
+#include "Framebuffer.h"
+#include "Shader.h"
+#include "Camera.h"
 #include "../../Rendering/Memory/UniformMemory.hpp"
 
 #include "../../Rendering/Model.h"
 #include "../../Rendering/OBJReader.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtx/transform.hpp>
 #include <vector>
 
 namespace Hayase

@@ -1,13 +1,9 @@
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
 
-#include <GLFW/glfw3.h>
-#include <string>
+#include "Event.h"
 
-#include <sstream>
-#include <functional>
-
-#include "../Events/Event.h"
+struct GLFWwindow;
 
 namespace Hayase
 {
@@ -17,7 +13,9 @@ namespace Hayase
 		unsigned s_MajorVer, s_MinorVer;
 		std::string s_Title;
 
-		WindowProperties(unsigned w = 1280, unsigned h = 720, unsigned major = 4, unsigned minor = 3, const std::string& t = "Hayase Renderer")
+		WindowProperties(unsigned w = 1280, unsigned h = 720, 
+			unsigned major = 4, unsigned minor = 3, 
+			const std::string& t = "Hayase Renderer")
 			: s_Width(w)
 			, s_Height(h)
 			, s_MajorVer(major)

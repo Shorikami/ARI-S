@@ -1,12 +1,10 @@
+#include <hyspch.h>
+
 #include "Application.h"
 #include "Global.hpp"
 
-#include "../Rendering/Shader.h"
+#include "Shader.h"
 
-#include <iostream>
-#include <cstdlib>
-#include <iostream>
-#include <stdexcept>
 #include <time.h>
 
 int Hayase::WindowInfo::windowWidth = 1600;
@@ -17,6 +15,12 @@ int Hayase::EditorInfo::rightSize = 400;
 int Hayase::EditorInfo::bottomSize = 200;
 
 std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h> 
 
 int main()
 {

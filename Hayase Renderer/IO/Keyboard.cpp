@@ -1,3 +1,5 @@
+#include <hyspch.h>
+
 #include "Keyboard.h"
 
 namespace Hayase

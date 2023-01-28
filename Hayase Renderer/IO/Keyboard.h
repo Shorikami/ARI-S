@@ -1,7 +1,6 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 namespace Hayase

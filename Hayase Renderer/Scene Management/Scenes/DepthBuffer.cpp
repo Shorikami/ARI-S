@@ -1,14 +1,16 @@
+#include <hyspch.h>
+
 #include "DepthBuffer.h"
 
-#include <glm/vec3.hpp>
+#include <vec3.hpp>
 #include <glad/glad.h>
 
-#include <glm/gtc/matrix_access.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <gtc/matrix_access.hpp>
+#include <gtc/type_ptr.hpp>
 
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-#include "imgui/imgui_internal.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_internal.h"
 
 #include "../../IO/Mouse.h"
 

@@ -1,17 +1,16 @@
+#include <hyspch.h>
+
 #include <glad/glad.h>
-#include <iostream>
-#include <set>
 #include "Mesh.h"
 
-#include <glm/gtc/epsilon.hpp>
-#include <glm/detail/type_mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <gtc/epsilon.hpp>
+#include <detail/type_mat4x4.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
 
-#include <glm/gtx/hash.hpp>
+#include <gtx/hash.hpp>
 
-#include <unordered_map>
-#include <tinyobjloader/tiny_obj_loader.h>
+#include <tiny_obj_loader.h>
 
 namespace Hayase
 {

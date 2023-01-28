@@ -2,9 +2,13 @@
 #define APPLICATION_H
 
 #include "Window.h"
+#include "Event.h"
+#include "LayerStack.h"
 
 namespace Hayase
 {
+	class WindowCloseEvent;
+
 	class Application
 	{
 	public:
@@ -13,9 +17,17 @@ namespace Hayase
 
 		void Run();
 
+		void OnEvent(Event& e);
+
+		void PushLayer(Layer* l);
+		void PushOverlay(Layer* o);
+
 	private:
+		bool OnWindowClose(WindowCloseEvent& e);
+
 		WindowBase* m_Window;
 		bool m_Active = true;
+		LayerStack m_LayerStack;
 	};
 }
 

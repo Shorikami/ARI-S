@@ -1,3 +1,5 @@
+#include <hyspch.h>
+
 #include "Mouse.h"
 
 namespace Hayase
