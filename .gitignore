@@ -3,6 +3,7 @@
 bin-int/
 Intermediates/
 Debug/
+obj/
 
 # Visual Studio files and folder
 .vs/
