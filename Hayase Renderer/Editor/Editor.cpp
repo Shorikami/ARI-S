@@ -9,8 +9,6 @@
 
 #include "Application.h"
 
-#include <GLFW/glfw3.h>
-
 namespace Hayase
 {
 	Editor::Editor()
@@ -20,7 +18,7 @@ namespace Hayase
 
 	Editor::~Editor()
 	{
-
+		delete m_Framebuffer;
 	}
 
 	void Editor::OnAttach()
@@ -47,6 +45,10 @@ namespace Hayase
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 430");
+
+		m_Framebuffer = new Framebuffer(app.GetWindow().GetWidth(), app.GetWindow().GetHeight(), 
+			GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_Framebuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
 	}
 
 	void Editor::OnDetach()
@@ -56,11 +58,56 @@ namespace Hayase
 		ImGui::DestroyContext();
 	}
 
+	void Editor::Update(DeltaTime dt)
+	{
+	
+	}
+
 	void Editor::Begin()
 	{
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		static bool dockspaceOpen = true;
+		static bool optFullscreenPersistant = true;
+		bool optFullScreen = optFullscreenPersistant;
+		static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None;
+
+		ImGuiWindowFlags winFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		if (optFullScreen)
+		{
+			ImGuiViewport* vp = ImGui::GetMainViewport();
+			ImGui::SetNextWindowPos(vp->Pos);
+			ImGui::SetNextWindowSize(vp->Size);
+			ImGui::SetNextWindowViewport(vp->ID);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+			winFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+			winFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+		}
+
+		if (dockspaceFlags & ImGuiDockNodeFlags_PassthruCentralNode)
+		{
+			winFlags |= ImGuiWindowFlags_NoBackground;
+		}
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("Dockspace", &dockspaceOpen, winFlags);
+		ImGui::PopStyleVar();
+
+		if (optFullScreen)
+		{
+			ImGui::PopStyleVar(2);
+		}
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			ImGuiID dockspaceID = ImGui::GetID("HysDockspace");
+			ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
+		}
 	}
 
 	void Editor::End()
@@ -84,8 +131,36 @@ namespace Hayase
 
 	void Editor::OnImGuiRender()
 	{
-		static bool show = true;
-		ImGui::ShowDemoWindow(&show);
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Exit"))
+				{
+					Application::Get().Close();
+				}
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenuBar();
+		}
+		ImGui::End();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
+		ImGui::Begin("Viewport");
+		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
+		if (m_ViewportSize != *((glm::vec2*)&vpPanelSize))
+		{
+			m_Framebuffer->Resize(m_ViewportSize);
+			m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
+		}
+
+		uint32_t fbTex = m_Framebuffer->GetColorAttachment(0).ID;
+		ImGui::Image((void*)fbTex, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		ImGui::PopStyleVar();
+
+		ImGui::End();
 	}
 
 	void Editor::OnEvent(Event& e)

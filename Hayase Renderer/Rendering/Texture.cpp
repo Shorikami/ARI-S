@@ -6,11 +6,15 @@
 
 namespace Hayase
 {
-	//Texture::Texture(std::string name)
-	//	: name(name)
-	//{
-	//	Generate();
-	//}
+	Texture::Texture()
+	{
+	}
+
+	Texture::Texture(std::string name)
+		: name(name)
+	{
+		Generate();
+	}
 
 	Texture::Texture(std::string dir, std::string path)
 		: dir(dir)

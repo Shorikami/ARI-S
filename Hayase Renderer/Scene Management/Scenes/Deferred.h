@@ -3,11 +3,11 @@
 
 #include "SceneFramework.h"
 #include "Texture.h"
-#include "Framebuffer.h"
 #include "Shader.h"
 #include "Camera.h"
 #include "Layer.h"
 #include "Memory/UniformMemory.hpp"
+#include "Memory/FrameMemory.hpp"
 
 #include "Model.h"
 #include "OBJReader.h"

@@ -100,4 +100,9 @@ namespace Hayase
 			m_Window->Update();
 		}
 	}
+
+	void Application::Close()
+	{
+		m_Active = false;
+	}
 }

@@ -19,6 +19,7 @@ namespace Hayase
 		~Application();
 
 		void Run();
+		void Close();
 
 		void OnEvent(Event& e);
 

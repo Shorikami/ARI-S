@@ -10,14 +10,15 @@ namespace Hayase
 	class Texture
 	{
 	public:
-		//Texture(std::string name);
+		Texture();
+		Texture(std::string name);
 		Texture(std::string dir, std::string path);
 
 		Texture(GLuint width, GLuint height, 
 			GLenum intForm, GLenum dataForm, void* data = nullptr, 
 			GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT, GLenum type = GL_UNSIGNED_BYTE);
 
-		Texture(const std::string& path, GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT);
+		Texture(const std::string& path, GLenum filter, GLenum repeat);
 
 		void Generate();
 		void Load(bool flip = true);
