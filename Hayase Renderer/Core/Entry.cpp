@@ -5,7 +5,11 @@
 
 #include "Shader.h"
 
-#include <time.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h> 
 
 int Hayase::WindowInfo::windowWidth = 1600;
 int Hayase::WindowInfo::windowHeight = 900;
@@ -16,11 +20,7 @@ int Hayase::EditorInfo::bottomSize = 200;
 
 std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h> 
 
 int main()
 {

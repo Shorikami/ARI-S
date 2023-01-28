@@ -43,6 +43,8 @@ project "Hayase Renderer"
 		"%{prj.name}/Core/**.hpp",
 		"%{prj.name}/Events/**.h",
 		"%{prj.name}/Events/**.cpp",
+		"%{prj.name}/Editor/**.h",
+		"%{prj.name}/Editor/**.cpp",
 		"%{prj.name}/IO/**.h",
 		"%{prj.name}/IO/**.cpp",
 		"%{prj.name}/Rendering/**.h",

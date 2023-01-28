@@ -4,6 +4,9 @@
 #include "AppEvent.h"
 
 #include "Empty.h"
+#include "Deferred.h"
+
+#include "../Editor/Editor.h"
 
 #include <glad/glad.h>
 
@@ -11,12 +14,26 @@ namespace Hayase
 {
 #define BIND_EVENT_FUNC(x) std::bind(&x, this, std::placeholders::_1)
 
+	Application* Application::m_Instance = nullptr;
+
 	Application::Application(int windowWidth, int windowHeight)
 	{
-		m_Window = Window::Generate();
+		m_Instance = this;
+
+		WindowProperties props{};
+		props.s_Width = windowWidth;
+		props.s_Height = windowHeight;
+		props.s_MajorVer = 4;
+		props.s_MinorVer = 3;
+		props.s_Title = "Hayase Renderer";
+
+		m_Window = Window::Generate(props);
 		m_Window->SetEventCallback(BIND_EVENT_FUNC(Application::OnEvent));
 
-		PushLayer(new EmptyScene());
+		m_Editor = new Editor();
+		PushOverlay(m_Editor);
+
+		PushLayer(new Deferred(windowWidth, windowHeight));
 	}
 
 	Application::~Application()
@@ -27,11 +44,13 @@ namespace Hayase
 	void Application::PushLayer(Layer* l)
 	{
 		m_LayerStack.PushLayer(l);
+		l->OnAttach();
 	}
 
 	void Application::PushOverlay(Layer* l)
 	{
 		m_LayerStack.PushOverlay(l);
+		l->OnAttach();
 	}
 
 	void Application::OnEvent(Event& e)
@@ -62,13 +81,21 @@ namespace Hayase
 	{
 		while (m_Active)
 		{
-			glClearColor(1, 1, 0, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
-
+			float time = Time::GetTime();
+			DeltaTime dt = time - m_LastFrameTime;
+			m_LastFrameTime = time;
+			
 			for (Layer* l : m_LayerStack)
 			{
-				l->Update();
+				l->Update(dt);
 			}
+
+			m_Editor->Begin();
+			for (Layer* l : m_LayerStack)
+			{
+				l->OnImGuiRender();
+			}
+			m_Editor->End();
 
 			m_Window->Update();
 		}

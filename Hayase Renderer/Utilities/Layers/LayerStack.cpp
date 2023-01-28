@@ -6,7 +6,6 @@ namespace Hayase
 {
 	LayerStack::LayerStack()
 	{
-		m_LayerInsert = m_Layers.begin();
 	}
 
 	LayerStack::~LayerStack()
@@ -19,7 +18,8 @@ namespace Hayase
 
 	void LayerStack::PushLayer(Layer* l)
 	{
-		m_LayerInsert = m_Layers.emplace(m_LayerInsert, l);
+		m_Layers.emplace(m_Layers.begin() + m_LayerInsertIdx, l);
+		++m_LayerInsertIdx;
 	}
 
 	void LayerStack::PopLayer(Layer* l)
@@ -28,7 +28,7 @@ namespace Hayase
 		if (it != m_Layers.end())
 		{
 			m_Layers.erase(it);
-			m_LayerInsert--;
+			m_LayerInsertIdx--;
 		}
 	}
 

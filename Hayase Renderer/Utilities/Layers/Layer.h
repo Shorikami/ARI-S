@@ -1,7 +1,8 @@
 #ifndef LAYER_H
 #define LAYER_H
 
-#include "../../Events/Event.h"
+#include "Event.h"
+#include "Timer.h"
 
 namespace Hayase
 {
@@ -13,7 +14,8 @@ namespace Hayase
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
-		virtual void Update() {}
+		virtual void Update(DeltaTime dt) {}
+		virtual void OnImGuiRender() {}
 		virtual void OnEvent(Event& e) {}
 
 		inline const std::string& GetName() const { return m_DebugName; }

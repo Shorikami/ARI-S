@@ -49,7 +49,7 @@ namespace Hayase
 
     }
 
-    void EmptyScene::Update()
+    void EmptyScene::Update(DeltaTime dt)
     {
         std::cout << GetName() << " updated" << std::endl;
     }

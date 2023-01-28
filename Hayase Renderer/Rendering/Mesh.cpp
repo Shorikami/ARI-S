@@ -271,40 +271,45 @@ namespace Hayase
     */
     void Mesh::GenerateBuffers(bool hasNormals)
     {
+        const char* idx = "Index";
+        const char* vert = "Vertex";
+        const char* norm = "Normal";
+        const char* uv = "TexCoords";
+
         vArray.Generate();
         vArray.Bind();
 
-        vArray["Index"] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        vArray["Index"].Generate();
-        vArray["Index"].Bind();
-        vArray["Index"].SetData<GLuint>(getIndexBufferSize(), getIndexBuffer(), GL_STATIC_DRAW);
+        vArray[idx] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        vArray[idx].Generate();
+        vArray[idx].Bind();
+        vArray[idx].SetData<GLuint>(getIndexBufferSize(), getIndexBuffer(), GL_STATIC_DRAW);
 
-        vArray["Vertex"] = VertexBuffer(GL_ARRAY_BUFFER);
-        vArray["Vertex"].Generate();
-        vArray["Vertex"].Bind();
-        vArray["Vertex"].SetData<glm::vec3>(getVertexBufferSize(), getVertexBufferVec3(), GL_STATIC_DRAW);
-        vArray["Vertex"].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
+        vArray[vert] = VertexBuffer(GL_ARRAY_BUFFER);
+        vArray[vert].Generate();
+        vArray[vert].Bind();
+        vArray[vert].SetData<glm::vec3>(getVertexBufferSize(), getVertexBufferVec3(), GL_STATIC_DRAW);
+        vArray[vert].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
 
-        vArray["Vertex"].Unbind();
+        vArray[vert].Unbind();
 
         if (hasNormals)
         {
-            vArray["Normal"] = VertexBuffer(GL_ARRAY_BUFFER);
-            vArray["Normal"].Generate();
-            vArray["Normal"].Bind();
-            vArray["Normal"].SetData<glm::vec3>(getVertexNormalCount(), getVertexNormalsVec3(), GL_STATIC_DRAW);
-            vArray["Normal"].SetAttPointer<GLfloat>(1, 3, GL_FLOAT, 3, 0);
+            vArray[norm] = VertexBuffer(GL_ARRAY_BUFFER);
+            vArray[norm].Generate();
+            vArray[norm].Bind();
+            vArray[norm].SetData<glm::vec3>(getVertexNormalCount(), getVertexNormalsVec3(), GL_STATIC_DRAW);
+            vArray[norm].SetAttPointer<GLfloat>(1, 3, GL_FLOAT, 3, 0);
         }
 
-        vArray["Normal"].Unbind();
+        vArray[norm].Unbind();
 
-        vArray["TexCoords"] = VertexBuffer(GL_ARRAY_BUFFER);
-        vArray["TexCoords"].Generate();
-        vArray["TexCoords"].Bind();
-        vArray["TexCoords"].SetData<glm::vec2>(getVertexUVCount(), getVertexUVsVec2(), GL_STATIC_DRAW);
-        vArray["TexCoords"].SetAttPointer<GLfloat>(2, 2, GL_FLOAT, 2, 0);
+        vArray[uv] = VertexBuffer(GL_ARRAY_BUFFER);
+        vArray[uv].Generate();
+        vArray[uv].Bind();
+        vArray[uv].SetData<glm::vec2>(getVertexUVCount(), getVertexUVsVec2(), GL_STATIC_DRAW);
+        vArray[uv].SetAttPointer<GLfloat>(2, 2, GL_FLOAT, 2, 0);
 
-        vArray["TexCoords"].Unbind();
+        vArray[uv].Unbind();
 
         vArray.Clear();
 
@@ -313,20 +318,20 @@ namespace Hayase
             nArray.Generate();
             nArray.Bind();
 
-            nArray["Index"] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
-            nArray["Index"].Generate();
-            nArray["Index"].Bind();
-            nArray["Index"].SetData<GLuint>(getDisplayIndexBufferSize(DisplayType::VERTEX),
+            nArray[idx] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
+            nArray[idx].Generate();
+            nArray[idx].Bind();
+            nArray[idx].SetData<GLuint>(getDisplayIndexBufferSize(DisplayType::VERTEX),
                 getDisplayIndexBuffer(DisplayType::VERTEX), GL_STATIC_DRAW);
 
-            nArray["Vertex"] = VertexBuffer(GL_ARRAY_BUFFER);
-            nArray["Vertex"].Generate();
-            nArray["Vertex"].Bind();
-            nArray["Vertex"].SetData<glm::vec3>(getDisplayCount(DisplayType::VERTEX),
+            nArray[vert] = VertexBuffer(GL_ARRAY_BUFFER);
+            nArray[vert].Generate();
+            nArray[vert].Bind();
+            nArray[vert].SetData<glm::vec3>(getDisplayCount(DisplayType::VERTEX),
                 getDisplayNormalsVec3(DisplayType::VERTEX), GL_STATIC_DRAW);
-            nArray["Vertex"].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
+            nArray[vert].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
 
-            nArray["Vertex"].Unbind();
+            nArray[vert].Unbind();
 
             nArray.Clear();
         }
@@ -334,20 +339,20 @@ namespace Hayase
         fArray.Generate();
         fArray.Bind();
 
-        fArray["Index"] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        fArray["Index"].Generate();
-        fArray["Index"].Bind();
-        fArray["Index"].SetData<GLuint>(getDisplayIndexBufferSize(DisplayType::FACE),
+        fArray[idx] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        fArray[idx].Generate();
+        fArray[idx].Bind();
+        fArray[idx].SetData<GLuint>(getDisplayIndexBufferSize(DisplayType::FACE),
             getDisplayIndexBuffer(DisplayType::FACE), GL_STATIC_DRAW);
 
-        fArray["Vertex"] = VertexBuffer(GL_ARRAY_BUFFER);
-        fArray["Vertex"].Generate();
-        fArray["Vertex"].Bind();
-        fArray["Vertex"].SetData<glm::vec3>(getDisplayCount(DisplayType::FACE),
+        fArray[vert] = VertexBuffer(GL_ARRAY_BUFFER);
+        fArray[vert].Generate();
+        fArray[vert].Bind();
+        fArray[vert].SetData<glm::vec3>(getDisplayCount(DisplayType::FACE),
             getDisplayNormalsVec3(DisplayType::FACE), GL_STATIC_DRAW);
-        fArray["Vertex"].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
+        fArray[vert].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
 
-        fArray["Vertex"].Unbind();
+        fArray[vert].Unbind();
 
         nArray.Clear();
 

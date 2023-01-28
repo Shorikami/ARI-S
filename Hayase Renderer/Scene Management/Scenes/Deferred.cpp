@@ -8,13 +8,13 @@
 #include <gtc/matrix_access.hpp>
 #include <gtc/type_ptr.hpp>
 
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_internal.h"
+#include "imgui.h"
+
+#include "Application.h"
 
 #include "stb_image.h"
 
-#include "../../IO/Mouse.h"
+#include "Mouse.h"
 
 int currLights = 4;
 int currLocalLights = NUM_LIGHTS;
@@ -33,15 +33,310 @@ namespace Hayase
 
     }
 
+    void Deferred::OnAttach()
+    {
+        Init();
+    }
+
+    void Deferred::OnDetach()
+    {
+        CleanUp();
+    }
+
+    void Deferred::Update(DeltaTime dt)
+    {
+        float time = dt.GetSeconds();
+
+        // update first...
+        ProcessInput(static_cast<GLFWwindow*>(Application::Get().GetWindow().GetWindow()), time);
+
+        // ... then render
+        Display();
+    }
+
+    void Deferred::OnImGuiRender()
+    {
+        if (ImGui::BeginMainMenuBar())
+        {
+            bool modelsOpen = false;
+
+            //if (m_EditorMode)
+            //{
+            //    ImGui::SetNextWindowBgAlpha(1.0f);
+            //    if (ImGui::BeginViewportSideBar("##RightMenuBar", viewport, ImGuiDir_Right, 400, window_flags))
+            //    {
+            //        if (ImGui::BeginTabBar("Tabs"))
+            //        {
+            //            if (ImGui::BeginTabItem("Debug Info"))
+            //            {
+            //                ImGui::Text("FPS: %.3f", frame);
+            //                ImGui::Separator();
+            //                ImGui::Text("Camera X: %.2f", m_Camera.cameraPos.x);
+            //                ImGui::Text("Camera Y: %.2f", m_Camera.cameraPos.y);
+            //                ImGui::Text("Camera Z: %.2f", m_Camera.cameraPos.z);
+            //                ImGui::Separator();
+            //
+            //                ImGui::Text("Welcome to the Hayase Renderer! A few things to note:");
+            //                ImGui::Text("- The program crashes if you minimize the window because");
+            //                ImGui::Text("the camera perspective function divides by zero");
+            //                ImGui::Text("I'm planning on reworking the way this editor is created");
+            //                ImGui::Text("since I don't want to create hacky solutions to some of");
+            //                ImGui::Text("the below problems. I'll start on the rework after I");
+            //                ImGui::Text("submit this project");
+            //                ImGui::Text("- Resizing the window somewhat breaks the viewport.");
+            //                ImGui::Text("Fixing that is a high priority");
+            //                ImGui::Text("- The FSQ textures appear like the way they do because");
+            //                ImGui::Text("of the method I'm rendering them through glViewport");
+            //                ImGui::Text("- .obj files are being loaded via tinyobjloader, but");
+            //                ImGui::Text("some objects are using the OBJReader class from the");
+            //                ImGui::Text("CS300 Framework because they lack built-in normals");
+            //                ImGui::Text("and UVs");
+            //                ImGui::Text("- Credits to yochan.176 on Sketchfab for the Blue");
+            //                ImGui::Text("Archive gun models that I used in this renderer.");
+            //                ImGui::Text("I'm keeping them in because I'm a bit lazy to find");
+            //                ImGui::Text("and test more complex models, but the guns were also");
+            //                ImGui::Text("good for deferred and UV generation testing purposes");
+            //                ImGui::Separator();
+            //
+            //                ImGui::EndTabItem();
+            //            }
+            //
+            //            if (ImGui::BeginTabItem("Scene Settings"))
+            //            {
+            //                if (ImGui::Button("Reload Shaders"))
+            //                {
+            //                    ReloadShaders();
+            //                }
+            //                ImGui::Separator();
+            //
+            //                ImGui::SliderFloat("Camera Near", &m_Camera.n, 0.1f, 10.0f);
+            //                ImGui::SliderFloat("Camera Far", &m_Camera.f, 10.0f, 500.0f);
+            //                ImGui::Separator();
+            //
+            //                ImGui::Checkbox("Display Local Light Ranges", &m_DisplayDebugRanges);
+            //                ImGui::Checkbox("Display Light Pass Locations", &m_DisplayLightPassLocations);
+            //                ImGui::Checkbox("Display Local Lights", &m_DisplayLocalLights);
+            //                ImGui::Checkbox("Display Skybox", &m_DisplaySkybox);
+            //                ImGui::Separator();
+            //
+            //                ImGui::Text("FSQ Rendering");
+            //                {
+            //                    static int renderWhat = 0;
+            //                    renderWhat = m_RenderOption;
+            //                    ImGui::RadioButton("Full Deferred", &renderWhat, 0);
+            //                    ImGui::RadioButton("Positions Only", &renderWhat, 1);
+            //                    ImGui::RadioButton("Normals Only", &renderWhat, 2);
+            //                    ImGui::RadioButton("UVs Only", &renderWhat, 3);
+            //                    ImGui::RadioButton("Diffuse Only", &renderWhat, 4);
+            //                    ImGui::RadioButton("Specular Only", &renderWhat, 5);
+            //                    ImGui::RadioButton("Depth Only", &renderWhat, 6);
+            //                    m_RenderOption = renderWhat;
+            //                }
+            //                ImGui::Separator();
+            //
+            //                ImGui::Text("Local Light Values");
+            //                if (ImGui::Button("Randomize Lights"))
+            //                {
+            //                    GenerateLocalLights();
+            //                }
+            //
+            //                float speed = 1.0f;
+            //
+            //                ImGui::PushItemWidth(100.0f);
+            //
+            //                ImGui::DragFloat("Min. X", &minX, speed, -50.0f, 50.0f);
+            //                ImGui::SameLine(); ImGui::DragFloat("Max. X", &maxX, speed, -50.0f, 50.0f);
+            //
+            //                ImGui::DragFloat("Min. Y", &minY, speed, -50.0f, 50.0f);
+            //                ImGui::SameLine(); ImGui::DragFloat("Max. Y", &maxY, speed, -50.0f, 50.0f);
+            //
+            //                ImGui::DragFloat("Min. Z", &minZ, speed, -50.0f, 50.0f);
+            //                ImGui::SameLine(); ImGui::DragFloat("Max. Z", &maxZ, speed, -50.0f, 50.0f);
+            //                ImGui::DragFloat("Min. Range", &minRange, speed, 1.0f, 10.0f);
+            //                ImGui::SameLine(); ImGui::DragFloat("Max. Range", &maxRange, speed, 1.0f, 10.0f);
+            //
+            //                ImGui::PopItemWidth();
+            //                ImGui::EndTabItem();
+            //            }
+            //
+            //            if (ImGui::BeginTabItem("Models"))
+            //            {
+            //                modelsOpen = true;
+            //
+            //                static int selectedModel = 0;
+            //                selectedModel = m_SelectedModelIdx;
+            //
+            //                for (unsigned i = 0; i < models.size(); ++i)
+            //                {
+            //                    ImGui::RadioButton(models[i]->Name().c_str(), &selectedModel, i);
+            //                }
+            //                m_SelectedModelIdx = selectedModel;
+            //
+            //                ImGui::EndTabItem();
+            //            }
+            //
+            //            if (ImGui::BeginTabItem("Local Lights"))
+            //            {
+            //                ImGui::PushItemWidth(100.0f);
+            //                ImGui::SliderInt("No. of Local Lights", &currLocalLights, 1, MAX_LIGHTS);
+            //                ImGui::PopItemWidth();
+            //                ImGui::Separator();
+            //
+            //                for (unsigned i = 0; i < currLocalLights; ++i)
+            //                {
+            //                    ImGui::PushID(i);
+            //
+            //                    ImGui::SliderFloat3("Light Position", glm::value_ptr(localLights[i].pos), -20.0f, 20.0f);
+            //                    ImGui::SliderFloat("Light Range", &localLights[i].pos.w, 1.0f, 50.0f);
+            //                    ImGui::Separator();
+            //                    ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
+            //                    ImGui::Separator();
+            //                    ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
+            //                    ImGui::SliderFloat("Range Multiplier", &localLights[i].options.y, 1.0f, 5.0f);
+            //                    ImGui::Separator();
+            //                    ImGui::Text("Total Range: %f", 0.08f * localLights[i].pos.w * localLights[i].options.y);
+            //
+            //                    ImGui::PopID();
+            //                }
+            //                ImGui::EndTabItem();
+            //            }
+            //            ImGui::EndTabBar();
+            //        }
+            //
+            //        ImGui::End();
+            //    }
+            //
+            //    ImGui::SetNextWindowBgAlpha(1.0f);
+            //    if (ImGui::BeginViewportSideBar("##LeftMenuBar", viewport, ImGuiDir_Left, 400, window_flags))
+            //    {
+            //        if (ImGui::BeginTabBar("LeftTabs"))
+            //        {
+            //            if (ImGui::BeginTabItem("FSQ Textures 1"))
+            //            {
+            //                std::vector<std::string> texNames =
+            //                {
+            //                    "Positions",
+            //                    "Normals",
+            //                    "UVs",
+            //                };
+            //
+            //                int imgWidth = 225;
+            //                int imgHeight = 225;
+            //
+            //                for (unsigned i = 0; i < 3; ++i)
+            //                {
+            //                    ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
+            //                    ImGui::Image((void*)(intptr_t)gTextures[i]->ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
+            //                    ImGui::Text(texNames[i].c_str());
+            //                    ImGui::Separator();
+            //                }
+            //                ImGui::EndTabItem();
+            //            }
+            //
+            //            if (ImGui::BeginTabItem("FSQ Textures 2"))
+            //            {
+            //                std::vector<std::string> texNames =
+            //                {
+            //                    "Diffuse",
+            //                    "Specular",
+            //                    "Depth",
+            //                };
+            //
+            //                int imgWidth = 225;
+            //                int imgHeight = 225;
+            //
+            //                for (unsigned i = 0; i < 3; ++i)
+            //                {
+            //                    ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
+            //                    ImGui::Image((void*)(intptr_t)gTextures[i + 3]->ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
+            //                    ImGui::Text(texNames[i].c_str());
+            //                    ImGui::Separator();
+            //                }
+            //                ImGui::EndTabItem();
+            //            }
+            //
+            //            ImGui::EndTabBar();
+            //        }
+            //
+            //        ImGui::End();
+            //    }
+            //
+            //    ImGui::SetNextWindowBgAlpha(1.0f);
+            //    if (ImGui::BeginViewportSideBar("##BottomMenuBar", viewport, ImGuiDir_Down, 200, window_flags))
+            //    {
+            //        if (modelsOpen)
+            //        {
+            //            if (ImGui::BeginTabBar("ModelBar"))
+            //            {
+            //                if (ImGui::BeginTabItem("Transformation"))
+            //                {
+            //                    ImGui::SliderFloat3("Position", glm::value_ptr(models[m_SelectedModelIdx]->Translation()), -20.0f, 20.0f);
+            //                    ImGui::Checkbox("Invert Axis?", &models[m_SelectedModelIdx]->AxisInverted());
+            //
+            //                    static int rotAxis = 0;
+            //                    rotAxis = static_cast<int>(models[m_SelectedModelIdx]->Rotation());
+            //                    ImGui::SameLine(); ImGui::RadioButton("X Axis", &rotAxis, 0);
+            //                    ImGui::SameLine(); ImGui::RadioButton("Y Axis", &rotAxis, 1);
+            //                    ImGui::SameLine(); ImGui::RadioButton("Z Axis", &rotAxis, 2);
+            //                    models[m_SelectedModelIdx]->Rotation() = static_cast<Model::RotationAxis>(rotAxis);
+            //
+            //                    ImGui::SliderAngle("Angle", &models[m_SelectedModelIdx]->Angle(), 0.0f, 360.0f);
+            //                    ImGui::SliderFloat3("Scale", glm::value_ptr(models[m_SelectedModelIdx]->Scale()), 0.1f, 20.0f);
+            //                    ImGui::EndTabItem();
+            //                }
+            //
+            //                if (ImGui::BeginTabItem("Properties"))
+            //                {
+            //                    ImGui::EndTabItem();
+            //                }
+            //
+            //                ImGui::EndTabBar();
+            //            }
+            //        }
+            //
+            //        ImGui::End();
+            //    }
+            //}
+            //
+            //if (ImGui::BeginMenu("Settings"))
+            //{
+            //    ImGui::Checkbox("Editor Mode", &m_EditorMode);
+            //    ImGui::EndMenu();
+            //}
+            //
+            //if (ImGui::BeginMenu("Text Editor Test"))
+            //{
+            //    static ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue
+            //        | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CtrlEnterForNewLine;
+            //
+            //    ImGui::CheckboxFlags("Read Only", (unsigned int*)&flags, ImGuiInputTextFlags_ReadOnly);
+            //    ImGui::CheckboxFlags("Enter Returns True", (unsigned int*)&flags, ImGuiInputTextFlags_EnterReturnsTrue);
+            //    ImGui::CheckboxFlags("Allow Tab Input", (unsigned int*)&flags, ImGuiInputTextFlags_AllowTabInput);
+            //    ImGui::CheckboxFlags("Ctrl + Enter for Newline", (unsigned int*)&flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
+            //
+            //    int size = skyboxShader->m_VertSrc.length();
+            //    bool res = ImGui::InputTextMultiline("##source", const_cast<char*>(skyboxShader->m_VertSrc.c_str()),
+            //        size * 16, ImVec2(400.0f, ImGui::GetTextLineHeight() * 16), flags);
+            //
+            //    if (res)
+            //    {
+            //        std::cout << skyboxShader->m_VertSrc << std::endl;
+            //    }
+            //
+            //    ImGui::EndMenu();
+            //}
+
+            ImGui::EndMainMenuBar();
+        }
+    }
+
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
     Deferred::Deferred(int windowWidth, int windowHeight)
         : Scene(windowWidth, windowHeight)
+        , Layer("Deferred Scene")
         , angleOfRotation(0.0f)
         , m_Camera(glm::vec3(-6.0f, 1.0f, 0.0f))
-        //, m_CS250_Camera(O + 10.0f * EZ, -EZ, EY, 45.0f,
-        //    (float)windowWidth / (float)windowHeight,
-        //    0.1f, 1000.0f)
     {
         initMembers();
     }
@@ -272,290 +567,6 @@ namespace Hayase
         _windowWidth = m_EditorMode ? WindowInfo::windowWidth - EditorInfo::rightSize - EditorInfo::leftSize : WindowInfo::windowWidth;
         _windowHeight = m_EditorMode ? WindowInfo::windowHeight - EditorInfo::bottomSize : WindowInfo::windowHeight;
 
-        // TODO: Move ImGui stuff to its own editor class
-        // TODO: Custom ImGui style colors (like the colors from blue archive's UI)
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        
-        ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)ImGui::GetMainViewport();
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
-        float height = ImGui::GetFrameHeight();
-
-        if (ImGui::BeginMainMenuBar())
-        {
-            bool modelsOpen = false;
-
-            if (m_EditorMode)
-            {
-                ImGui::SetNextWindowBgAlpha(1.0f);
-                if (ImGui::BeginViewportSideBar("##RightMenuBar", viewport, ImGuiDir_Right, 400, window_flags))
-                {
-                    if (ImGui::BeginTabBar("Tabs"))
-                    {
-                        if (ImGui::BeginTabItem("Debug Info"))
-                        {
-                            ImGui::Text("FPS: %.3f", frame);
-                            ImGui::Separator();
-                            ImGui::Text("Camera X: %.2f", m_Camera.cameraPos.x);
-                            ImGui::Text("Camera Y: %.2f", m_Camera.cameraPos.y);
-                            ImGui::Text("Camera Z: %.2f", m_Camera.cameraPos.z);
-                            ImGui::Separator();
-
-                            ImGui::Text("Welcome to the Hayase Renderer! A few things to note:");
-                            ImGui::Text("- The program crashes if you minimize the window because");
-                            ImGui::Text("the camera perspective function divides by zero");
-                            ImGui::Text("I'm planning on reworking the way this editor is created");
-                            ImGui::Text("since I don't want to create hacky solutions to some of");
-                            ImGui::Text("the below problems. I'll start on the rework after I");
-                            ImGui::Text("submit this project");
-                            ImGui::Text("- Resizing the window somewhat breaks the viewport.");
-                            ImGui::Text("Fixing that is a high priority");
-                            ImGui::Text("- The FSQ textures appear like the way they do because");
-                            ImGui::Text("of the method I'm rendering them through glViewport");
-                            ImGui::Text("- .obj files are being loaded via tinyobjloader, but");
-                            ImGui::Text("some objects are using the OBJReader class from the");
-                            ImGui::Text("CS300 Framework because they lack built-in normals");
-                            ImGui::Text("and UVs");
-                            ImGui::Text("- Credits to yochan.176 on Sketchfab for the Blue");
-                            ImGui::Text("Archive gun models that I used in this renderer.");
-                            ImGui::Text("I'm keeping them in because I'm a bit lazy to find");
-                            ImGui::Text("and test more complex models, but the guns were also");
-                            ImGui::Text("good for deferred and UV generation testing purposes");
-                            ImGui::Separator();
-
-                            ImGui::EndTabItem();
-                        }
-            
-                        if (ImGui::BeginTabItem("Scene Settings"))
-                        {
-                            if (ImGui::Button("Reload Shaders"))
-                            {
-                                ReloadShaders();
-                            }
-                            ImGui::Separator();
-            
-                            ImGui::SliderFloat("Camera Near", &m_Camera.n, 0.1f, 10.0f);
-                            ImGui::SliderFloat("Camera Far", &m_Camera.f, 10.0f, 500.0f);
-                            ImGui::Separator();
-            
-                            ImGui::Checkbox("Display Local Light Ranges", &m_DisplayDebugRanges);
-                            ImGui::Checkbox("Display Light Pass Locations", &m_DisplayLightPassLocations);
-                            ImGui::Checkbox("Display Local Lights", &m_DisplayLocalLights);
-                            ImGui::Checkbox("Display Skybox", &m_DisplaySkybox);
-                            ImGui::Separator();
-            
-                            ImGui::Text("FSQ Rendering");
-                            {
-                                static int renderWhat = 0;
-                                renderWhat = m_RenderOption;
-                                ImGui::RadioButton("Full Deferred", &renderWhat, 0);
-                                ImGui::RadioButton("Positions Only", &renderWhat, 1);
-                                ImGui::RadioButton("Normals Only", &renderWhat, 2);
-                                ImGui::RadioButton("UVs Only", &renderWhat, 3);
-                                ImGui::RadioButton("Diffuse Only", &renderWhat, 4);
-                                ImGui::RadioButton("Specular Only", &renderWhat, 5);
-                                ImGui::RadioButton("Depth Only", &renderWhat, 6);
-                                m_RenderOption = renderWhat;
-                            }
-                            ImGui::Separator();
-            
-                            ImGui::Text("Local Light Values");
-                            if (ImGui::Button("Randomize Lights"))
-                            {
-                                GenerateLocalLights();
-                            }
-            
-                            float speed = 1.0f;
-
-                            ImGui::PushItemWidth(100.0f);
-            
-                            ImGui::DragFloat("Min. X", &minX, speed, -50.0f, 50.0f);
-                            ImGui::SameLine(); ImGui::DragFloat("Max. X", &maxX, speed, -50.0f, 50.0f);
-            
-                            ImGui::DragFloat("Min. Y", &minY, speed, -50.0f, 50.0f);
-                            ImGui::SameLine(); ImGui::DragFloat("Max. Y", &maxY, speed, -50.0f, 50.0f);
-            
-                            ImGui::DragFloat("Min. Z", &minZ, speed, -50.0f, 50.0f);
-                            ImGui::SameLine(); ImGui::DragFloat("Max. Z", &maxZ, speed, -50.0f, 50.0f);
-                            ImGui::DragFloat("Min. Range", &minRange, speed, 1.0f, 10.0f);
-                            ImGui::SameLine(); ImGui::DragFloat("Max. Range", &maxRange, speed, 1.0f, 10.0f);
-            
-                            ImGui::PopItemWidth();
-                            ImGui::EndTabItem();
-                        }
-            
-                        if (ImGui::BeginTabItem("Models"))
-                        {
-                            modelsOpen = true;
-
-                            static int selectedModel = 0;
-                            selectedModel = m_SelectedModelIdx;
-
-                            for (unsigned i = 0; i < models.size(); ++i)
-                            {
-                                ImGui::RadioButton(models[i]->Name().c_str(), &selectedModel, i);
-                            }
-                            m_SelectedModelIdx = selectedModel;
-
-                            ImGui::EndTabItem();
-                        }
-
-                        if (ImGui::BeginTabItem("Local Lights"))
-                        {
-                            ImGui::PushItemWidth(100.0f);
-                            ImGui::SliderInt("No. of Local Lights", &currLocalLights, 1, MAX_LIGHTS);
-                            ImGui::PopItemWidth();
-                            ImGui::Separator();
-
-                            for (unsigned i = 0; i < currLocalLights; ++i)
-                            {
-                                ImGui::PushID(i);
-
-                                ImGui::SliderFloat3("Light Position", glm::value_ptr(localLights[i].pos), -20.0f, 20.0f);
-                                ImGui::SliderFloat("Light Range", &localLights[i].pos.w, 1.0f, 50.0f);
-                                ImGui::Separator();
-                                ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
-                                ImGui::Separator();
-                                ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
-                                ImGui::SliderFloat("Range Multiplier", &localLights[i].options.y, 1.0f, 5.0f);
-                                ImGui::Separator();
-                                ImGui::Text("Total Range: %f", 0.08f * localLights[i].pos.w * localLights[i].options.y);
-
-                                ImGui::PopID();
-                            }
-                            ImGui::EndTabItem();
-                        }
-                        ImGui::EndTabBar();
-                    }
-            
-                    ImGui::End();
-                }
-            
-                ImGui::SetNextWindowBgAlpha(1.0f);
-                if (ImGui::BeginViewportSideBar("##LeftMenuBar", viewport, ImGuiDir_Left, 400, window_flags))
-                {
-                    if (ImGui::BeginTabBar("LeftTabs"))
-                    {
-                        if (ImGui::BeginTabItem("FSQ Textures 1"))
-                        {
-                            std::vector<std::string> texNames =
-                            {
-                                "Positions",
-                                "Normals",
-                                "UVs",
-                            };
-
-                            int imgWidth = 225;
-                            int imgHeight = 225;
-
-                            for (unsigned i = 0; i < 3; ++i)
-                            {
-                                ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
-                                ImGui::Image((void*)(intptr_t)gTextures[i]->ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
-                                ImGui::Text(texNames[i].c_str());
-                                ImGui::Separator();
-                            }
-                            ImGui::EndTabItem();
-                        }
-
-                        if (ImGui::BeginTabItem("FSQ Textures 2"))
-                        {
-                            std::vector<std::string> texNames =
-                            {
-                                "Diffuse",
-                                "Specular",
-                                "Depth",
-                            };
-
-                            int imgWidth = 225;
-                            int imgHeight = 225;
-
-                            for (unsigned i = 0; i < 3; ++i)
-                            {
-                                ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
-                                ImGui::Image((void*)(intptr_t)gTextures[i + 3]->ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
-                                ImGui::Text(texNames[i].c_str());
-                                ImGui::Separator();
-                            }
-                            ImGui::EndTabItem();
-                        }
-
-                        ImGui::EndTabBar();
-                    }
-
-                    ImGui::End();
-                }
-            
-                ImGui::SetNextWindowBgAlpha(1.0f);
-                if (ImGui::BeginViewportSideBar("##BottomMenuBar", viewport, ImGuiDir_Down, 200, window_flags))
-                {
-                    if (modelsOpen)
-                    {
-                        if (ImGui::BeginTabBar("ModelBar"))
-                        {
-                            if (ImGui::BeginTabItem("Transformation"))
-                            {
-                                ImGui::SliderFloat3("Position", glm::value_ptr(models[m_SelectedModelIdx]->Translation()), -20.0f, 20.0f);
-                                ImGui::Checkbox("Invert Axis?", &models[m_SelectedModelIdx]->AxisInverted());
-
-                                static int rotAxis = 0;
-                                rotAxis = static_cast<int>(models[m_SelectedModelIdx]->Rotation());
-                                ImGui::SameLine(); ImGui::RadioButton("X Axis", &rotAxis, 0);
-                                ImGui::SameLine(); ImGui::RadioButton("Y Axis", &rotAxis, 1);
-                                ImGui::SameLine(); ImGui::RadioButton("Z Axis", &rotAxis, 2);
-                                models[m_SelectedModelIdx]->Rotation() = static_cast<Model::RotationAxis>(rotAxis);
-
-                                ImGui::SliderAngle("Angle", &models[m_SelectedModelIdx]->Angle(), 0.0f, 360.0f);
-                                ImGui::SliderFloat3("Scale", glm::value_ptr(models[m_SelectedModelIdx]->Scale()), 0.1f, 20.0f);
-                                ImGui::EndTabItem();
-                            }
-
-                            if (ImGui::BeginTabItem("Properties"))
-                            {
-                                ImGui::EndTabItem();
-                            }
-
-                            ImGui::EndTabBar();
-                        }
-                    }
-
-                    ImGui::End();
-                }
-            }
-
-            if (ImGui::BeginMenu("Settings"))
-            {
-                ImGui::Checkbox("Editor Mode", &m_EditorMode);
-                ImGui::EndMenu();
-            }
-            
-            if (ImGui::BeginMenu("Text Editor Test"))
-            {
-                static ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue 
-                    | ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_CtrlEnterForNewLine;
-            
-                ImGui::CheckboxFlags("Read Only", (unsigned int*)&flags, ImGuiInputTextFlags_ReadOnly);
-                ImGui::CheckboxFlags("Enter Returns True", (unsigned int*)&flags, ImGuiInputTextFlags_EnterReturnsTrue);
-                ImGui::CheckboxFlags("Allow Tab Input", (unsigned int*)&flags, ImGuiInputTextFlags_AllowTabInput);
-                ImGui::CheckboxFlags("Ctrl + Enter for Newline", (unsigned int*)&flags, ImGuiInputTextFlags_CtrlEnterForNewLine);
-            
-                int size = skyboxShader->m_VertSrc.length();
-                bool res = ImGui::InputTextMultiline("##source", const_cast<char*>(skyboxShader->m_VertSrc.c_str()),
-                    size * 16, ImVec2(400.0f, ImGui::GetTextLineHeight() * 16), flags);
-            
-                if (res)
-                {
-                    std::cout << skyboxShader->m_VertSrc << std::endl;
-                }
-            
-                ImGui::EndMenu();
-            }
-            
-            ImGui::EndMainMenuBar();
-        }
-
-        ImGui::Render();
 
         lightUBO.eyePos = glm::vec4(m_Camera.cameraPos, 1.0f);
         lightData->SetData();
@@ -685,7 +696,6 @@ namespace Hayase
     //////////////////////////////////////////////////////
     int Deferred::PostRender()
     {
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         return 0;
     }
 
@@ -796,7 +806,7 @@ namespace Hayase
 
     void Deferred::ProcessInput(GLFWwindow* win, float dt)
     {
-        if (!ImGui::IsItemActive() && ImGui::TempInputIsActive(ImGui::GetActiveID()))
+        if (!ImGui::IsItemActive())
         {
             if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
                 m_Camera.UpdateCameraPos(CameraDirection::FORWARD, dt);

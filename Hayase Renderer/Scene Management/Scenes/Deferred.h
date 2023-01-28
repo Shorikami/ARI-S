@@ -6,10 +6,11 @@
 #include "Framebuffer.h"
 #include "Shader.h"
 #include "Camera.h"
-#include "../../Rendering/Memory/UniformMemory.hpp"
+#include "Layer.h"
+#include "Memory/UniformMemory.hpp"
 
-#include "../../Rendering/Model.h"
-#include "../../Rendering/OBJReader.h"
+#include "Model.h"
+#include "OBJReader.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
@@ -19,7 +20,7 @@
 
 namespace Hayase
 {
-    class Deferred : public Scene
+    class Deferred : public Scene, public Layer
     {
 
     public:
@@ -27,6 +28,11 @@ namespace Hayase
         Deferred(int windowWidth, int windowHeight);
         virtual ~Deferred();
 
+    public:
+        void OnAttach() override;
+        void OnDetach() override;
+        void Update(DeltaTime dt) override;
+        void OnImGuiRender() override;
 
     public:
         int Init() override;

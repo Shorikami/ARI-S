@@ -104,6 +104,12 @@ namespace Hayase
 			return buffers[key];
 		}
 
+		VertexBuffer& operator[](std::string key)
+		{
+			return buffers[key.c_str()];
+		}
+
+
 		// Generate the vertex array
 		void Generate()
 		{

@@ -1,8 +1,8 @@
 #ifndef EMPTYSCENE_H
 #define EMPTYSCENE_H
 
-#include "../SceneFramework.h"
-#include "../../Utilities/Layers/Layer.h"
+#include "SceneFramework.h"
+#include "Layer.h"
 
 namespace Hayase
 {
@@ -25,7 +25,7 @@ namespace Hayase
     public:
         virtual void OnAttach() override;
         virtual void OnDetach() override;
-        virtual void Update() override;
+        virtual void Update(DeltaTime dt) override;
         virtual void OnEvent(Event& e) override;
 
 	};
