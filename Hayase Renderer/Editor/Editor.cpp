@@ -7,6 +7,9 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
 
+#include "Deferred.h"
+#include "Empty.h"
+
 #include "Application.h"
 
 namespace Hayase
@@ -46,9 +49,10 @@ namespace Hayase
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init("#version 430");
 
-		m_Framebuffer = new Framebuffer(app.GetWindow().GetWidth(), app.GetWindow().GetHeight(), 
-			GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		m_Framebuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+		int w = app.GetWindow().GetWidth();
+		int h = app.GetWindow().GetHeight();
+
+		m_ActiveScene = new Deferred(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 	}
 
 	void Editor::OnDetach()
@@ -60,7 +64,7 @@ namespace Hayase
 
 	void Editor::Update(DeltaTime dt)
 	{
-	
+		m_ActiveScene->Display();
 	}
 
 	void Editor::Begin()
@@ -147,16 +151,19 @@ namespace Hayase
 		}
 		ImGui::End();
 
+		ImGui::Begin("Settings");
+		ImGui::End();
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
 		ImGui::Begin("Viewport");
 		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
 		if (m_ViewportSize != *((glm::vec2*)&vpPanelSize))
 		{
-			m_Framebuffer->Resize(m_ViewportSize);
+			m_ActiveScene->GetSceneFBO()->Resize(m_ViewportSize);
 			m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
 		}
-
-		uint32_t fbTex = m_Framebuffer->GetColorAttachment(0).ID;
+		
+		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment(0).ID;
 		ImGui::Image((void*)fbTex, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		ImGui::PopStyleVar();
 

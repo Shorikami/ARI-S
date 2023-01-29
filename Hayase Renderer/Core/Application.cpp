@@ -33,7 +33,7 @@ namespace Hayase
 		m_Editor = new Editor();
 		PushOverlay(m_Editor);
 
-		PushLayer(new Deferred(windowWidth, windowHeight));
+		//PushLayer(new Deferred(props.s_Width, props.s_Height));
 	}
 
 	Application::~Application()
@@ -61,13 +61,13 @@ namespace Hayase
 		//std::cout << e.ToString() << std::endl;
 
 		// Handle events on the lower-most layer first
-		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
+		for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
 		{
-			(*--it)->OnEvent(e);
 			if (e.m_Handled)
 			{
 				break;
 			}
+			(*it)->OnEvent(e);
 		}
 	}
 

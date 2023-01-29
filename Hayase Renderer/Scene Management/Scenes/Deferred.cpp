@@ -28,35 +28,15 @@ namespace Hayase
     //////////////////////////////////////////////////////
     Deferred::~Deferred()
     {
-
+        CleanUp();
     }
 
     void Deferred::OnAttach()
     {
-        float quadVertices[] = {
-            // positions        // texture Coords
-            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-        // setup plane VAO
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-
-        Init();
     }
 
     void Deferred::OnDetach()
     {
-        CleanUp();
     }
 
     void Deferred::Update(DeltaTime dt)
@@ -90,6 +70,26 @@ namespace Hayase
         , m_Camera(glm::vec3(-6.0f, 1.0f, 0.0f))
     {
         initMembers();
+
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+        Init();
     }
 
 #pragma clang diagnostic push
@@ -170,6 +170,9 @@ namespace Hayase
         delete cube;
         delete sphere;
         delete skybox;
+
+        delete gBuffer;
+        delete m_SceneFBO;
     }
 
 
@@ -192,6 +195,14 @@ namespace Hayase
         groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_diff_512x512.png", GL_LINEAR, GL_REPEAT), "diffTex"));
         groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_spec_512x512.png", GL_LINEAR, GL_REPEAT), "specTex"));
 
+        // Scene FBO (for the editor)
+        m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_SceneFBO->Bind();
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+        m_SceneFBO->DrawBuffers();
+        m_SceneFBO->AllocateAttachRBO(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT);
+        m_SceneFBO->Unbind();
+
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
         {
@@ -202,8 +213,6 @@ namespace Hayase
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
         
         // gBuffer FBO
-        
-
         gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBuffer->Bind();
         for (unsigned i = 0; i < gTextures.size() - 1; ++i)
@@ -368,7 +377,8 @@ namespace Hayase
         }
 
         gBuffer->Unbind();
-
+        m_SceneFBO->Bind();
+            
         // lighting pass
         glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -397,10 +407,10 @@ namespace Hayase
         // glBlitFramebuffer depends on whether or not editor mode is enabled because glViewport changes
         // the dimensions of the FSQ
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
         glBlitFramebuffer(0, 0,  _windowWidth,_windowHeight, 0, 0, _windowWidth, _windowHeight, 
             GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO->GetID());
         
         Lights& lightUBO = lightData->GetData();
         
@@ -429,6 +439,8 @@ namespace Hayase
         {
             RenderSkybox();
         }
+
+        m_SceneFBO->Unbind();
         
         return 0;
     }

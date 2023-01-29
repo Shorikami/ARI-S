@@ -4,7 +4,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "../Core/Window.h"
+#include "Window.h"
+#include "Memory/FrameMemory.hpp"
 
 #define _GET_GL_ERROR   { GLenum err = glGetError(); std::cout << "[OpenGL Error] " << glewGetErrorString(err) << std::endl; }
 
@@ -29,8 +30,11 @@ namespace Hayase
 
         virtual void CleanUp();
 
+        Framebuffer* GetSceneFBO() { return m_SceneFBO; }
+
     protected:
         int _windowHeight, _windowWidth;
+        Framebuffer* m_SceneFBO;
     };
 }
 

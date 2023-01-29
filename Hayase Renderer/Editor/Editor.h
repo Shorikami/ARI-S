@@ -3,6 +3,7 @@
 
 #include "Layer.h"
 #include "Memory/FrameMemory.hpp"
+#include "SceneFramework.h"
 
 #include <glm.hpp>
 
@@ -25,6 +26,7 @@ namespace Hayase
 	private:
 		Framebuffer* m_Framebuffer;
 		glm::vec2 m_ViewportSize;
+		Scene* m_ActiveScene;
 	};
 }
 

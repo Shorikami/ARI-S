@@ -47,7 +47,7 @@ namespace Hayase
 			, m_Height(0)
 			, m_BitCombo(0)
 		{
-			Refresh();
+			Generate();
 		}
 
 		Framebuffer(GLuint width, GLuint height, GLbitfield bitCombo)
@@ -56,7 +56,7 @@ namespace Hayase
 			, m_Height(height)
 			, m_BitCombo(bitCombo)
 		{
-			Refresh();
+			Generate();
 		}
 
 		void Generate()
@@ -142,7 +142,7 @@ namespace Hayase
 			m_Width = size.x;
 			m_Height = size.y;
 
-			Refresh();
+			//Refresh();
 		}
 
 		void Resize(uint32_t width, uint32_t height)
@@ -150,7 +150,7 @@ namespace Hayase
 			m_Width = width;
 			m_Height = height;
 
-			Refresh();
+			//Refresh();
 		}
 
 		void AllocateAttachRBO(GLenum type, GLenum format)
@@ -169,8 +169,11 @@ namespace Hayase
 		void AllocateAttachTexture(GLenum attachType, GLenum format, GLenum type)
 		{
 
-			std::string name = "tex" + m_ColorAttachments.size();
+			std::string name = "texture" + m_ColorAttachments.size();
 			Texture tex(name);
+			tex.m_Width = m_Width;
+			tex.m_Height = m_Height;
+			tex.m_DataFormat = tex.m_InternalFormat = format;
 
 			tex.Bind();
 			tex.Allocate(format, m_Width, m_Height, type);
