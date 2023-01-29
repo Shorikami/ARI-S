@@ -47,6 +47,11 @@ namespace Hayase
         return;
     }
 
+    void Scene::OnViewportResize(uint32_t w, uint32_t h)
+    {
+        return;
+    }
+
     void Scene::CleanUp()
     {
         return;

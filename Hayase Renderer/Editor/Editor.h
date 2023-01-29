@@ -25,7 +25,7 @@ namespace Hayase
 		void End();
 	private:
 		Framebuffer* m_Framebuffer;
-		glm::vec2 m_ViewportSize;
+		glm::vec2 m_ViewportSize = glm::vec2(0.0f);
 		Scene* m_ActiveScene;
 	};
 }

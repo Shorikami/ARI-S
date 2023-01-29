@@ -43,6 +43,8 @@ namespace Hayase
         int Render() override;
         int PostRender() override;
 
+        void OnViewportResize(uint32_t w, uint32_t h) override;
+
     private:
         void initMembers();
         void ReloadShaders();
@@ -85,9 +87,9 @@ namespace Hayase
         float minX = -4.0f, maxX = 10.0f, minY = -1.f, maxY = 15.f, minZ = -4.0f, maxZ = 14.0f, minRange = 1.0f, maxRange = 10.0f;
 
         bool m_DisplayDebugRanges = false, m_DisplayLightPassLocations = true,
-            m_DisplayLocalLights = true, m_DisplaySkybox = true, m_EditorMode = false;
+            m_DisplayLocalLights = true, m_DisplaySkybox = true;
         
-        int m_RenderOption = 0,  m_SelectedModelIdx = 0;
+        int m_RenderOption = 0, m_SelectedModelIdx = 0;
     };
 }
 

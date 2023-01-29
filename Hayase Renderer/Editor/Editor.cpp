@@ -64,7 +64,17 @@ namespace Hayase
 
 	void Editor::Update(DeltaTime dt)
 	{
-		m_ActiveScene->Display();
+		m_ActiveScene->OnViewportResize(m_ViewportSize.x, m_ViewportSize.y);
+
+		Framebuffer* fbo = static_cast<Deferred*>(m_ActiveScene)->GetSceneFBO();
+
+		if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && 
+			(fbo->GetSpecs().s_Width != m_ViewportSize.x || fbo->GetSpecs().s_Height != m_ViewportSize.y))
+		{
+			fbo->Resize(m_ViewportSize.x, m_ViewportSize.y);
+		}
+
+		static_cast<Deferred*>(m_ActiveScene)->Update(dt);
 	}
 
 	void Editor::Begin()
@@ -135,6 +145,8 @@ namespace Hayase
 
 	void Editor::OnImGuiRender()
 	{
+		static_cast<Deferred*>(m_ActiveScene)->OnImGuiRender();
+
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -151,20 +163,13 @@ namespace Hayase
 		}
 		ImGui::End();
 
-		ImGui::Begin("Settings");
-		ImGui::End();
-
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
 		ImGui::Begin("Viewport");
 		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
-		if (m_ViewportSize != *((glm::vec2*)&vpPanelSize))
-		{
-			m_ActiveScene->GetSceneFBO()->Resize(m_ViewportSize);
-			m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
-		}
+		m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
 		
-		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment(0).ID;
-		ImGui::Image((void*)fbTex, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment().m_ID;
+		ImGui::Image(reinterpret_cast<void*>(fbTex), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		ImGui::PopStyleVar();
 
 		ImGui::End();
@@ -172,6 +177,6 @@ namespace Hayase
 
 	void Editor::OnEvent(Event& e)
 	{
-
+		static_cast<Deferred*>(m_ActiveScene)->OnEvent(e);
 	}
 }

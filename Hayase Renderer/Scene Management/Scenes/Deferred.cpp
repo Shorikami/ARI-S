@@ -41,10 +41,10 @@ namespace Hayase
 
     void Deferred::Update(DeltaTime dt)
     {
-        float time = dt.GetSeconds();
+        m_DT = dt.GetSeconds();
 
         // update first...
-        m_Camera.Update(dt);
+        m_Camera.Update(m_DT);
 
         // ... then render
         Display();
@@ -57,7 +57,164 @@ namespace Hayase
 
     void Deferred::OnImGuiRender()
     {
-        ImGui::Begin("Settings");
+        ImGui::Begin("FSQ Textures");
+        std::vector<std::string> texNames =
+        {
+            "Positions",
+            "Normals",
+            "UVs",
+            "Diffuse",
+            "Specular",
+            "Depth"
+        };
+        int imgWidth = 225;
+        int imgHeight = 225;
+
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
+            ImGui::Image((void*)(intptr_t)gTextures[i]->m_ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Text(texNames[i].c_str());
+            ImGui::Separator();
+        }
+        ImGui::End();
+
+        ImGui::Begin("Debug Info");
+        ImGui::Text("FPS: %.3f", m_DT.GetSeconds());
+        ImGui::Separator();
+        ImGui::Text("Camera X: %.2f", m_Camera.cameraPos.x);
+        ImGui::Text("Camera Y: %.2f", m_Camera.cameraPos.y);
+        ImGui::Text("Camera Z: %.2f", m_Camera.cameraPos.z);
+        ImGui::Separator();
+
+        ImGui::Text("Welcome to the Hayase Renderer! A few things to note:");
+        ImGui::Text("- The program crashes if you minimize the window because");
+        ImGui::Text("the camera perspective function divides by zero");
+        ImGui::Text("I'm planning on reworking the way this editor is created");
+        ImGui::Text("since I don't want to create hacky solutions to some of");
+        ImGui::Text("the below problems. I'll start on the rework after I");
+        ImGui::Text("submit this project");
+        ImGui::Text("- Resizing the window somewhat breaks the viewport.");
+        ImGui::Text("Fixing that is a high priority");
+        ImGui::Text("- The FSQ textures appear like the way they do because");
+        ImGui::Text("of the method I'm rendering them through glViewport");
+        ImGui::Text("- .obj files are being loaded via tinyobjloader, but");
+        ImGui::Text("some objects are using the OBJReader class from the");
+        ImGui::Text("CS300 Framework because they lack built-in normals");
+        ImGui::Text("and UVs");
+        ImGui::Text("- Credits to yochan.176 on Sketchfab for the Blue");
+        ImGui::Text("Archive gun models that I used in this renderer.");
+        ImGui::Text("I'm keeping them in because I'm a bit lazy to find");
+        ImGui::Text("and test more complex models, but the guns were also");
+        ImGui::Text("good for deferred and UV generation testing purposes");
+        ImGui::Separator();
+        ImGui::End();
+
+        ImGui::Begin("Scene Settings");
+        if (ImGui::Button("Reload Shaders"))
+        {
+            ReloadShaders();
+        }
+        ImGui::Separator();
+
+        ImGui::SliderFloat("Camera Near", &m_Camera.n, 0.1f, 10.0f);
+        ImGui::SliderFloat("Camera Far", &m_Camera.f, 10.0f, 500.0f);
+        ImGui::Separator();
+
+        ImGui::Checkbox("Display Local Light Ranges", &m_DisplayDebugRanges);
+        ImGui::Checkbox("Display Light Pass Locations", &m_DisplayLightPassLocations);
+        ImGui::Checkbox("Display Local Lights", &m_DisplayLocalLights);
+        ImGui::Checkbox("Display Skybox", &m_DisplaySkybox);
+        ImGui::Separator();
+
+        ImGui::Text("FSQ Rendering");
+        {
+            static int renderWhat = 0;
+            renderWhat = m_RenderOption;
+            ImGui::RadioButton("Full Deferred", &renderWhat, 0);
+            ImGui::RadioButton("Positions Only", &renderWhat, 1);
+            ImGui::RadioButton("Normals Only", &renderWhat, 2);
+            ImGui::RadioButton("UVs Only", &renderWhat, 3);
+            ImGui::RadioButton("Diffuse Only", &renderWhat, 4);
+            ImGui::RadioButton("Specular Only", &renderWhat, 5);
+            ImGui::RadioButton("Depth Only", &renderWhat, 6);
+            m_RenderOption = renderWhat;
+        }
+        ImGui::Separator();
+
+        ImGui::Text("Local Light Values");
+        if (ImGui::Button("Randomize Lights"))
+        {
+            GenerateLocalLights();
+        }
+
+        float speed = 1.0f;
+
+        ImGui::PushItemWidth(100.0f);
+
+        ImGui::DragFloat("Min. X", &minX, speed, -50.0f, 50.0f);
+        ImGui::SameLine(); ImGui::DragFloat("Max. X", &maxX, speed, -50.0f, 50.0f);
+
+        ImGui::DragFloat("Min. Y", &minY, speed, -50.0f, 50.0f);
+        ImGui::SameLine(); ImGui::DragFloat("Max. Y", &maxY, speed, -50.0f, 50.0f);
+
+        ImGui::DragFloat("Min. Z", &minZ, speed, -50.0f, 50.0f);
+        ImGui::SameLine(); ImGui::DragFloat("Max. Z", &maxZ, speed, -50.0f, 50.0f);
+        ImGui::DragFloat("Min. Range", &minRange, speed, 1.0f, 10.0f);
+        ImGui::SameLine(); ImGui::DragFloat("Max. Range", &maxRange, speed, 1.0f, 10.0f);
+
+        ImGui::PopItemWidth();
+        ImGui::End();
+
+        ImGui::Begin("Models");
+        static int selectedModel = 0;
+        selectedModel = m_SelectedModelIdx;
+
+        for (unsigned i = 0; i < models.size(); ++i)
+        {
+            ImGui::RadioButton(models[i]->Name().c_str(), &selectedModel, i);
+        }
+        m_SelectedModelIdx = selectedModel;
+
+        ImGui::End();
+
+        ImGui::Begin("Local Lights");
+        ImGui::PushItemWidth(100.0f);
+        ImGui::SliderInt("No. of Local Lights", &currLocalLights, 1, MAX_LIGHTS);
+        ImGui::PopItemWidth();
+        ImGui::Separator();
+
+        for (unsigned i = 0; i < currLocalLights; ++i)
+        {
+            ImGui::PushID(i);
+
+            ImGui::SliderFloat3("Light Position", glm::value_ptr(localLights[i].pos), -20.0f, 20.0f);
+            ImGui::SliderFloat("Light Range", &localLights[i].pos.w, 1.0f, 50.0f);
+            ImGui::Separator();
+            ImGui::ColorEdit4("Light Color", glm::value_ptr(localLights[i].color));
+            ImGui::Separator();
+            ImGui::SliderFloat("Intensity", &localLights[i].options.x, 0.0f, 10.0f);
+            ImGui::SliderFloat("Range Multiplier", &localLights[i].options.y, 1.0f, 5.0f);
+            ImGui::Separator();
+            ImGui::Text("Total Range: %f", 0.08f * localLights[i].pos.w * localLights[i].options.y);
+
+            ImGui::PopID();
+        }
+        ImGui::End();
+
+        ImGui::Begin("Model Transformation");
+        ImGui::SliderFloat3("Position", glm::value_ptr(models[m_SelectedModelIdx]->Translation()), -20.0f, 20.0f);
+        ImGui::Checkbox("Invert Axis?", &models[m_SelectedModelIdx]->AxisInverted());
+
+        static int rotAxis = 0;
+        rotAxis = static_cast<int>(models[m_SelectedModelIdx]->Rotation());
+        ImGui::SameLine(); ImGui::RadioButton("X Axis", &rotAxis, 0);
+        ImGui::SameLine(); ImGui::RadioButton("Y Axis", &rotAxis, 1);
+        ImGui::SameLine(); ImGui::RadioButton("Z Axis", &rotAxis, 2);
+        models[m_SelectedModelIdx]->Rotation() = static_cast<Model::RotationAxis>(rotAxis);
+
+        ImGui::SliderAngle("Angle", &models[m_SelectedModelIdx]->Angle(), 0.0f, 360.0f);
+        ImGui::SliderFloat3("Scale", glm::value_ptr(models[m_SelectedModelIdx]->Scale()), 0.1f, 20.0f);
         ImGui::End();
     }
 
@@ -175,6 +332,16 @@ namespace Hayase
         delete m_SceneFBO;
     }
 
+    void Deferred::OnViewportResize(uint32_t w, uint32_t h)
+    {
+        if (_windowWidth == w && _windowHeight == h)
+        {
+            return;
+        }
+
+        _windowWidth = w;
+        _windowHeight = h;
+    }
 
     //////////////////////////////////////////////////////
     //////////////////////////////////////////////////////
@@ -200,16 +367,22 @@ namespace Hayase
         m_SceneFBO->Bind();
         m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
         m_SceneFBO->DrawBuffers();
-        m_SceneFBO->AllocateAttachRBO(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT);
+        m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cout << "Uh oh! Refresh() command is incomplete!" << std::endl;
+        }
+
         m_SceneFBO->Unbind();
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
         {
-            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA, GL_RGBA, nullptr,
                 GL_NEAREST, GL_CLAMP_TO_EDGE));
         }
-        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
         
         // gBuffer FBO
@@ -352,8 +525,8 @@ namespace Hayase
     //////////////////////////////////////////////////////
     int Deferred::Render()
     {
-        matrixData->GetData().proj = m_Camera.perspective();
-        matrixData->GetData().view = m_Camera.view();
+        matrixData->GetData().proj = m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height);
+        matrixData->GetData().view = m_Camera.View();
         matrixData->SetData();
 
         glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
@@ -362,7 +535,6 @@ namespace Hayase
         // (-_windowWidth + (EditorInfo::leftSize + EditorInfo::rightSize)) + 
         // gBuffer pass
         gBuffer->Activate();
-
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
@@ -373,11 +545,11 @@ namespace Hayase
         for (unsigned i = 0; i < models.size(); ++i)
         {
             models[i]->Update();
-            models[i]->Draw(geometryPass->m_ID, m_Camera.view(), m_Camera.perspective());
+            models[i]->Draw(geometryPass->m_ID, m_Camera.View(), m_Camera.Perspective(gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height));
         }
 
         gBuffer->Unbind();
-        m_SceneFBO->Bind();
+        m_SceneFBO->Activate();
             
         // lighting pass
         glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
@@ -391,7 +563,7 @@ namespace Hayase
         for (unsigned i = 0; i < 6; ++i)
         {
             glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, gTextures[i]->ID);
+            glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);
         }
         
         lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
@@ -408,8 +580,10 @@ namespace Hayase
         // the dimensions of the FSQ
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
-        glBlitFramebuffer(0, 0,  _windowWidth,_windowHeight, 0, 0, _windowWidth, _windowHeight, 
-            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        glBlitFramebuffer(0, 0, gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height, 
+                          0, 0, m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height,
+                          GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
         glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO->GetID());
         
         Lights& lightUBO = lightData->GetData();
@@ -424,7 +598,7 @@ namespace Hayase
                 localLightData->SetData();
         
                 cube->Update(0.0f, glm::vec3(0.2f), glm::vec3(lightUBO.lightPos[i]));
-                cube->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
+                cube->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
             }
         }
         
@@ -486,7 +660,7 @@ namespace Hayase
 
             sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
 
-            sphere->Draw(localLight->m_ID, m_Camera.view(), m_Camera.perspective());
+            sphere->Draw(localLight->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
         }
 
         glEnable(GL_CULL_FACE);
@@ -501,12 +675,12 @@ namespace Hayase
             localLightData->SetData();
 
             sphere->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
-            sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective());
+            sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
 
             if (m_DisplayDebugRanges)
             {
                 sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
-                sphere->Draw(flatShader->m_ID, m_Camera.view(), m_Camera.perspective(), {}, GL_LINES);
+                sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height), {}, GL_LINES);
             }
         }
     }
@@ -520,11 +694,11 @@ namespace Hayase
 
         glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
 
-        matrixData->GetData().view = glm::mat4(glm::mat3(m_Camera.view()));
+        matrixData->GetData().view = glm::mat4(glm::mat3(m_Camera.View()));
         matrixData->SetData();
 
        //skybox->Update(0.0f, glm::vec3(50.0f), (m_Camera.cameraPos + skybox->getModelCentroid()) / glm::vec3(50.0f));
-       skybox->Draw(skyboxShader->m_ID, glm::mat4(glm::mat3(m_Camera.view())), m_Camera.perspective(), skyboxTextures, GL_TRIANGLES);
+       skybox->Draw(skyboxShader->m_ID, glm::mat4(glm::mat3(m_Camera.View())), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height), skyboxTextures, GL_TRIANGLES);
        
        glDepthFunc(GL_LESS);
     }

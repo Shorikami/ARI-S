@@ -49,13 +49,20 @@ namespace Hayase
         void UpdateCameraPos(CameraDirection d, double dt);
         void UpdateCameraZoom(double dy);
 
-        __inline glm::mat4 view() { return glm::lookAt(cameraPos, cameraPos + front, up); };
-        __inline glm::mat4 perspective()
+        __inline glm::mat4 View() { return glm::lookAt(cameraPos, cameraPos + front, up); };
+        __inline glm::mat4 Perspective()
         {
             WindowBase& w = Application::Get().GetWindow();
 
             return glm::perspective(glm::radians(zoom),
                 static_cast<float>(w.GetWidth()) / static_cast<float>(w.GetHeight()),
+                n, f);
+        }
+
+        __inline glm::mat4 Perspective(uint32_t w, uint32_t h)
+        {
+            return glm::perspective(glm::radians(zoom),
+                static_cast<float>(w) / static_cast<float>(h),
                 n, f);
         }
 

@@ -34,7 +34,7 @@ namespace Hayase
 
 		void Cleanup();
 
-		unsigned ID;
+		unsigned m_ID;
 		//aiTextureType type;
 		std::string dir, path, name;
 

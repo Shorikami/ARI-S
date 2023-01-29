@@ -7,6 +7,7 @@
 namespace Hayase
 {
 	Texture::Texture()
+		: m_ID(0)
 	{
 	}
 
@@ -30,8 +31,8 @@ namespace Hayase
 		m_InternalFormat = intForm;
 		m_DataFormat = dataForm;
 
-		glGenTextures(1, &ID);
-		glBindTexture(GL_TEXTURE_2D, ID);
+		glGenTextures(1, &m_ID);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, intForm, w, h, 0, dataForm, type, NULL);
 
@@ -56,8 +57,8 @@ namespace Hayase
 		int width, height, channels;
 		stbi_set_flip_vertically_on_load(1);
 	
-		glGenTextures(1, &ID);
-		glBindTexture(GL_TEXTURE_2D, ID);
+		glGenTextures(1, &m_ID);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
 	
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
@@ -102,7 +103,7 @@ namespace Hayase
 
 	void Texture::Generate()
 	{
-		glGenTextures(1, &ID);
+		glGenTextures(1, &m_ID);
 	}
 
 	void Texture::Load(bool flip)
@@ -126,7 +127,7 @@ namespace Hayase
 
 		if (data)
 		{
-			glBindTexture(GL_TEXTURE_2D, ID);
+			glBindTexture(GL_TEXTURE_2D, m_ID);
 			glTexImage2D(GL_TEXTURE_2D, 0, colorMode, width, height, 0, colorMode, GL_UNSIGNED_BYTE, data);
 			glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -151,6 +152,8 @@ namespace Hayase
 
 	void Texture::SetParameters(GLenum texMin, GLenum texMag, GLenum wrapS, GLenum wrapT)
 	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, texMag);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texMin);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
@@ -159,13 +162,13 @@ namespace Hayase
 
 	void Texture::Bind()
 	{
-		glBindTexture(GL_TEXTURE_2D, ID);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
 	}
 
 	void Texture::Bind(GLuint slot)
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
-		glBindTexture(GL_TEXTURE_2D, ID);
+		glBindTexture(GL_TEXTURE_2D, m_ID);
 	}
 
 	void Texture::Unbind()
@@ -175,6 +178,6 @@ namespace Hayase
 
 	void Texture::Cleanup()
 	{
-		glDeleteTextures(1, &ID);
+		glDeleteTextures(1, &m_ID);
 	}
 }

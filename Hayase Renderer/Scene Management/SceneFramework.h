@@ -6,6 +6,7 @@
 
 #include "Window.h"
 #include "Memory/FrameMemory.hpp"
+#include "Timer.h"
 
 #define _GET_GL_ERROR   { GLenum err = glGetError(); std::cout << "[OpenGL Error] " << glewGetErrorString(err) << std::endl; }
 
@@ -28,6 +29,8 @@ namespace Hayase
 
         virtual void ProcessInput(GLFWwindow* w, float dt);
 
+        virtual void OnViewportResize(uint32_t w, uint32_t h);
+
         virtual void CleanUp();
 
         Framebuffer* GetSceneFBO() { return m_SceneFBO; }
@@ -35,6 +38,7 @@ namespace Hayase
     protected:
         int _windowHeight, _windowWidth;
         Framebuffer* m_SceneFBO;
+        DeltaTime m_DT;
     };
 }
 
