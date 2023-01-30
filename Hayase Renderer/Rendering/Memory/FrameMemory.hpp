@@ -154,7 +154,7 @@ namespace Hayase
 
 			for (size_t i = 0; i < m_Specs.s_Attachments.s_Attachments.size(); ++i)
 			{
-				AllocateAttachTexture(GL_COLOR_ATTACHMENT0 + i, GL_RGBA, GL_UNSIGNED_BYTE, true);
+				AllocateAttachTexture(GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i), GL_RGBA, GL_UNSIGNED_BYTE, true);
 			}
 
 			if (m_ColorAttachments.size() > 0)
@@ -178,8 +178,8 @@ namespace Hayase
 
 		void Resize(glm::vec2 size)
 		{
-			m_Specs.s_Width = size.x;
-			m_Specs.s_Height = size.y;
+			m_Specs.s_Width = static_cast<uint32_t>(size.x);
+			m_Specs.s_Height = static_cast<uint32_t>(size.y);
 
 			Refresh();
 		}
@@ -266,7 +266,7 @@ namespace Hayase
 				drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
 			}
 			
-			glDrawBuffers(m_ColorAttachments.size(), drawBuffers.data());
+			glDrawBuffers(static_cast<GLsizei>(m_ColorAttachments.size()), drawBuffers.data());
 		}
 
 		void Cleanup()

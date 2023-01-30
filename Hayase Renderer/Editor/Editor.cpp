@@ -16,6 +16,8 @@ namespace Hayase
 {
 	Editor::Editor()
 		: Layer("Editor")
+		, m_ActiveScene(nullptr)
+		, m_Framebuffer(nullptr)
 	{
 	}
 
@@ -33,6 +35,7 @@ namespace Hayase
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;   // Enable multi-viewport
+		io.IniFilename = "Materials/editor.ini";
 
 		ImGui::StyleColorsDark();
 
@@ -64,14 +67,14 @@ namespace Hayase
 
 	void Editor::Update(DeltaTime dt)
 	{
-		m_ActiveScene->OnViewportResize(m_ViewportSize.x, m_ViewportSize.y);
+		m_ActiveScene->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 
 		Framebuffer* fbo = static_cast<Deferred*>(m_ActiveScene)->GetSceneFBO();
 
 		if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && 
 			(fbo->GetSpecs().s_Width != m_ViewportSize.x || fbo->GetSpecs().s_Height != m_ViewportSize.y))
 		{
-			fbo->Resize(m_ViewportSize.x, m_ViewportSize.y);
+			fbo->Resize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 		}
 
 		static_cast<Deferred*>(m_ActiveScene)->Update(dt);
@@ -128,7 +131,7 @@ namespace Hayase
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		Application& app = Application::Get();
-		io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+		io.DisplaySize = ImVec2(static_cast<float>(app.GetWindow().GetWidth()), static_cast<float>(app.GetWindow().GetHeight()));
 
 		// Rendering
 		ImGui::Render();

@@ -14,7 +14,7 @@
 
 #include "stb_image.h"
 
-int currLights = 1;
+unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
 namespace Hayase
@@ -73,7 +73,7 @@ namespace Hayase
         for (unsigned i = 0; i < 6; ++i)
         {
             ImGui::SetCursorPos(ImVec2((400 - imgWidth) * 0.5f, (100 + i * (imgHeight * 2.5f)) * 0.5f));
-            ImGui::Image((void*)(intptr_t)gTextures[i]->m_ID, ImVec2(imgWidth, imgHeight), ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::Image((void*)(intptr_t)gTextures[i]->m_ID, ImVec2((float)imgWidth, (float)imgHeight), ImVec2(0, 1), ImVec2(1, 0));
             ImGui::Text(texNames[i].c_str());
             ImGui::Separator();
         }
@@ -184,7 +184,7 @@ namespace Hayase
         ImGui::PopItemWidth();
         ImGui::Separator();
 
-        for (unsigned i = 0; i < currLocalLights; ++i)
+        for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
         {
             ImGui::PushID(i);
 
@@ -647,7 +647,7 @@ namespace Hayase
 
         glUseProgram(0);
 
-        for (unsigned i = 0; i < currLocalLights; ++i)
+        for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
         {
             localLightData->GetData().pos = localLights[i].pos;
             localLightData->GetData().color = localLights[i].color;
@@ -664,7 +664,7 @@ namespace Hayase
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
 
-        for (unsigned i = 0; i < currLocalLights; ++i)
+        for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
         {
             localLightData->GetData().pos = localLights[i].pos;
             localLightData->GetData().color = localLights[i].color;

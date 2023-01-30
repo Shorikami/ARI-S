@@ -17,6 +17,7 @@ namespace Hayase
 		AppTick, AppUpdate, AppRender
 	};
 
+
 	enum EventCategory
 	{
 		None = -1,
@@ -44,11 +45,13 @@ namespace Hayase
 		virtual const char* GetName() const = 0;
 		virtual int GetCategoryFlags() const = 0;
 		virtual std::string ToString() const { return GetName(); }
-
+#pragma warning (push)
+#pragma warning ( disable : 26812 )
 		bool IsInCategory(EventCategory category)
 		{
 			return GetCategoryFlags() & category;
 		}
+#pragma warning (pop)
 	};
 
 	class EventDispatcher

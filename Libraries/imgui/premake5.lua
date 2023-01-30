@@ -29,6 +29,11 @@ project "ImGui"
 		"imgui_impl_opengl3.h",
 		"imgui_impl_opengl3_loader.h"
     }
+	
+	defines
+	{
+		"_CRT_SECURE_NO_WARNINGS"
+	}
     
 	filter "system:windows"
         systemversion "latest"

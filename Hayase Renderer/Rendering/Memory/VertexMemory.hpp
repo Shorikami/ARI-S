@@ -16,13 +16,16 @@ namespace Hayase
 
 		// Empty vertex buffer
 		VertexBuffer()
+			: id(0)
+			, type(0)
 		{
 		}
 
 		// Vertex buffer with specified type
 		// type - Type of buffer (Element, regular)
 		VertexBuffer(GLenum type)
-			: type(type)
+			: id(0)
+			, type(type)
 		{
 		}
 
@@ -94,7 +97,7 @@ namespace Hayase
 	class VertexArray
 	{
 	public:
-		GLuint id;
+		GLuint id = 0;
 		std::map<const char*, VertexBuffer> buffers;
 
 		// Operator overload for locating a specific buffer
@@ -133,10 +136,10 @@ namespace Hayase
 
 		// Draw the elements of a vertex array, but instanced
 		// THIS GOES UNUSED FOR NOW (This exists because of importing from my other renderer)
-		void Draw(GLenum mode, GLuint count, GLenum type, GLint indices, GLuint instanceCount = 1)
-		{
-			glDrawElementsInstanced(mode, count, type, (void*)indices, instanceCount);
-		}
+		//void Draw(GLenum mode, GLuint count, GLenum type, GLint indices, GLuint instanceCount = 1)
+		//{
+		//	glDrawElementsInstanced(mode, count, type, (void*)indices, instanceCount);
+		//}
 
 		// Clean up the vertex array
 		void Cleanup()

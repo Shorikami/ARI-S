@@ -52,8 +52,8 @@ namespace Hayase
 	{
 		if (rotateCamera)
 		{
-			yaw += dx;
-			pitch += dy;
+			yaw += static_cast<float>(dx);
+			pitch += static_cast<float>(dy);
 
 			if (pitch > 89.0f)
 			{
@@ -93,7 +93,7 @@ namespace Hayase
 	{
 		if (zoom >= 1.0f && zoom <= 45.0f)
 		{
-			zoom -= dy;
+			zoom -= static_cast<float>(dy);
 		}
 		else if (zoom < 1.0f)
 		{
@@ -137,7 +137,7 @@ namespace Hayase
 			firstMouse = false;
 		}
 
-		UpdateCameraDir((e.GetX() - lastX) * sens, (lastY - e.GetY()) * sens);
+		UpdateCameraDir(static_cast<double>(((double)e.GetX() - lastX)) * sens, static_cast<double>((lastY - (double)e.GetY())) * sens);
 
 		lastX = e.GetX();
 		lastY = e.GetY();

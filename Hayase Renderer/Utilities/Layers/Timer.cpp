@@ -8,6 +8,6 @@ namespace Hayase
 {
 	float Time::GetTime()
 	{
-		return glfwGetTime();
+		return static_cast<float>(glfwGetTime());
 	}
 }

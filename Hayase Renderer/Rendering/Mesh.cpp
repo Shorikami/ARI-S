@@ -23,12 +23,14 @@ namespace Hayase
     Mesh::Mesh()
         : normalLength(0.0f)
         , modelMat(glm::mat4(1.0f))
+        , boundingBox{ glm::vec3(0.0f), glm::vec3(0.0f) }
     {
     }
 
     Mesh::Mesh(std::string p, std::string m)
         : normalLength(0.0f)
         , modelMat(glm::mat4(1.0f))
+        , boundingBox{ glm::vec3(0.0f), glm::vec3(0.0f) }
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
@@ -56,9 +58,9 @@ namespace Hayase
                 {
                     v.position =
                     {
-                        attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2],
+                        attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 0],
+                        attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 1],
+                        attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 2],
                     };
                 }
 
@@ -66,9 +68,9 @@ namespace Hayase
                 {
                     v.normal =
                     {
-                        attrib.normals[3 * index.normal_index + 0],
-                        attrib.normals[3 * index.normal_index + 1],
-                        attrib.normals[3 * index.normal_index + 2],
+                        attrib.normals[3 * static_cast<size_t>(index.normal_index) + 0],
+                        attrib.normals[3 * static_cast<size_t>(index.normal_index) + 1],
+                        attrib.normals[3 * static_cast<size_t>(index.normal_index) + 2],
                     };
                 }
 
@@ -76,8 +78,8 @@ namespace Hayase
                 {
                     v.uv =
                     {
-                        attrib.texcoords[2 * index.texcoord_index + 0],
-                        attrib.texcoords[2 * index.texcoord_index + 1],
+                        attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 0],
+                        attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 1],
                     };
                 }
 
@@ -100,15 +102,14 @@ namespace Hayase
       rad - The radius of the sphere
       divisions - The number of subdivisions for this sphere (more is higher quality)
     */
-    Mesh* Mesh::CreateSphere(float rad, int divisions)
+    Mesh* Mesh::CreateSphere(float rad, unsigned divisions)
     {
         Mesh* res = new Mesh();
 
         float x, y, z, xy;
-        float nx, ny, nz;
         float length = 1.0f / rad;
 
-        float pi = glm::pi<float>();
+        constexpr float pi = glm::pi<float>();
 
         float sectorStep = 2 * pi / divisions;
         float stackStep = pi / divisions;
@@ -120,7 +121,7 @@ namespace Hayase
             xy = rad * cosf(stackAngle);
             z = rad * sinf(stackAngle);
 
-            for (int j = 0; j <= divisions; ++j)
+            for (unsigned j = 0; j <= divisions; ++j)
             {
                 sectorAngle = j * sectorStep;
 
@@ -198,11 +199,11 @@ namespace Hayase
       rad - The radius of the line
       divisions - The number of subdivisions for this line (more is higher quality)
     */
-    Mesh* Mesh::CreateLine(float rad, int divisions)
+    Mesh* Mesh::CreateLine(float rad, unsigned divisions)
     {
         Mesh* res = new Mesh();
 
-        float pi = glm::pi<float>();
+        constexpr float pi = glm::pi<float>();
         float v = 2 * pi / divisions;
 
         for (unsigned i = 0; i < divisions; ++i)
@@ -523,9 +524,9 @@ namespace Hayase
         switch (t)
         {
         case DisplayType::VERTEX:
-            return vertexNormalDisplay.size();
+            return static_cast<unsigned>(vertexNormalDisplay.size());
         case DisplayType::FACE:
-            return faceNormalDisplay.size();
+            return static_cast<unsigned>(faceNormalDisplay.size());
         }
 
         return 0;
@@ -549,9 +550,9 @@ namespace Hayase
         switch (t)
         {
         case DisplayType::VERTEX:
-            return vertNormIndices.size();
+            return static_cast<unsigned>(vertNormIndices.size());
         case DisplayType::FACE:
-            return faceNormIndices.size();
+            return static_cast<unsigned>(faceNormIndices.size());
         }
 
         return 0;
@@ -589,12 +590,12 @@ namespace Hayase
 
     unsigned int Mesh::getVertexNormalCount()
     {
-        return vertexNormals.size();
+        return static_cast<unsigned>(vertexNormals.size());
     }
 
     unsigned int Mesh::getVertexUVCount()
     {
-        return vertexUVs.size();
+        return static_cast<unsigned>(vertexUVs.size());
     }
 
     glm::vec3  Mesh::getModelScale()
@@ -844,8 +845,8 @@ namespace Hayase
             switch (uvType)
             {
             case Mesh::PLANAR_UV:
-                uv.x = (normVertex.x - (-1.0)) / (2.0);
-                uv.y = (normVertex.y - (-1.0)) / (2.0);
+                uv.x = (normVertex.x - (-1.0f)) / (2.0f);
+                uv.y = (normVertex.y - (-1.0f)) / (2.0f);
                 break;
 
             case Mesh::CYLINDRICAL_UV:

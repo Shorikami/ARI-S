@@ -39,8 +39,8 @@ namespace Hayase
         Mesh();
         Mesh(std::string path, std::string mtlPath = std::string());
 
-        static Mesh* CreateSphere(float rad, int divisions);
-        static Mesh* CreateLine(float rad, int divisions);
+        static Mesh* CreateSphere(float rad, unsigned divisions);
+        static Mesh* CreateLine(float rad, unsigned divisions);
 
         // Get attribute values buffer
 

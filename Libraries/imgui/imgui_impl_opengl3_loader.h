@@ -527,6 +527,9 @@ union GL3WProcs {
 
 GL3W_API extern union GL3WProcs imgl3wProcs;
 
+#pragma warning( push )
+#pragma warning( disable : 4005 )
+
 /* OpenGL functions */
 #define glActiveTexture                   imgl3wProcs.gl.ActiveTexture
 #define glAttachShader                    imgl3wProcs.gl.AttachShader
@@ -592,6 +595,8 @@ GL3W_API extern union GL3WProcs imgl3wProcs;
 #endif
 
 #endif
+
+#pragma warning ( pop )
 
 #ifdef IMGL3W_IMPL
 #ifdef __cplusplus
