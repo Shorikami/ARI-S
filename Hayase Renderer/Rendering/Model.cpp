@@ -5,6 +5,7 @@ namespace Hayase
 {
 	Model::Model()
 		: m_Mesh(nullptr)
+		, m_InvertAxis(false)
 	{
 	}
 
@@ -14,6 +15,7 @@ namespace Hayase
 		, m_Scale(scale)
 		, m_Angle(angle)
 		, m_Axis(axis)
+		, m_InvertAxis(false)
 	{
 		m_Mesh = new Mesh(path);
 		m_Mesh->GenerateBuffers();

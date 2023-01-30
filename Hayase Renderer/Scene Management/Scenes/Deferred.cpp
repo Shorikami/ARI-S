@@ -14,7 +14,7 @@
 
 #include "stb_image.h"
 
-int currLights = 4;
+int currLights = 1;
 int currLocalLights = NUM_LIGHTS;
 
 namespace Hayase
@@ -379,10 +379,10 @@ namespace Hayase
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
         {
-            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA, GL_RGBA, nullptr,
+            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
                 GL_NEAREST, GL_CLAMP_TO_EDGE));
         }
-        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, nullptr,
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
         
         // gBuffer FBO
@@ -529,9 +529,6 @@ namespace Hayase
         matrixData->GetData().view = m_Camera.View();
         matrixData->SetData();
 
-        glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         // (-_windowWidth + (EditorInfo::leftSize + EditorInfo::rightSize)) + 
         // gBuffer pass
         gBuffer->Activate();
@@ -549,11 +546,10 @@ namespace Hayase
         }
 
         gBuffer->Unbind();
-        m_SceneFBO->Activate();
-            
+
         // lighting pass
-        glClearColor(m_BGColor.x, m_BGColor.y, m_BGColor.z, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_SceneFBO->Activate();
+        
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);

@@ -95,6 +95,11 @@ namespace Hayase
 			Generate();
 		}
 
+		~Framebuffer()
+		{
+			Cleanup();
+		}
+
 		void Generate()
 		{
 			glGenFramebuffers(1, &m_ID);

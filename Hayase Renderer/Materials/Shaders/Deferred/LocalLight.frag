@@ -26,8 +26,7 @@ uniform int vHeight;
 
 vec3 LightCalc()
 {
-	vec2 fragUV = vec2(gl_FragCoord.x / vWidth, 
-	gl_FragCoord.y / vHeight);
+	vec2 fragUV = vec2(gl_FragCoord.x / vWidth, gl_FragCoord.y / vHeight);
 	
 	vec3 gFragPos = texture(gPos, fragUV).rgb;
 	vec3 norm = texture(gNorm, fragUV).rgb;
