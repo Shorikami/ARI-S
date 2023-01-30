@@ -43,16 +43,13 @@ namespace Hayase
     {
         m_DT = dt.GetSeconds();
 
-        // update first...
-        m_Camera.Update(m_DT);
-
         // ... then render
         Display();
     }
 
     void Deferred::OnEvent(Event& e)
     {
-        m_Camera.OnEvent(e);
+        
     }
 
     void Deferred::OnImGuiRender()
@@ -223,9 +220,8 @@ namespace Hayase
     Deferred::Deferred(int windowWidth, int windowHeight)
         : Scene(windowWidth, windowHeight)
         , Layer("Deferred Scene")
-        , angleOfRotation(0.0f)
-        , m_Camera(glm::vec3(-6.0f, 1.0f, 0.0f))
     {
+        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
         initMembers();
 
         float quadVertices[] = {
@@ -256,7 +252,6 @@ namespace Hayase
     void Deferred::initMembers()
     {
         //shaderID = lineShaderID = 0;
-        angleOfRotation = 0.0f;
 
         matrixData = new UniformBuffer<World>(0);
         lightData = new UniformBuffer<Lights>(1);

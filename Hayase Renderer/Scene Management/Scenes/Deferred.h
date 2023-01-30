@@ -4,10 +4,8 @@
 #include "SceneFramework.h"
 #include "Texture.h"
 #include "Shader.h"
-#include "Camera.h"
 #include "Layer.h"
 #include "Memory/UniformMemory.hpp"
-#include "Memory/FrameMemory.hpp"
 
 #include "Model.h"
 #include "OBJReader.h"
@@ -57,8 +55,6 @@ namespace Hayase
         GLuint quadVAO, quadVBO;
         void RenderQuad();
 
-        Camera m_Camera;
-
         LocalLight localLights[MAX_LIGHTS];
 
         UniformBuffer<World>* matrixData;
@@ -77,8 +73,6 @@ namespace Hayase
         std::vector<std::pair<Texture*, std::string>> textures, groundTextures, skyboxTextures;
 
         Framebuffer* gBuffer;
-
-        GLfloat   angleOfRotation;
 
         // ImGUI options
         glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);

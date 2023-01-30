@@ -23,10 +23,22 @@ namespace Hayase
 
 		void Begin();
 		void End();
+
+		void BlockEvents(bool b) { m_BlockEvents = b; }
+
+	private:
+		void CustomizeColors();
+
 	private:
 		Framebuffer* m_Framebuffer;
 		glm::vec2 m_ViewportSize = glm::vec2(0.0f);
 		Scene* m_ActiveScene;
+
+		bool m_BlockEvents = true;
+
+		bool m_ViewportFocused = false, m_ViewportHovered = false;
+
+		
 	};
 }
 

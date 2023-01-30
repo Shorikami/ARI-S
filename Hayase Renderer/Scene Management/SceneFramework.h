@@ -7,6 +7,7 @@
 #include "Window.h"
 #include "Memory/FrameMemory.hpp"
 #include "Timer.h"
+#include "Camera.h"
 
 #define _GET_GL_ERROR   { GLenum err = glGetError(); std::cout << "[OpenGL Error] " << glewGetErrorString(err) << std::endl; }
 
@@ -35,10 +36,13 @@ namespace Hayase
 
         Framebuffer* GetSceneFBO() { return m_SceneFBO; }
 
+        Camera& GetCamera() { return m_Camera; }
+
     protected:
         int _windowHeight, _windowWidth;
         Framebuffer* m_SceneFBO;
         DeltaTime m_DT;
+        Camera m_Camera;
     };
 }
 

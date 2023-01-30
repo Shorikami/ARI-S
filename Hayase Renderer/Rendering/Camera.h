@@ -4,10 +4,10 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 
-#include "Application.h"
 #include "AppEvent.h"
 #include "MouseEvent.h"
 #include "KeyEvent.h"
+#include "Timer.h"
 
 namespace Hayase
 {
@@ -50,14 +50,14 @@ namespace Hayase
         void UpdateCameraZoom(double dy);
 
         __inline glm::mat4 View() { return glm::lookAt(cameraPos, cameraPos + front, up); };
-        __inline glm::mat4 Perspective()
-        {
-            WindowBase& w = Application::Get().GetWindow();
-
-            return glm::perspective(glm::radians(zoom),
-                static_cast<float>(w.GetWidth()) / static_cast<float>(w.GetHeight()),
-                n, f);
-        }
+        //__inline glm::mat4 Perspective()
+        //{
+        //    WindowBase& w = Application::Get().GetWindow();
+        //
+        //    return glm::perspective(glm::radians(zoom),
+        //        static_cast<float>(w.GetWidth()) / static_cast<float>(w.GetHeight()),
+        //        n, f);
+        //}
 
         __inline glm::mat4 Perspective(uint32_t w, uint32_t h)
         {

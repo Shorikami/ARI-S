@@ -77,6 +77,12 @@ namespace Hayase
 			fbo->Resize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 		}
 
+		BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+		if (m_ViewportFocused)
+		{
+			m_ActiveScene->GetCamera().Update(dt);
+		}
+
 		static_cast<Deferred*>(m_ActiveScene)->Update(dt);
 	}
 
@@ -168,6 +174,10 @@ namespace Hayase
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
 		ImGui::Begin("Viewport");
+
+		m_ViewportFocused = ImGui::IsWindowFocused();
+		m_ViewportHovered = ImGui::IsWindowHovered();
+
 		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
 		
@@ -180,6 +190,25 @@ namespace Hayase
 
 	void Editor::OnEvent(Event& e)
 	{
-		static_cast<Deferred*>(m_ActiveScene)->OnEvent(e);
+		if (m_BlockEvents)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			e.m_Handled |= e.IsInCategory(CategoryMouse) & io.WantCaptureMouse;
+			e.m_Handled |= e.IsInCategory(CategoryKeyboard) & io.WantCaptureKeyboard;
+		}
+		else
+		{
+			if (m_ViewportFocused)
+			{
+				m_ActiveScene->GetCamera().OnEvent(e);
+			}
+
+			static_cast<Deferred*>(m_ActiveScene)->OnEvent(e);
+		}
+	}
+
+	void Editor::CustomizeColors()
+	{
+	
 	}
 }
