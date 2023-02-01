@@ -42,6 +42,9 @@ project "Hayase Renderer"
 		"%{prj.name}/Core/**.h",
 		"%{prj.name}/Core/**.cpp",
 		"%{prj.name}/Core/**.hpp",
+		"%{prj.name}/ECS/**.h",
+		"%{prj.name}/ECS/**.cpp",
+		"%{prj.name}/ECS/**.hpp",
 		"%{prj.name}/Events/**.h",
 		"%{prj.name}/Events/**.cpp",
 		"%{prj.name}/Editor/**.h",
@@ -72,10 +75,13 @@ project "Hayase Renderer"
 	includedirs
 	{
 		"%{prj.name}/Core",
+		"%{prj.name}/ECS",
+		"%{prj.name}/ECS/Components",
 		"%{prj.name}/Events",
 		"%{prj.name}/IO",
 		"%{prj.name}/Libraries",
 		"%{prj.name}/Rendering",
+		"%{prj.name}/Rendering/Memory",
 		"%{prj.name}/Scene Management",
 		"%{prj.name}/Scene Management/Scenes",
 		"%{prj.name}/Utilities",

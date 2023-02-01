@@ -1,3 +1,5 @@
+#include "entt.hpp"
+
 #ifndef SCENEFRAMEWORK_H
 #define SCENEFRAMEWORK_H
 
@@ -8,8 +10,6 @@
 #include "Memory/FrameMemory.hpp"
 #include "Timer.h"
 #include "Camera.h"
-
-#define _GET_GL_ERROR   { GLenum err = glGetError(); std::cout << "[OpenGL Error] " << glewGetErrorString(err) << std::endl; }
 
 namespace Hayase
 {
@@ -40,9 +40,14 @@ namespace Hayase
 
     protected:
         int _windowHeight, _windowWidth;
+
         Framebuffer* m_SceneFBO;
         DeltaTime m_DT;
         Camera m_Camera;
+
+        entt::registry m_Registry;
+
+        friend class Entity;
     };
 }
 
