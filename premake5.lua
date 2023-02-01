@@ -59,7 +59,7 @@ project "Hayase Renderer"
 		"Libraries/glm/**.hpp",
 		"Libraries/glm/**.inl",
 		
-		"Libraries/entt/**.hpp"
+		"Libraries/entt/**.hpp",
 		
 		"Libraries/stb/**.h",
 		
