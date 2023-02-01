@@ -16,6 +16,7 @@ IncludeDir["GLFW"] = "Libraries/GLFW/include"
 IncludeDir["Glad"] = "Libraries/Glad/include"
 IncludeDir["glm"] = "Libraries/glm"
 IncludeDir["ImGui"] = "Libraries/imgui"
+IncludeDir["entt"] = "Libraries/entt"
 IncludeDir["stb"] = "Libraries/stb"
 IncludeDir["tinygltf"] = "Libraries/tinygltf"
 IncludeDir["tinyobj"] = "Libraries/tinyobjloader"
@@ -58,6 +59,8 @@ project "Hayase Renderer"
 		"Libraries/glm/**.hpp",
 		"Libraries/glm/**.inl",
 		
+		"Libraries/entt/**.hpp"
+		
 		"Libraries/stb/**.h",
 		
 		"Libraries/tinygltf/**.h",
@@ -81,6 +84,7 @@ project "Hayase Renderer"
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
+		"%{IncludeDir.entt}",
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.tinygltf}",
 		"%{IncludeDir.tinyobj}"
