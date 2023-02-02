@@ -33,7 +33,8 @@ namespace Hayase
 
 		for (std::pair<Texture*, std::string> t : m_Textures)
 		{
-			delete t.first;
+			t.first->Cleanup();
+			//delete t.first;
 		}
 	}
 

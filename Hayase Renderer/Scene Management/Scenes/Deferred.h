@@ -37,7 +37,7 @@ namespace Hayase
         int Init() override;
         void CleanUp() override;
 
-        int PreRender(float frame) override;
+        int PreRender() override;
         int Render() override;
         int PostRender() override;
 

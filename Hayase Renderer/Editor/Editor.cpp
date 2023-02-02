@@ -50,7 +50,8 @@ namespace Hayase
 		int w = app.GetWindow().GetWidth();
 		int h = app.GetWindow().GetHeight();
 
-		m_ActiveScene = new Deferred(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+		m_ActiveScene = std::make_shared<Deferred>(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+		m_HierarchyPanel.SetContext(m_ActiveScene);
 	}
 
 	void Editor::OnDetach()
@@ -64,7 +65,7 @@ namespace Hayase
 	{
 		m_ActiveScene->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 
-		Framebuffer* fbo = static_cast<Deferred*>(m_ActiveScene)->GetSceneFBO();
+		Framebuffer* fbo = static_cast<Deferred*>(m_ActiveScene.get())->GetSceneFBO();
 
 		if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && 
 			(fbo->GetSpecs().s_Width != m_ViewportSize.x || fbo->GetSpecs().s_Height != m_ViewportSize.y))
@@ -78,7 +79,7 @@ namespace Hayase
 			m_ActiveScene->GetCamera().Update(dt);
 		}
 
-		static_cast<Deferred*>(m_ActiveScene)->Update(dt);
+		static_cast<Deferred*>(m_ActiveScene.get())->Update(dt);
 	}
 
 	void Editor::Begin()
@@ -149,7 +150,7 @@ namespace Hayase
 
 	void Editor::OnImGuiRender()
 	{
-		static_cast<Deferred*>(m_ActiveScene)->OnImGuiRender();
+		static_cast<Deferred*>(m_ActiveScene.get())->OnImGuiRender();
 
 		if (ImGui::BeginMenuBar())
 		{
@@ -166,6 +167,8 @@ namespace Hayase
 			ImGui::EndMenuBar();
 		}
 		ImGui::End();
+
+		m_HierarchyPanel.OnImGuiRender();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
 		ImGui::Begin("Viewport");
@@ -198,7 +201,7 @@ namespace Hayase
 				m_ActiveScene->GetCamera().OnEvent(e);
 			}
 
-			static_cast<Deferred*>(m_ActiveScene)->OnEvent(e);
+			static_cast<Deferred*>(m_ActiveScene.get())->OnEvent(e);
 		}
 	}
 

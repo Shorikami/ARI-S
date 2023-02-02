@@ -2,8 +2,10 @@
 #define EDITOR_H
 
 #include "Layer.h"
-#include "Memory/FrameMemory.hpp"
+#include "FrameMemory.hpp"
 #include "SceneFramework.h"
+
+#include "HierarchyPanel.h"
 
 #include <glm.hpp>
 
@@ -32,13 +34,13 @@ namespace Hayase
 	private:
 		Framebuffer* m_Framebuffer;
 		glm::vec2 m_ViewportSize = glm::vec2(0.0f);
-		Scene* m_ActiveScene;
+		std::shared_ptr<Scene> m_ActiveScene;
 
 		bool m_BlockEvents = true;
 
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 
-		
+		HierarchyPanel m_HierarchyPanel;
 	};
 }
 

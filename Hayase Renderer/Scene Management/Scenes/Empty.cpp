@@ -24,7 +24,7 @@ namespace Hayase
     {
     }
 
-    int EmptyScene::PreRender(float frame)
+    int EmptyScene::PreRender()
     {
         return 0;
     }

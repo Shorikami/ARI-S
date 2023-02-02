@@ -1,18 +1,20 @@
-#include "entt.hpp"
-
-#ifndef SCENEFRAMEWORK_H
-#define SCENEFRAMEWORK_H
+#pragma once
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "Window.h"
-#include "Memory/FrameMemory.hpp"
+#include "FrameMemory.hpp"
 #include "Timer.h"
 #include "Camera.h"
+#include "UUID.hpp"
+
+#include "entt.hpp"
 
 namespace Hayase
 {
+    class Entity;
+
     class Scene
     {
 
@@ -21,21 +23,24 @@ namespace Hayase
         Scene(int windowWidth, int windowHeight);
         virtual ~Scene();
 
-        virtual int Init();
-        virtual int Display(float frameTime = 0.0f);
+        Entity CreateEntity(const std::string& name = std::string());
+        Entity CreateEntityWithUUID(UUID id, const std::string& name = std::string());
+        void DestroyEntity(Entity e);
+        
+        Entity FindEntityByName(std::string_view name);
+        Entity FindEntityByUUID(UUID uuid);
 
-        virtual int PreRender(float frame);
+        virtual int Init();
+        virtual int Display();
+        virtual void CleanUp();
+
+        virtual int PreRender();
         virtual int Render();
         virtual int PostRender();
 
-        virtual void ProcessInput(GLFWwindow* w, float dt);
-
         virtual void OnViewportResize(uint32_t w, uint32_t h);
 
-        virtual void CleanUp();
-
         Framebuffer* GetSceneFBO() { return m_SceneFBO; }
-
         Camera& GetCamera() { return m_Camera; }
 
     protected:
@@ -46,9 +51,10 @@ namespace Hayase
         Camera m_Camera;
 
         entt::registry m_Registry;
+        
+        std::unordered_map<UUID, entt::entity> m_EntityMap;
 
         friend class Entity;
+        friend class HierarchyPanel;
     };
 }
-
-#endif

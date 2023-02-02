@@ -77,7 +77,7 @@ namespace Hayase
         ImGui::End();
 
         ImGui::Begin("Debug Info");
-        ImGui::Text("FPS: %.3f", m_DT.GetSeconds());
+        ImGui::Text("FPS: %.3f", 1.0f / m_DT.GetSeconds());
         ImGui::Separator();
         ImGui::Text("Camera X: %.2f", m_Camera.cameraPos.x);
         ImGui::Text("Camera Y: %.2f", m_Camera.cameraPos.y);
@@ -498,7 +498,7 @@ namespace Hayase
         return 0;
     }
 
-    int Deferred::PreRender(float frame)
+    int Deferred::PreRender()
     {
         Lights& lightUBO = lightData->GetData();
 

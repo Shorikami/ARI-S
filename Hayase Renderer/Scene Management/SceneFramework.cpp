@@ -1,6 +1,7 @@
 #include <hyspch.h>
 
 #include "SceneFramework.h"
+#include "Entity.h"
 
 namespace Hayase
 {
@@ -22,12 +23,59 @@ namespace Hayase
         CleanUp();
     }
 
+    Entity Scene::CreateEntity(const std::string& name)
+    {
+        return CreateEntityWithUUID(UUID(), name);
+    }
+    
+    Entity Scene::CreateEntityWithUUID(UUID id, const std::string& name)
+    {
+        Entity e = { m_Registry.create(), this };
+        e.AddComponent<IDComponent>(id);
+        e.AddComponent<TransformComponent>(); // an entity must always have a transform
+        auto& tag = e.AddComponent<TagComponent>();
+        tag.s_Tag = name.empty() ? "Entity" : name;
+        
+        m_EntityMap[id] = e;
+        
+        return e;
+    }
+    
+    void Scene::DestroyEntity(Entity e)
+    {
+        m_EntityMap.erase(e.GetUUID());
+        m_Registry.destroy(e);
+    }
+    
+    Entity Scene::FindEntityByName(std::string_view name)
+    {
+        auto view = m_Registry.view<TagComponent>();
+        for (auto entity : view)
+        {
+            const TagComponent& tc = view.get<TagComponent>(entity);
+            if (tc.s_Tag == name)
+            {
+                return Entity{ entity, this };
+            }
+        }
+        return {};
+    }
+    
+    Entity Scene::FindEntityByUUID(UUID uuid)
+    {
+        if (m_EntityMap.find(uuid) != m_EntityMap.end())
+        {
+            return { m_EntityMap.at(uuid), this };
+        }
+        return {};
+    }
+
     int Scene::Init()
     {
         return -1;
     }
 
-    int Scene::PreRender(float frame)
+    int Scene::PreRender()
     {
         return -1;
     }
@@ -42,11 +90,6 @@ namespace Hayase
         return -1;
     }
 
-    void Scene::ProcessInput(GLFWwindow* w, float dt)
-    {
-        return;
-    }
-
     void Scene::OnViewportResize(uint32_t w, uint32_t h)
     {
         return;
@@ -57,9 +100,9 @@ namespace Hayase
         return;
     }
 
-    int Scene::Display(float frameTime)
+    int Scene::Display()
     {
-        PreRender(frameTime);
+        PreRender();
         Render();
         PostRender();
 
