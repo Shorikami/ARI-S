@@ -90,9 +90,9 @@ namespace Hayase
 				if (ImGui::MenuItem("Create Entity"))
 				{
 					m_Context->CreateEntity("Empty Entity");
-
-					ImGui::EndPopup();
 				}
+
+				ImGui::EndPopup();
 			}
 		}
 		ImGui::End();
