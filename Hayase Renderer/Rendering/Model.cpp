@@ -1,70 +1,117 @@
 #include <hyspch.h>
 #include "Model.h"
 
+#include "Texture.h"
+
+#include "Hasher.hpp"
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <gtx/hash.hpp>
+
+#include <tiny_obj_loader.h>
+
+namespace std
+{
+    template<> struct hash<Hayase::Vertex>
+    {
+        std::size_t operator()(Hayase::Vertex const& v) const noexcept
+        {
+            std::size_t seed = 0;
+            Hayase::HashCombine(seed, v.s_Position, v.s_Normal, v.s_UV, v.s_Tangent);
+            return seed;
+        }
+    };
+}
+
 namespace Hayase
 {
-	Model::Model()
-		: m_Mesh(nullptr)
-		, m_InvertAxis(false)
+	Model::Model(std::string path)
 	{
-	}
+		std::string fileType = std::string();
 
-	Model::Model(std::string path, glm::vec3 translation, glm::vec3 scale, float angle,
-		RotationAxis axis, std::vector<std::pair<Texture*, std::string>> textures)
-		: m_Translation(translation)
-		, m_Scale(scale)
-		, m_Angle(angle)
-		, m_Axis(axis)
-		, m_InvertAxis(false)
-	{
-		m_Mesh = new Mesh(path);
-		m_Mesh->GenerateBuffers();
-
-		m_Textures = textures;
-	}
-
-	Model::~Model()
-	{
-		if (m_Mesh)
+		size_t loc = path.find_last_of(".");
+		if (loc != std::string::npos)
 		{
-			m_Mesh->Cleanup();
-			delete m_Mesh;
+			fileType = path.substr(loc + 1);
+		}
+		else
+		{
+			// warning
 		}
 
-		for (std::pair<Texture*, std::string> t : m_Textures)
+		// probably a better way of doing this
+		if (fileType.compare("obj") == 0)
 		{
-			t.first->Cleanup();
-			//delete t.first;
+			ModelBuilder::LoadOBJ(path, *this);
+		}
+		else if (fileType.compare("gltf") == 0)
+		{
+			ModelBuilder::LoadGLTF(path, *this);
 		}
 	}
 
-	void Model::Update()
+	void ModelBuilder::LoadOBJ(std::string path, Model& model)
 	{
-		glm::vec3 angleOfRot = glm::vec3(0.0f);
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string warn, err;
 
-		switch (m_Axis)
-		{
-		case RotationAxis::xAxis:
-			angleOfRot = glm::vec3(1.0f, 0.0f, 0.0f);
-			break;
-		case RotationAxis::yAxis:
-			angleOfRot = glm::vec3(0.0f, 1.0f, 0.0f);
-			break;
-		case RotationAxis::zAxis:
-			angleOfRot = glm::vec3(0.0f, 0.0f, 1.0f);
-			break;
-		}
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
+        {
+            throw std::runtime_error(warn + err);
+        }
 
-		if (m_InvertAxis)
-		{
-			angleOfRot *= -1.0f;
-		}
+        std::unordered_map<Vertex, uint32_t> uniqueVerts{};
 
-		m_Mesh->Update(m_Angle, m_Scale, m_Translation, angleOfRot);
+        for (const auto& shape : shapes)
+        {
+            for (const auto& index : shape.mesh.indices)
+            {
+                Vertex v{};
+
+                if (index.vertex_index >= 0)
+                {
+                    v.s_Position =
+                    {
+                        attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 0],
+                        attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 1],
+                        attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 2],
+                    };
+                }
+
+                if (index.normal_index >= 0)
+                {
+                    v.s_Normal =
+                    {
+                        attrib.normals[3 * static_cast<size_t>(index.normal_index) + 0],
+                        attrib.normals[3 * static_cast<size_t>(index.normal_index) + 1],
+                        attrib.normals[3 * static_cast<size_t>(index.normal_index) + 2],
+                    };
+                }
+
+                if (index.texcoord_index >= 0)
+                {
+                    v.s_UV =
+                    {
+                        attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 0],
+                        attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 1],
+                    };
+                }
+
+                if (uniqueVerts.count(v) == 0)
+                {
+                    uniqueVerts[v] = static_cast<uint32_t>(model.m_Vertices.size());
+                    model.m_Vertices.push_back(v);
+                }
+
+                model.m_Indices.push_back(uniqueVerts[v]);
+            }
+        }
 	}
-	
-	void Model::Draw(GLuint shaderID, glm::mat4 view, glm::mat4 proj)
+
+	void ModelBuilder::LoadGLTF(std::string path, Model& model)
 	{
-		m_Mesh->Draw(shaderID, view, proj, m_Textures);
+
 	}
 }

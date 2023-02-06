@@ -72,7 +72,23 @@ namespace Hayase
 
     int Scene::Init()
     {
-        return -1;
+        // Scene FBO (for the editor)
+        m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_SceneFBO->Bind();
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+        m_SceneFBO->DrawBuffers();
+        m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cout << "Uh oh! Scene FBO is incomplete!" << std::endl;
+            m_SceneFBO->Unbind();
+            return -1;
+        }
+
+        m_SceneFBO->Unbind();
+
+        return 0;
     }
 
     int Scene::PreRender()

@@ -7,9 +7,6 @@
 #include "Layer.h"
 #include "Memory/UniformMemory.hpp"
 
-#include "Model.h"
-#include "OBJReader.h"
-
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -61,9 +58,8 @@ namespace Hayase
         UniformBuffer<Lights>* lightData;
         UniformBuffer<LocalLight>* localLightData;
 
-        std::vector<Model*> models;
-        Mesh *cube, *sphere, *skybox;
-        OBJReader reader;
+        //std::vector<Model*> models;
+        //Mesh *cube, *sphere, *skybox;
 
         Shader *geometryPass, *lightingPass, *localLight, *flatShader;
         Shader *skyboxShader;

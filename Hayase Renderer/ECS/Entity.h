@@ -1,4 +1,5 @@
 #include "Transform.hpp"
+#include "Mesh.hpp"
 #include "UUID.hpp"
 
 #include "entt.hpp"

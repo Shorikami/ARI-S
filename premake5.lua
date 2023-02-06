@@ -20,10 +20,12 @@ IncludeDir["entt"] = "Libraries/entt"
 IncludeDir["stb"] = "Libraries/stb"
 IncludeDir["tinygltf"] = "Libraries/tinygltf"
 IncludeDir["tinyobj"] = "Libraries/tinyobjloader"
+IncludeDir["YAML_CPP"] = "Libraries/yaml-cpp/include"
 
 include "Libraries/GLFW"
 include "Libraries/Glad"
 include "Libraries/imgui"
+include "Libraries/yaml-cpp"
 
 project "Hayase Renderer"
 	location "Hayase Renderer"
@@ -93,7 +95,8 @@ project "Hayase Renderer"
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.tinygltf}",
-		"%{IncludeDir.tinyobj}"
+		"%{IncludeDir.tinyobj}",
+		"%{IncludeDir.YAML_CPP}"
 	}
 	
 	links
@@ -101,6 +104,7 @@ project "Hayase Renderer"
 		"GLFW",
 		"Glad",
 		"ImGui",
+		"YAML-CPP",
 		"opengl32.lib"
 	}
 	

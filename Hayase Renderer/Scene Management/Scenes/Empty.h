@@ -6,6 +6,8 @@
 
 namespace Hayase
 {
+    class Entity;
+
 	class EmptyScene : public Scene, public Layer
 	{
     public:
@@ -23,11 +25,10 @@ namespace Hayase
         int PostRender() override;
 
     public:
-        virtual void OnAttach() override;
-        virtual void OnDetach() override;
-        virtual void Update(DeltaTime dt) override;
-        virtual void OnEvent(Event& e) override;
-
+        void OnAttach() override;
+        void OnDetach() override;
+        void Update(DeltaTime dt) override;
+        void OnEvent(Event& e) override;
 	};
 }
 

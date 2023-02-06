@@ -1,6 +1,7 @@
 #include <hyspch.h>
 
 #include "Empty.h"
+#include "Entity.h"
 
 namespace Hayase
 {
@@ -8,6 +9,7 @@ namespace Hayase
         : Scene(windowWidth, windowHeight)
         , Layer("EmptyScene")
     {
+        Init();
     }
 
     EmptyScene:: ~EmptyScene()
@@ -17,7 +19,10 @@ namespace Hayase
 
     int EmptyScene::Init()
     {
-        return 0;
+        Entity e = CreateEntity("test");
+        e.AddComponent<MeshComponent>(std::string("Materials/Models/BA/Shiroko/Mesh/Shiroko_Original_Weapon.obj"));
+
+        return Scene::Init();
     }
 
     void EmptyScene::CleanUp()
@@ -32,7 +37,8 @@ namespace Hayase
     int EmptyScene::Render()
     {
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_SceneFBO->Activate();
+        m_SceneFBO->Unbind();
         return 0;
     }
 
@@ -53,7 +59,10 @@ namespace Hayase
 
     void EmptyScene::Update(DeltaTime dt)
     {
-        std::cout << GetName() << " updated" << std::endl;
+        m_DT = dt.GetSeconds();
+
+        // ... then render
+        Display();
     }
 
     void EmptyScene::OnEvent(Event& e) 

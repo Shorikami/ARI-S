@@ -56,5 +56,6 @@ namespace Hayase
 
         friend class Entity;
         friend class HierarchyPanel;
+        friend class SceneSerializer;
     };
 }
