@@ -1,6 +1,6 @@
 #include <hyspch.h>
 
-#include "SceneFramework.h"
+#include "Scene.h"
 #include "Entity.h"
 
 namespace Hayase
@@ -9,13 +9,14 @@ namespace Hayase
         : _windowWidth(100)
         , _windowHeight(100)
     {
-
+        Init();
     }
 
     Scene::Scene(int windowWidth, int windowHeight)
         : _windowWidth(windowWidth)
         , _windowHeight(windowHeight)
     {
+        Init();
     }
 
     Scene::~Scene()
@@ -93,17 +94,21 @@ namespace Hayase
 
     int Scene::PreRender()
     {
-        return -1;
+        return 0;
     }
 
     int Scene::Render()
     {
-        return -1;
+        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
+        m_SceneFBO->Activate();
+        m_SceneFBO->Unbind();
+
+        return 0;
     }
 
     int Scene::PostRender()
     {
-        return -1;
+        return 0;
     }
 
     void Scene::OnViewportResize(uint32_t w, uint32_t h)
@@ -123,5 +128,22 @@ namespace Hayase
         PostRender();
 
         return -1;
+    }
+
+    void Scene::Update(DeltaTime dt)
+    {
+        m_DT = dt.GetSeconds();
+
+        Display();
+    }
+
+    void Scene::OnImGuiRender()
+    {
+    
+    }
+
+    void Scene::OnEvent(Event& e)
+    {
+        std::cout << e.ToString() << std::endl;
     }
 }

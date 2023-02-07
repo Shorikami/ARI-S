@@ -1,7 +1,7 @@
 #ifndef HIERARCHYPANEL_H
 #define HIERARCHYPANEL_H
 
-#include "SceneFramework.h"
+#include "Scene.h"
 #include "Entity.h"
 
 namespace Hayase

@@ -7,10 +7,11 @@
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
 
-#include "Deferred.h"
-#include "Empty.h"
-
 #include "Application.h"
+
+#include "SceneSerializer.h"
+
+#include "FileDialogs.h"
 
 namespace Hayase
 {
@@ -35,7 +36,7 @@ namespace Hayase
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;   // Enable multi-viewport
-		io.IniFilename = "Materials/editor.ini";
+		io.IniFilename = "Content/editor.ini";
 
 		ImGui::StyleColorsDark();
 
@@ -50,7 +51,7 @@ namespace Hayase
 		int w = app.GetWindow().GetWidth();
 		int h = app.GetWindow().GetHeight();
 
-		m_ActiveScene = std::make_shared<EmptyScene>(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+		m_ActiveScene = std::make_shared<Scene>(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 		m_HierarchyPanel.SetContext(m_ActiveScene);
 	}
 
@@ -61,7 +62,7 @@ namespace Hayase
 		ImGui::DestroyContext();
 	}
 
-	void Editor::Update(DeltaTime dt)
+	void Editor::OnUpdate(DeltaTime dt)
 	{
 		m_ActiveScene->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 
@@ -79,7 +80,7 @@ namespace Hayase
 			m_ActiveScene->GetCamera().Update(dt);
 		}
 
-		static_cast<EmptyScene*>(m_ActiveScene.get())->Update(dt);
+		m_ActiveScene.get()->Update(dt);
 	}
 
 	void Editor::Begin()
@@ -150,12 +151,27 @@ namespace Hayase
 
 	void Editor::OnImGuiRender()
 	{
-		static_cast<EmptyScene*>(m_ActiveScene.get())->OnImGuiRender();
+		m_ActiveScene.get()->OnImGuiRender();
 
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("New","Ctrl+N"))
+				{
+					NewScene();
+				}
+
+				if (ImGui::MenuItem("Open...", "Ctrl+O"))
+				{
+					OpenScene();
+				}
+
+				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
+				{
+					SaveSceneAs();
+				}
+
 				if (ImGui::MenuItem("Exit"))
 				{
 					Application::Get().Close();
@@ -201,7 +217,41 @@ namespace Hayase
 				m_ActiveScene->GetCamera().OnEvent(e);
 			}
 
-			static_cast<EmptyScene*>(m_ActiveScene.get())->OnEvent(e);
+			m_ActiveScene.get()->OnEvent(e);
+		}
+	}
+
+	void Editor::NewScene()
+	{
+		m_ActiveScene = std::make_shared<Scene>();
+		//m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_HierarchyPanel.SetContext(m_ActiveScene);
+	}
+
+	void Editor::OpenScene()
+	{
+		std::string path = FileDialogs::OpenFile("Aris Scene (*.aris)\0*.aris\0");
+		if (!path.empty())
+		{
+			std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
+			//m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			
+			SceneSerializer s(newScene);
+			if (s.Deserialize(path))
+			{
+				m_ActiveScene = newScene;
+				m_HierarchyPanel.SetContext(m_ActiveScene);
+			}
+		}
+	}
+
+	void Editor::SaveSceneAs()
+	{
+		std::string path = FileDialogs::SaveFile("Aris Scene (*.aris)\0*.aris\0");
+		if (!path.empty())
+		{
+			SceneSerializer s(m_ActiveScene);
+			s.Serialize(path);
 		}
 	}
 

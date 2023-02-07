@@ -1,6 +1,7 @@
 #include <hyspch.h>
 
 #include "HierarchyPanel.h"
+#include "ModelBuilder.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -11,6 +12,7 @@
 
 namespace Hayase
 {
+#pragma region staticFuncs
 	template<typename T, typename Function>
 	static void DrawComponent(const std::string& name, Entity e, Function func)
 	{
@@ -56,6 +58,73 @@ namespace Hayase
 				
 		}
 	}
+
+	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		auto boldFont = io.Fonts->Fonts[0];
+
+		ImGui::PushID(label.c_str());
+
+		ImGui::Columns(2);
+		ImGui::SetColumnWidth(0, columnWidth);
+		ImGui::Text(label.c_str());
+		ImGui::NextColumn();
+
+		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+		float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+		ImGui::PushFont(boldFont);
+		if (ImGui::Button("X", buttonSize))
+			values.x = resetValue;
+		ImGui::PopFont();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine();
+		ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+		ImGui::PushFont(boldFont);
+		if (ImGui::Button("Y", buttonSize))
+			values.y = resetValue;
+		ImGui::PopFont();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine();
+		ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+		ImGui::PopItemWidth();
+		ImGui::SameLine();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+		ImGui::PushFont(boldFont);
+		if (ImGui::Button("Z", buttonSize))
+			values.z = resetValue;
+		ImGui::PopFont();
+		ImGui::PopStyleColor(3);
+
+		ImGui::SameLine();
+		ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+		ImGui::PopItemWidth();
+
+		ImGui::PopStyleVar();
+
+		ImGui::Columns(1);
+
+		ImGui::PopID();
+	}
+#pragma endregion staticFuncs
 
 	HierarchyPanel::HierarchyPanel(const std::shared_ptr<Scene>& scene)
 	{
@@ -116,8 +185,11 @@ namespace Hayase
 	{
 		if (!m_SelectionContext.HasComponent<T>())
 		{
-			m_SelectionContext.AddComponent<T>();
-			ImGui::CloseCurrentPopup();
+			if (ImGui::MenuItem(name.c_str()))
+			{
+				m_SelectionContext.AddComponent<T>();
+				ImGui::CloseCurrentPopup();
+			}
 		}
 	}
 
@@ -188,9 +260,44 @@ namespace Hayase
 
 		if (ImGui::BeginPopup("AddComp"))
 		{
+			DisplayAddComponentEntry<MeshComponent>("Model");
 			ImGui::EndPopup();
 		}
 
 		ImGui::PopItemWidth();
+
+		DrawComponent<TransformComponent>("Transform", e, [](auto& comp)
+		{
+			DrawVec3Control("Translation", comp.m_Translation);
+			glm::vec3 rot = glm::degrees(comp.m_Rotation);
+			DrawVec3Control("Rotation", rot);
+			comp.m_Rotation = glm::radians(rot);
+			DrawVec3Control("Scale", comp.m_Scale, 1.0f);
+		});
+
+		DrawComponent<MeshComponent>("Model", e, [](auto& comp)
+		{
+			static Model* currItem = &comp.m_Model;
+			if (ImGui::BeginCombo("##custom combo", currItem->GetName().c_str()))
+			{
+				std::unordered_map<std::string, Model*> modelTable = ModelBuilder::Get().GetModelTable();
+				for (std::unordered_map<std::string, Model*>::iterator it =
+					modelTable.begin(); it != modelTable.end(); ++it)
+				{
+					Model* item = it->second;
+					bool isSelected = (currItem == item);
+					if (ImGui::Selectable(item->GetName().c_str(), isSelected))
+					{
+						currItem = item;
+						comp.m_Model = *currItem;
+					}
+					if (isSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+		});
 	}
 }

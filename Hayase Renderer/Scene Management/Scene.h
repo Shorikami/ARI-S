@@ -8,6 +8,7 @@
 #include "Timer.h"
 #include "Camera.h"
 #include "UUID.hpp"
+#include "Layer.h"
 
 #include "entt.hpp"
 
@@ -15,7 +16,7 @@ namespace Hayase
 {
     class Entity;
 
-    class Scene
+    class Scene : public Layer
     {
 
     public:
@@ -32,6 +33,9 @@ namespace Hayase
 
         virtual int Init();
         virtual int Display();
+
+        virtual void Update(DeltaTime dt);
+
         virtual void CleanUp();
 
         virtual int PreRender();
@@ -42,6 +46,9 @@ namespace Hayase
 
         Framebuffer* GetSceneFBO() { return m_SceneFBO; }
         Camera& GetCamera() { return m_Camera; }
+    public:
+        void OnImGuiRender() override;
+        void OnEvent(Event& e) override;
 
     protected:
         int _windowHeight, _windowWidth;

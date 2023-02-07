@@ -18,7 +18,7 @@ project "YAML-CPP"
 	filter "system:windows"
         cppdialect "C++17"
         systemversion "latest"
-        staticruntime "off"
+        staticruntime "on"
        
     filter { "system:windows", "configurations:Release" }
         runtime "Release"

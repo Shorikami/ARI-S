@@ -1,7 +1,5 @@
 #include <hyspch.h>
-#include "Model.h"
-
-#include "Texture.h"
+#include "ModelBuilder.h"
 
 #include "Hasher.hpp"
 
@@ -25,33 +23,67 @@ namespace std
 
 namespace Hayase
 {
-	Model::Model(std::string path)
-	{
-		std::string fileType = std::string();
 
-		size_t loc = path.find_last_of(".");
-		if (loc != std::string::npos)
-		{
-			fileType = path.substr(loc + 1);
-		}
-		else
-		{
-			// warning
-		}
+    ModelBuilder* ModelBuilder::m_Instance = nullptr;
 
-		// probably a better way of doing this
-		if (fileType.compare("obj") == 0)
-		{
-			ModelBuilder::LoadOBJ(path, *this);
-		}
-		else if (fileType.compare("gltf") == 0)
-		{
-			ModelBuilder::LoadGLTF(path, *this);
-		}
-	}
+    ModelBuilder::ModelBuilder()
+    {
+        m_Instance = this;
+        BuildTable();
+    }
 
-	void ModelBuilder::LoadOBJ(std::string path, Model& model)
-	{
+    ModelBuilder::~ModelBuilder()
+    {
+        DestroyTable();
+    }
+
+    void ModelBuilder::BuildTable()
+    {
+        std::vector<std::string> lookUpExts =
+        {
+            "obj",
+            "gltf"
+        };
+
+        // This is O(n^2); optimize?
+        // Also this takes in a hard-coded content path. Pls change
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("Content/Assets/Models"))
+        {
+            std::string filePath = dirEntry.path().string();
+
+            for (std::string s : lookUpExts)
+            {
+                if (filePath.find(s) != std::string::npos)
+                {
+                    //std::cout << filePath << std::endl;
+                    std::string name = std::string();
+                    size_t nameLoc = filePath.find_last_of("\\");
+                    size_t typeLoc = filePath.find_last_of(".");
+                    
+                    if (nameLoc != std::string::npos && typeLoc != std::string::npos)
+                    {
+                         name = filePath.substr(nameLoc + 1, typeLoc);
+                         m_ModelTable[name] = new Model(filePath);
+                         m_ModelTable[name]->m_Name = name;
+                         //std::cout << name << std::endl;
+                    }
+                    else
+                    {
+                        // warning
+                    }
+                    
+                }
+            }
+        }
+    }
+
+    void ModelBuilder::DestroyTable()
+    {
+        m_ModelTable.clear();
+    }
+
+    void ModelBuilder::LoadOBJ(std::string path, Model& model)
+    {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
@@ -101,17 +133,21 @@ namespace Hayase
 
                 if (uniqueVerts.count(v) == 0)
                 {
-                    uniqueVerts[v] = static_cast<uint32_t>(model.m_Vertices.size());
-                    model.m_Vertices.push_back(v);
+                    uniqueVerts[v] = static_cast<uint32_t>(model.m_VertexData.size());
+                    model.m_VertexData.push_back(v);
+
+                    model.m_Vertices.push_back(v.s_Position);
+                    model.m_Normals.push_back(v.s_Normal);
+                    model.m_UVs.push_back(v.s_UV);
                 }
 
                 model.m_Indices.push_back(uniqueVerts[v]);
             }
         }
-	}
+    }
 
-	void ModelBuilder::LoadGLTF(std::string path, Model& model)
-	{
+    void ModelBuilder::LoadGLTF(std::string path, Model& model)
+    {
 
-	}
+    }
 }

@@ -3,6 +3,7 @@
 #include "Application.h"
 
 #include "Shader.h"
+#include "ModelBuilder.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -16,7 +17,10 @@ std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
 int main()
 {
 	srand((unsigned)time(NULL));
+
+	// Application MUST be built first before the model table
 	Hayase::Application app{ 1600, 900 };
+	Hayase::ModelBuilder mb;
 	
 	std::cout << "Hello, Hello World!" << std::endl;
 	

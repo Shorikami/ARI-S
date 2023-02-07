@@ -30,31 +30,31 @@ namespace Hayase
 	{
 	public:
 		Model() = default;
+		Model(const Model& other);
 		Model(std::string path);
 
-		void BuildMeshArray();
+		void BuildArrays();
+		void DestroyArrays();
 
-		VertexArray GetMeshArray() const { return m_MeshArray; }
+		std::string GetName() const { return m_Name; }
+
+		VertexArray GetVAO() const { return m_VertexArray; }
+
 	private:
 
-		std::vector<Vertex> m_Vertices;
+		std::string m_Name;
+
+		std::vector<Vertex> m_VertexData;
+		std::vector<glm::vec3> m_Vertices;
+		std::vector<glm::vec3> m_Normals;
+		std::vector<glm::vec2> m_UVs;
 		std::vector<unsigned int> m_Indices;
 
-		VertexArray m_MeshArray;
+		VertexArray m_VertexArray;
+		//VertexArray m_NormalArray;
+		//VertexArray m_FaceArray;
 
 		friend class ModelBuilder;
-	};
-
-	class ModelBuilder
-	{
-	public:
-		static void LoadOBJ(std::string path, Model& model);
-		static void LoadGLTF(std::string path, Model& model);
-
-		std::unordered_map<std::string, Model> GetModelTable() { return m_ModelTable; }
-
-	private:
-		static std::unordered_map<std::string, Model> m_ModelTable;
 	};
 }
 

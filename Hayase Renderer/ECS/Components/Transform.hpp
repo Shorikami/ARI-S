@@ -45,6 +45,9 @@ namespace Hayase
 		glm::mat4 m_TransformMatrix = glm::mat4(1.0f);
 
 		bool m_IsDirty = true;
+
+		friend class SceneSerializer;
+		friend class HierarchyPanel;
 	};
 }
 

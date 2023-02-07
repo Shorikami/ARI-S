@@ -1,7 +1,7 @@
 #ifndef SCENESERIALIZER_H
 #define SCENESERIALIZER_H
 
-#include "SceneFramework.h"
+#include "Scene.h"
 
 namespace Hayase
 {

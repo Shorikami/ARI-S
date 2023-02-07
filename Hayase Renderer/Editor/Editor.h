@@ -3,7 +3,7 @@
 
 #include "Layer.h"
 #include "FrameMemory.hpp"
-#include "SceneFramework.h"
+#include "Scene.h"
 
 #include "HierarchyPanel.h"
 
@@ -19,7 +19,7 @@ namespace Hayase
 
 		void OnAttach() override;
 		void OnDetach() override;
-		void Update(DeltaTime dt) override;
+		void OnUpdate(DeltaTime dt) override;
 		void OnImGuiRender() override;
 		void OnEvent(Event& e) override;
 
@@ -30,6 +30,9 @@ namespace Hayase
 
 	private:
 		void CustomizeColors();
+		void NewScene();
+		void OpenScene();
+		void SaveSceneAs();
 
 	private:
 		Framebuffer* m_Framebuffer;

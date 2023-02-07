@@ -14,7 +14,7 @@ namespace Hayase
 
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
-		virtual void Update(DeltaTime dt) {}
+		virtual void OnUpdate(DeltaTime dt) {}
 		virtual void OnImGuiRender() {}
 		virtual void OnEvent(Event& e) {}
 

@@ -1,7 +1,7 @@
 #include <hyspch.h>
 
 #include "Entity.h"
-#include "SceneFramework.h"
+#include "Scene.h"
 
 namespace Hayase
 {

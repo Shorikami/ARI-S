@@ -15,14 +15,34 @@ namespace Hayase
 	{
 	public:
 		MeshComponent() = default;
-		MeshComponent(std::string path)
+		MeshComponent(const Model& model)
 		{
+			m_Model = model;
+			m_Model.BuildArrays();
 		}
+
+		void operator=(const Model& model)
+		{
+			m_Model = model;
+
+			if (m_Model.GetVAO().id != 0)
+			{
+				m_Model.DestroyArrays();
+			}
+
+			m_Model.BuildArrays();
+		}
+
+		std::string GetName() const { return m_Model.GetName(); }
+
 	private:
-		Model m;
+		Model m_Model;
 
 		std::vector<Texture> m_Textures;
 		glm::vec4 m_Ambient, m_Albedo, m_Specular;
+
+		friend class SceneSerializer;
+		friend class HierarchyPanel;
 	};
 }
 

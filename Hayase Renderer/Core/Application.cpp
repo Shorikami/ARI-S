@@ -3,9 +3,6 @@
 #include "Application.h"
 #include "AppEvent.h"
 
-#include "Empty.h"
-#include "Deferred.h"
-
 #include "Tools.h"
 
 #include "../Editor/Editor.h"
@@ -87,7 +84,7 @@ namespace Hayase
 			
 			for (Layer* l : m_LayerStack)
 			{
-				l->Update(dt);
+				l->OnUpdate(dt);
 			}
 
 			m_Editor->Begin();
