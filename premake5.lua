@@ -1,6 +1,6 @@
-workspace "Hayase Renderer"
+workspace "ARI-S"
 	architecture "x64"
-	startproject "Hayase Renderer"
+	startproject "ARI-S"
 	
 	configurations
 	{
@@ -27,8 +27,8 @@ include "Libraries/Glad"
 include "Libraries/imgui"
 include "Libraries/yaml-cpp"
 
-project "Hayase Renderer"
-	location "Hayase Renderer"
+project "ARI-S"
+	location "ARI-S"
 	kind "ConsoleApp"
 	language "C++"
 	staticruntime "off"
@@ -36,8 +36,8 @@ project "Hayase Renderer"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 	
-	pchheader "hyspch.h"
-	pchsource "Hayase Renderer/Core/hyspch.cpp"
+	pchheader "arpch.h"
+	pchsource "ARI-S/Core/arpch.cpp"
 	
 	files
 	{
