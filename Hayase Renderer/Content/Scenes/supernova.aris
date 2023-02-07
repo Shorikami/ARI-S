@@ -1,0 +1,24 @@
+Scene: Test
+Entities:
+  - Entity: 7997000258205019906
+    TagComponent:
+      Tag: Hasumi
+    TransformComponent:
+      Translation: [3, 1.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [3, 3, 3]
+    MeshComponent:
+      Name: Hasumi_Original_Weapon.obj
+      Vertex Path: DiffuseShader.vert
+      Fragment Path: DiffuseShader.frag
+  - Entity: 5312421067855493974
+    TagComponent:
+      Tag: "Supernova: Sword of Light"
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 1.57079637, 0]
+      Scale: [3, 3, 3]
+    MeshComponent:
+      Name: Aris_Original_Weapon.obj
+      Vertex Path: DiffuseShader.vert
+      Fragment Path: DiffuseShader.frag

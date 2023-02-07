@@ -33,12 +33,26 @@ namespace Hayase
 		Model(const Model& other);
 		Model(std::string path);
 
+		void operator=(const Model& other);
+
 		void BuildArrays();
 		void DestroyArrays();
 
 		std::string GetName() const { return m_Name; }
 
 		VertexArray GetVAO() const { return m_VertexArray; }
+
+		size_t GetVertexCount() { return m_Vertices.size(); }
+		size_t GetIndexCount() { return m_Indices.size(); }
+
+		size_t GetNormalCount() { return m_Normals.size(); }
+		size_t GetTexCoordCount() { return m_UVs.size(); }
+
+		std::vector<glm::vec3> GetVertices() const { return m_Vertices; }
+		std::vector<unsigned int> GetIndices() const { return m_Indices; }
+
+		std::vector<glm::vec3> GetNormals() const { return m_Normals; }
+		std::vector<glm::vec2> GetTexCoords() const { return m_UVs; }
 
 	private:
 

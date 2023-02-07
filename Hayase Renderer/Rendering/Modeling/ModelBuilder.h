@@ -22,6 +22,9 @@ namespace Hayase
 		std::unordered_map<std::string, Model*> GetModelTable() { return m_ModelTable; }
 
 	private:
+		void BuildNormals(Model& m);
+		void BuildTexCoords(Model& m);
+
 		std::unordered_map<std::string, Model*> m_ModelTable;
 		static ModelBuilder* m_Instance;
 	};

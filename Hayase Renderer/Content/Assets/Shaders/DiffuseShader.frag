@@ -1,8 +1,5 @@
 #version 430 core
 
-uniform vec3 lightColor;
-uniform vec3 lightPos;
-
 in VS_OUT
 {
     vec3 fragDiffuse;
@@ -15,6 +12,9 @@ out vec4 fragColor;
 
 void main()
 {
+	vec3 lightColor = vec3(0.5f);
+	vec3 lightPos = vec3(1.0f);
+
     // Ambient
 	float ambientStrength = 0.9f;
 	vec4 ambient = vec4(ambientStrength * lightColor, 1.0f);

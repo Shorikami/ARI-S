@@ -11,7 +11,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h> 
 
-std::string Hayase::Shader::defaultDirectory = "Materials/Shaders/";
+std::string Hayase::Shader::defaultDirectory = "Content/Assets/Shaders/";
 
 
 int main()

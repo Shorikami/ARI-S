@@ -16,6 +16,23 @@ namespace Hayase
     {
     }
 
+    void Model::operator=(const Model& other)
+    {
+        m_Name = other.m_Name;
+        m_VertexData = other.m_VertexData;
+        m_Vertices = other.m_Vertices;
+        m_Normals = other.m_Normals;
+        m_UVs = other.m_UVs;
+        m_Indices = other.m_Indices;
+
+        if (m_VertexArray.id != 0)
+        {
+            DestroyArrays();
+        }
+
+        BuildArrays();
+    }
+
 	Model::Model(std::string path)
         : m_Name(std::string())
 	{
@@ -85,51 +102,6 @@ namespace Hayase
         m_VertexArray[uv].Unbind();
 
         m_VertexArray.Clear();
-
-        //if (m_Normals.size() > 0)
-        //{
-        //    nArray.Generate();
-        //    nArray.Bind();
-        //
-        //    nArray[idx] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        //    nArray[idx].Generate();
-        //    nArray[idx].Bind();
-        //    nArray[idx].SetData<GLuint>(getDisplayIndexBufferSize(DisplayType::VERTEX),
-        //        getDisplayIndexBuffer(DisplayType::VERTEX), GL_STATIC_DRAW);
-        //
-        //    nArray[vert] = VertexBuffer(GL_ARRAY_BUFFER);
-        //    nArray[vert].Generate();
-        //    nArray[vert].Bind();
-        //    nArray[vert].SetData<glm::vec3>(getDisplayCount(DisplayType::VERTEX),
-        //        getDisplayNormalsVec3(DisplayType::VERTEX), GL_STATIC_DRAW);
-        //    nArray[vert].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
-        //
-        //    nArray[vert].Unbind();
-        //
-        //    nArray.Clear();
-        //}
-
-        //fArray.Generate();
-        //fArray.Bind();
-        //
-        //fArray[idx] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        //fArray[idx].Generate();
-        //fArray[idx].Bind();
-        //fArray[idx].SetData<GLuint>(getDisplayIndexBufferSize(DisplayType::FACE),
-        //    getDisplayIndexBuffer(DisplayType::FACE), GL_STATIC_DRAW);
-        //
-        //fArray[vert] = VertexBuffer(GL_ARRAY_BUFFER);
-        //fArray[vert].Generate();
-        //fArray[vert].Bind();
-        //fArray[vert].SetData<glm::vec3>(getDisplayCount(DisplayType::FACE),
-        //    getDisplayNormalsVec3(DisplayType::FACE), GL_STATIC_DRAW);
-        //fArray[vert].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
-        //
-        //fArray[vert].Unbind();
-
-        //nArray.Clear();
-        //
-        //nArray.Clear();
 	}
 
     void Model::DestroyArrays()

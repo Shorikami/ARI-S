@@ -101,6 +101,8 @@ namespace Hayase
             for (const auto& index : shape.mesh.indices)
             {
                 Vertex v{};
+                bool vertexHasNorm = false;
+                bool vertexHasUV = false;
 
                 if (index.vertex_index >= 0)
                 {
@@ -114,6 +116,7 @@ namespace Hayase
 
                 if (index.normal_index >= 0)
                 {
+                    vertexHasNorm = true;
                     v.s_Normal =
                     {
                         attrib.normals[3 * static_cast<size_t>(index.normal_index) + 0],
@@ -124,6 +127,7 @@ namespace Hayase
 
                 if (index.texcoord_index >= 0)
                 {
+                    vertexHasUV = true;
                     v.s_UV =
                     {
                         attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 0],
@@ -137,17 +141,114 @@ namespace Hayase
                     model.m_VertexData.push_back(v);
 
                     model.m_Vertices.push_back(v.s_Position);
-                    model.m_Normals.push_back(v.s_Normal);
-                    model.m_UVs.push_back(v.s_UV);
+                    if (vertexHasNorm)
+                    {
+                        model.m_Normals.push_back(v.s_Normal);
+                    }
+                    if (vertexHasUV)
+                    {
+                        model.m_UVs.push_back(v.s_UV);
+                    }
                 }
 
                 model.m_Indices.push_back(uniqueVerts[v]);
             }
+        }
+
+        if (model.m_Normals.size() <= 0)
+        {
+            BuildNormals(model);
+        }
+
+        if (model.m_UVs.size() <= 0)
+        {
+            BuildTexCoords(model);
         }
     }
 
     void ModelBuilder::LoadGLTF(std::string path, Model& model)
     {
 
+    }
+
+    void ModelBuilder::BuildNormals(Model& model)
+    {
+        std::vector<glm::vec3> vvv;
+        model.m_Normals.resize(model.m_Vertices.size(), glm::vec3(0.0f));
+
+        // TODO: Manual normal generation
+        uint32_t idx = 0;
+
+        for (; idx < model.m_Indices.size();)
+        {
+            GLuint a = model.m_Indices.at(idx++);
+            GLuint b = model.m_Indices.at(idx++);
+            GLuint c = model.m_Indices.at(idx++);
+
+            glm::vec3 vA = model.m_Vertices[a];
+            glm::vec3 vB = model.m_Vertices[b];
+            glm::vec3 vC = model.m_Vertices[c];
+
+            glm::vec3 E1 = vB - vA;
+            glm::vec3 E2 = vC - vA;
+
+            glm::vec3 N = glm::normalize(glm::cross(E1, E2));
+
+            if (N.x < 0.0001f && N.x > -0.0001f)
+            {
+                N.x = 0.0f;
+            }
+            if (N.y < 0.0001f && N.y > -0.0001f)
+            {
+                N.y = 0.0f;
+            }
+            if (N.z < 0.0001f && N.z > -0.0001f)
+            {
+                N.z = 0.0f;
+            }
+
+            vvv.push_back(N);
+        }
+
+        for (int idx = 0; idx < model.m_Vertices.size(); ++idx)
+        {
+            glm::vec3 vNormal(0.0f);
+
+            int bb = 0;
+            std::vector<glm::vec3> dup;
+
+            for (int kk = 0; bb < model.m_Indices.size(); ++kk)
+            {
+                GLuint a = model.m_Indices.at(bb++);
+                GLuint b = model.m_Indices.at(bb++);
+                GLuint c = model.m_Indices.at(bb++);
+
+                if (a == idx || b == idx || c == idx)
+                {
+                    bool isDup = false;
+
+                    for (int k = 0; k < dup.size(); ++k)
+                    {
+                        if (vvv[kk] == dup[k])
+                        {
+                            isDup = true;
+                        }
+                    }
+
+                    if (!isDup)
+                    {
+                        dup.push_back(vvv[kk]);
+                        vNormal += vvv[kk];
+                    }
+                }
+            }
+
+            model.m_Normals[idx] = glm::normalize(vNormal);
+        }
+    }
+
+    void ModelBuilder::BuildTexCoords(Model& model)
+    {
+    
     }
 }

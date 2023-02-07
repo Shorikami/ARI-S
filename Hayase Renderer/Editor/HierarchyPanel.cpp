@@ -5,6 +5,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 
 #include <gtc/type_ptr.hpp>
 
@@ -21,6 +22,7 @@ namespace Hayase
 
 		if (e.HasComponent<T>())
 		{
+
 			auto& comp = e.GetComponent<T>();
 			ImVec2 contentRegion = ImGui::GetContentRegionAvail();
 
@@ -30,10 +32,18 @@ namespace Hayase
 			bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeFlags, name.c_str());
 			ImGui::PopStyleVar();
 			ImGui::SameLine(contentRegion.x - lineHeight * 0.5f);
-			if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
+			if (std::is_same<T, TransformComponent>::value)
 			{
-				ImGui::OpenPopup("ComponentSettings");
+				ImGui::Dummy(ImVec2{ lineHeight, lineHeight });
 			}
+			else
+			{
+				if (ImGui::Button("+", ImVec2{ lineHeight, lineHeight }))
+				{
+					ImGui::OpenPopup("ComponentSettings");
+				}
+			}
+
 
 			bool removeComponent = false;
 			if (ImGui::BeginPopup("ComponentSettings"))
@@ -57,6 +67,18 @@ namespace Hayase
 			}
 				
 		}
+	}
+
+	static int TextResizeCallback(ImGuiInputTextCallbackData* data)
+	{
+		if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+		{
+			ImVector<char>* my_str = (ImVector<char>*)data->UserData;
+			IM_ASSERT(my_str->begin() == data->Buf);
+			my_str->resize(data->BufSize); // NB: On resizing calls, generally data->BufSize == data->BufTextLen + 1
+			data->Buf = my_str->begin();
+		}
+		return 0;
 	}
 
 	static void DrawVec3Control(const std::string& label, glm::vec3& values, float resetValue = 0.0f, float columnWidth = 100.0f)
@@ -217,12 +239,12 @@ namespace Hayase
 
 		if (opened)
 		{
-			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
-			if (opened)
-			{
-				ImGui::TreePop();
-			}
+			//ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+			//bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
+			//if (opened)
+			//{
+			//	ImGui::TreePop();
+			//}
 			ImGui::TreePop();
 		}
 
@@ -277,7 +299,7 @@ namespace Hayase
 
 		DrawComponent<MeshComponent>("Model", e, [](auto& comp)
 		{
-			static Model* currItem = &comp.m_Model;
+			Model* currItem = &comp.m_Model;
 			if (ImGui::BeginCombo("##custom combo", currItem->GetName().c_str()))
 			{
 				std::unordered_map<std::string, Model*> modelTable = ModelBuilder::Get().GetModelTable();
@@ -297,6 +319,22 @@ namespace Hayase
 					}
 				}
 				ImGui::EndCombo();
+			}
+
+			std::string vBuf = comp.m_VertexSrc, fBuf = comp.m_FragmentSrc;
+			if (ImGui::InputText("Vertex Shader Path", &vBuf, ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				comp.m_VertexSrc = std::string(vBuf);
+			}
+
+			if (ImGui::InputText("Fragment Shader Path", &fBuf, ImGuiInputTextFlags_EnterReturnsTrue))
+			{
+				comp.m_FragmentSrc = std::string(fBuf);
+			}
+
+			if (ImGui::Button("Reload Model Shader"))
+			{
+				comp.ReloadShader();
 			}
 		});
 	}

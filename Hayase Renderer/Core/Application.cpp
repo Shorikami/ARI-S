@@ -29,8 +29,6 @@ namespace Hayase
 
 		m_Editor = new Editor();
 		PushOverlay(m_Editor);
-
-		//PushLayer(new Deferred(props.s_Width, props.s_Height));
 	}
 
 	Application::~Application()

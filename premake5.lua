@@ -60,6 +60,7 @@ project "Hayase Renderer"
 		"%{prj.name}/Scene Management/**.cpp",
 		"%{prj.name}/Utilities/**.h",
 		"%{prj.name}/Utilities/**.cpp",
+		"%{prj.name}/Utilities/**.hpp",
 		
 		"Libraries/glm/**.hpp",
 		"Libraries/glm/**.inl",

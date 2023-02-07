@@ -128,9 +128,8 @@ namespace Hayase
 
 	static void SerializeEntity(YAML::Emitter& out, Entity e)
 	{
-		out << YAML::BeginMap;
-		out << YAML::Key << "Entity";
-		out << YAML::Value << e.GetUUID();
+		out << YAML::BeginMap; // Entity
+		out << YAML::Key << "Entity" << YAML::Value << e.GetUUID();
 
 		if (e.HasComponent<TagComponent>())
 		{
@@ -163,9 +162,13 @@ namespace Hayase
 
 			auto& mc = e.GetComponent<MeshComponent>();
 			out << YAML::Key << "Name" << YAML::Value << mc.GetName();
+			out << YAML::Key << "Vertex Path" << YAML::Value << mc.GetVertexPath();
+			out << YAML::Key << "Fragment Path" << YAML::Value << mc.GetFragmentPath();
 
 			out << YAML::EndMap;
 		}
+
+		out << YAML::EndMap; // Entity
 	}
 	
 	SceneSerializer::SceneSerializer(const std::shared_ptr<Scene>& scene)
@@ -248,7 +251,13 @@ namespace Hayase
 
 					auto& t = deserializedEntity.AddComponent<MeshComponent>();
 					std::string name = mc["Name"].as<std::string>();
+					std::string vSrc = mc["Vertex Path"].as<std::string>();
+					std::string fSrc = mc["Fragment Path"].as<std::string>();
+
 					t.m_Model = *ModelBuilder::Get().GetModelTable()[name];
+					t.m_VertexSrc = vSrc;
+					t.m_FragmentSrc = fSrc;
+					t.ReloadShader();
 				}
 			}
 		}
