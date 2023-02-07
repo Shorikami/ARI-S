@@ -23,3 +23,10 @@ All libraries are included in the `Libraries/` directory.
 - tinygltf
 - tinyobjloader
 - YAML-CPP
+
+# Credits
+- All relevant classes I took at DigiPen Institute of Technology regarding the techniques used in this renderer. Classes include (but are not limited to):
+  - CS300/CS350
+  - CS562
+- [The Cherno's Game Engine series](https://www.youtube.com/playlist?list=PLlrATfBNZ98dC-V-N3m0Go4deliWHPFwT) for the editor framework and EnTT library integration
+- [Michael Grieco's C++ OpenGL tutorial](https://www.youtube.com/playlist?list=PLysLvOneEETPlOI_PI4mJnocqIpr2cSHS) for OpenGL file structure
