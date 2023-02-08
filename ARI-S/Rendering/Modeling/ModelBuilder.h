@@ -21,6 +21,8 @@ namespace ARIS
 		
 		std::unordered_map<std::string, Model*> GetModelTable() { return m_ModelTable; }
 
+		static void CreateSphere(float radius, unsigned divisions, Model& model);
+
 	private:
 		void BuildNormals(Model& m);
 		void BuildTexCoords(Model& m);

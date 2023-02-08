@@ -12,14 +12,13 @@ layout (binding = 3) uniform sampler2D gAlbedo;
 layout (binding = 4) uniform sampler2D gSpecular;
 layout (binding = 5) uniform sampler2D gDepth;
 
-layout(std140, binding = 2) uniform LocalLight
-{
-  vec4 pos; // xyz = position, w = range
-  vec4 color;
-  vec2 options; // x = intensity, y = range multiplier
-};
+uniform vec3 pos;
+uniform vec4 color;
 
 uniform vec3 eyePos;
+
+uniform float range;
+uniform float intensity;
 
 uniform int vWidth;
 uniform int vHeight;
@@ -33,8 +32,8 @@ vec3 LightCalc()
 	vec3 diffTex = texture(gAlbedo, fragUV).rgb;
 	vec3 specTex = texture(gSpecular, fragUV).rgb;
 
-	vec3 L = pos.xyz - gFragPos;
-	float dist = distance(gFragPos, pos.xyz);
+	vec3 L = pos - gFragPos;
+	float dist = distance(gFragPos, pos);
 	L /= dist;
 
 	// ambient
@@ -42,7 +41,7 @@ vec3 LightCalc()
 	
 	// diffuse
 	float nDotL = max(dot(norm, L), 0.0);
-	vec3 finalDiff = options.x * nDotL * diffTex * color.xyz;
+	vec3 finalDiff = intensity * nDotL * diffTex * color.xyz;
 
 	// specular
 	// correct?
@@ -52,10 +51,10 @@ vec3 LightCalc()
 	
 	vec3 reflectDir = reflect(L, norm);
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
-	vec3 finalSpec = options.x * color.xyz * sp * specTex;
+	vec3 finalSpec = intensity * color.xyz * sp * specTex;
 
 	// attenuation
-	float att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08 * pos.w * options.y, 2)));
+	float att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08 * range, 2)));
 	
 	return att * (finalDiff + finalSpec);
 }
@@ -66,13 +65,13 @@ void main()
 	gl_FragCoord.y / vHeight);
 
 	vec3 gFragPos = texture(gPos, fragUV).rgb;
-	vec3 L = pos.xyz - gFragPos;
+	vec3 L = pos - gFragPos;
 	float dist = length(L);
 	
     // arbitrary scale for the distance check because the
     // influence sphere scales based on the original radius
     // (in this case it's 0.08f)
-	if (dist > 0.08f * (pos.w * options.y))
+	if (dist > 0.08f * range)
 	{
 		discard;
 	}

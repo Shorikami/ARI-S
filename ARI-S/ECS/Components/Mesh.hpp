@@ -37,9 +37,20 @@ namespace ARIS
 			m_Model.BuildArrays();
 		}
 
+		void SetTextures(std::vector< std::pair<Texture, std::string>> t)
+		{
+			m_Textures = t;
+		}
+
 		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj)
 		{
 			m_Shader.Activate();
+
+			for (unsigned i = 0; i < m_Textures.size(); ++i)
+			{
+				m_Textures[i].first.Bind(i);
+				glUniform1i(glGetUniformLocation(m_Shader.m_ID, m_Textures[i].second.c_str()), i);
+			}
 
 			m_Shader.SetMat4("model", model);
 			m_Shader.SetMat4("view", view);
@@ -67,7 +78,7 @@ namespace ARIS
 
 		std::string m_VertexSrc = std::string(), m_FragmentSrc = std::string();
 
-		std::vector<Texture> m_Textures;
+		std::vector<std::pair<Texture, std::string>> m_Textures;
 		glm::vec4 m_Ambient, m_Albedo, m_Specular;
 
 		friend class SceneSerializer;

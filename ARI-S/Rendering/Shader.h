@@ -14,6 +14,7 @@
 
 namespace ARIS
 {
+
 	class Shader
 	{
 	public:
@@ -32,16 +33,51 @@ namespace ARIS
 		void SetBool(const std::string& name, bool val);
 
 		void SetInt(const std::string& name, int val);
+		
+		template <typename U>
+		void SetInt(const std::string& name, U val)
+		{
+		}
+
 		void SetFloat(const std::string& name, float val);
+
+		template <typename U>
+		void SetFloat(const std::string& name, U val)
+		{
+		}
 
 		void SetVec3(const std::string& name, float v1, float v2, float v3);
 		void SetVec3(const std::string& name, glm::vec3 v);
 
 		void SetVec4(const std::string& name, float v1, float v2, float v3, float v4);
 		void SetVec4(const std::string& name, glm::vec4 v);
-		//void SetVec4(const std::string& name, aiColor4D color);
 
 		void SetMat4(const std::string& name, glm::mat4 val);
+
+		template<typename T>
+		void SetData(const std::string& name, T t)
+		{
+			if (std::is_same<T, bool>::value || std::is_same<T, int>::value)
+			{
+				SetInt(name, t);
+			}
+			else if (std::is_same<T, float>::value)
+			{
+				SetFloat(name, t);
+			}
+			else if (std::is_same<T, Vector3>::value)
+			{
+				SetVec3(name, Vector3::ToVecGLM(t));
+			}
+			else if (std::is_same<T, Vector4>::value)
+			{
+				SetVec4(name, Vector4::ToVecGLM(t));
+			}
+			else if (std::is_same<T, Matrix4>::value)
+			{
+				SetMat4(name, Matrix4::ToMatGLM(t));
+			}
+		}
 
 		static std::string defaultDirectory;
 		static std::stringstream defaultHeaders;

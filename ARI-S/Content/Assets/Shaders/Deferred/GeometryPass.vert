@@ -4,18 +4,13 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormals;
 layout (location = 2) in vec2 aTexCoords;
 
-layout(std140, binding = 0) uniform World
-{
-  mat4 proj;
-  mat4 view;
-  vec2 nearFar;
-};
-
 out vec3 outPos;
 out vec3 outNorm;
 out vec2 outTexCoord;
 
 uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main()
 {
@@ -27,5 +22,5 @@ void main()
 	
 	outTexCoord = aTexCoords;
 	
-	gl_Position = proj * view * worldPos;
+	gl_Position = projection * view * worldPos;
 }

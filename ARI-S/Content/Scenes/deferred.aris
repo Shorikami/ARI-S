@@ -1,0 +1,82 @@
+Scene: Test
+Entities:
+  - Entity: 2111609431927737830
+    TagComponent:
+      Tag: Eye of Horus
+    TransformComponent:
+      Translation: [2.29999995, 1.10000002, -3.0999999]
+      Rotation: [0, 4.71238899, 0]
+      Scale: [6, 6, 6]
+    MeshComponent:
+      Name: Hosino_Origninal_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+  - Entity: 16044736794185012064
+    TagComponent:
+      Tag: Supernova
+    TransformComponent:
+      Translation: [5.69999981, 1.29999995, -2.70000005]
+      Rotation: [0, 4.71238899, 0]
+      Scale: [6, 6, 6]
+    MeshComponent:
+      Name: Aris_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+  - Entity: 10671448151760388228
+    TagComponent:
+      Tag: White Fang
+    TransformComponent:
+      Translation: [0.200000003, 1.70000005, -2.20000005]
+      Rotation: [0, 4.71238899, 0]
+      Scale: [6, 6, 6]
+    MeshComponent:
+      Name: Shiroko_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+  - Entity: 14048498191554888129
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [-1.70000005, 5, -4]
+      Rotation: [0, 0, 4.71238899]
+      Scale: [10, 10, 10]
+    MeshComponent:
+      Name: Plane.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+  - Entity: 4666517870167730181
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [3.29999995, 0, -4]
+      Rotation: [0, 0, 0]
+      Scale: [10, 10, 10]
+    MeshComponent:
+      Name: Plane.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+  - Entity: 6944010888572611649
+    TagComponent:
+      Tag: Plane
+    TransformComponent:
+      Translation: [3.29999995, 5, 1]
+      Rotation: [4.71238899, 0, 0]
+      Scale: [10, 10, 10]
+    MeshComponent:
+      Name: Plane.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+  - Entity: 14821271718499934075
+    TagComponent:
+      Tag: Local Light
+    TransformComponent:
+      Translation: [3.20000005, 2.20000005, 0]
+      Rotation: [0, 0, 0]
+      Scale: [100, 100, 100]
+    LightComponent:
+      Vertex Path: Deferred/LocalLight.vert
+      Fragment Path: Deferred/LocalLight.frag
+      Color: [1, 1, 1, 1]
+      Direction: [0, 0, 0]
+      Range: 100
+      Intensity: 1.36399996

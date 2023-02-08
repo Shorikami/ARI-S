@@ -1,5 +1,7 @@
 #include "Transform.hpp"
 #include "Mesh.hpp"
+#include "Light.hpp"
+
 #include "UUID.hpp"
 
 #include "entt.hpp"

@@ -82,6 +82,66 @@ namespace ARIS
         m_ModelTable.clear();
     }
 
+    void ModelBuilder::CreateSphere(float radius, unsigned divisions, Model& model)
+    {
+        float x, y, z, xy;
+        float length = 1.0f / radius;
+
+        constexpr float pi = glm::pi<float>();
+
+        float sectorStep = 2 * pi / divisions;
+        float stackStep = pi / divisions;
+        float sectorAngle, stackAngle;
+
+        for (unsigned i = 0; i <= divisions; ++i)
+        {
+            stackAngle = pi / 2 - i * stackStep;
+            xy = radius * cosf(stackAngle);
+            z = radius * sinf(stackAngle);
+
+            for (unsigned j = 0; j <= divisions; ++j)
+            {
+                sectorAngle = j * sectorStep;
+
+                x = xy * cosf(sectorAngle);
+                y = xy * sinf(sectorAngle);
+
+                model.m_Vertices.push_back(glm::vec3(x, y, z));
+
+                float nx = x * length;
+                float ny = y * length;
+                float nz = z * length;
+
+                glm::vec3 sphereNorm = glm::vec3(nx, ny, nz);
+                model.m_Normals.push_back(sphereNorm);
+            }
+        }
+
+        unsigned k1, k2;
+        for (unsigned i = 0; i < divisions; ++i)
+        {
+            k1 = i * (divisions + 1);
+            k2 = k1 + divisions + 1;
+
+            for (unsigned j = 0; j < divisions; ++j, ++k1, ++k2)
+            {
+                if (i != 0)
+                {
+                    model.m_Indices.push_back(k1);
+                    model.m_Indices.push_back(k2);
+                    model.m_Indices.push_back(k1 + 1);
+                }
+
+                if (i != (divisions - 1))
+                {
+                    model.m_Indices.push_back(k1 + 1);
+                    model.m_Indices.push_back(k2);
+                    model.m_Indices.push_back(k2 + 1);
+                }
+            }
+        }
+    }
+
     void ModelBuilder::LoadOBJ(std::string path, Model& model)
     {
         tinyobj::attrib_t attrib;

@@ -11,6 +11,8 @@
 
 #include "imgui.h"
 
+#include "Math/Vector.h"
+
 //#include "stb_image.h"
 
 unsigned currLights = 4;
@@ -76,7 +78,7 @@ namespace ARIS
         : _windowWidth(100)
         , _windowHeight(100)
     {
-        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
+        m_Camera = Camera(glm::vec3(0.0f, 5.0f, 0.0f));
         InitMembers();
 
         float quadVertices[] = {
@@ -104,7 +106,7 @@ namespace ARIS
         : _windowWidth(windowWidth)
         , _windowHeight(windowHeight)
     {
-        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
+        m_Camera = Camera(glm::vec3(0.0f, 5.0f, 0.0f));
         InitMembers();
 
         float quadVertices[] = {
@@ -162,6 +164,41 @@ namespace ARIS
 
     int Scene::Init()
     {
+        lightingPass = new Shader(false, "Deferred/LightingPass.vert", "Deferred/LightingPass.frag");
+
+        Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
+        Texture t2 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
+
+        // Object textures
+        textures.push_back(std::make_pair(t1, "diffTex"));
+        textures.push_back(std::make_pair(t2, "specTex"));
+        //
+        //groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_diff_512x512.png", GL_LINEAR, GL_REPEAT), "diffTex"));
+        //groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_spec_512x512.png", GL_LINEAR, GL_REPEAT), "specTex"));
+
+        // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
+        for (unsigned i = 0; i < 5; ++i)
+        {
+            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+                GL_NEAREST, GL_CLAMP_TO_EDGE));
+        }
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+            GL_NEAREST, GL_REPEAT, GL_FLOAT));
+
+        // gBuffer FBO
+        gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gBuffer->Bind();
+        for (unsigned i = 0; i < gTextures.size() - 1; ++i)
+        {
+            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
+        }
+        gBuffer->DrawBuffers();
+
+        gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
+        gBuffer->Unbind();
+
+        GenerateLocalLights();
+
         // Scene FBO (for the editor)
         m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_SceneFBO->Bind();
@@ -183,20 +220,28 @@ namespace ARIS
 
     int Scene::PreRender()
     {
+        lightingPass->Activate();
+        lightingPass->SetInt("gPos", 0);
+        lightingPass->SetInt("gNorm", 1);
+        lightingPass->SetInt("gUVs", 2);
+        lightingPass->SetInt("gAlbedo", 3);
+        lightingPass->SetInt("gSpecular", 4);
+        lightingPass->SetInt("gDepth", 5);
+
         return 0;
     }
 
     int Scene::Render()
     {
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
-        m_SceneFBO->Activate();
 
-        glDisable(GL_CULL_FACE);
+        gBuffer->Activate();
+        glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
 
-        // render
+        // render models
         {
             auto view = m_Registry.view<TransformComponent, MeshComponent>();
             for (auto entity : view)
@@ -204,7 +249,67 @@ namespace ARIS
                 auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
 
                 transform.Update();
+                mesh.SetTextures(textures);
                 mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(_windowWidth, _windowHeight));
+            }
+        }
+        gBuffer->Unbind();
+
+        m_SceneFBO->Activate();
+
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
+        lightingPass->Activate();
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);
+        }
+
+        lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
+        lightingPass->SetVec3("lightDir", glm::vec3(-0.2f, -1.0f, -0.3f));
+
+        lightingPass->SetInt("vWidth", _windowWidth);
+        lightingPass->SetInt("vHeight", _windowHeight);
+
+        RenderQuad();
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
+        glBlitFramebuffer(0, 0, gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height,
+            0, 0, m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height,
+            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO->GetID());
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+
+        // render lights
+        {
+            auto view = m_Registry.view<TransformComponent, LightComponent>();
+            for (auto entity : view)
+            {
+                auto [transform, light] = view.get<TransformComponent, LightComponent>(entity);
+        
+                light.UpdateShader("pos", Vector3(transform.GetTranslation()), 
+                                  "color", Vector4(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), 
+                                  "eyePos", Vector3(m_Camera.cameraPos),
+                                  "range", light.GetRange(),
+                                  "intensity", light.GetIntensity(),
+                                  "vWidth", _windowWidth,
+                                  "vHeight", _windowHeight);
+                transform.Scale(glm::vec3(light.GetRange()));
+                transform.Update();
+                light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
             }
         }
 

@@ -104,7 +104,7 @@ namespace ARIS
 
         std::vector<Texture*> gTextures;
 
-        std::vector<std::pair<Texture*, std::string>> textures, groundTextures, skyboxTextures;
+        std::vector<std::pair<Texture, std::string>> textures, groundTextures, skyboxTextures;
 
         Framebuffer* gBuffer;
 

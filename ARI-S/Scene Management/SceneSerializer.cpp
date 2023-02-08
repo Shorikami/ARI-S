@@ -168,6 +168,22 @@ namespace ARIS
 			out << YAML::EndMap;
 		}
 
+		if (e.HasComponent<LightComponent>())
+		{
+			out << YAML::Key << "LightComponent";
+			out << YAML::BeginMap;
+
+			auto& lc = e.GetComponent<LightComponent>();
+			out << YAML::Key << "Vertex Path" << YAML::Value << lc.GetVertexPath();
+			out << YAML::Key << "Fragment Path" << YAML::Value << lc.GetFragmentPath();
+			out << YAML::Key << "Color" << YAML::Value << lc.GetColor();
+			out << YAML::Key << "Direction" << YAML::Value << lc.GetDirection();
+			out << YAML::Key << "Range" << YAML::Value << lc.GetRange();
+			out << YAML::Key << "Intensity" << YAML::Value << lc.GetIntensity();
+
+			out << YAML::EndMap;
+		}
+
 		out << YAML::EndMap; // Entity
 	}
 	
@@ -198,7 +214,6 @@ namespace ARIS
 
 		std::ofstream fout(filepath);
 		fout << out.c_str();
-
 	}
 
 	void SceneSerializer::SerializeRuntime(const std::string& filepath)
@@ -257,6 +272,23 @@ namespace ARIS
 					t.m_Model = *ModelBuilder::Get().GetModelTable()[name];
 					t.m_VertexSrc = vSrc;
 					t.m_FragmentSrc = fSrc;
+					t.ReloadShader();
+				}
+
+				auto lc = e["LightComponent"];
+				if (lc)
+				{
+					auto& t = deserializedEntity.AddComponent<LightComponent>();
+					std::string vSrc = lc["Vertex Path"].as<std::string>();
+					std::string fSrc = lc["Fragment Path"].as<std::string>();
+
+					t.m_VertexSrc = vSrc;
+					t.m_FragmentSrc = fSrc;
+					t.m_Color = lc["Color"].as<glm::vec4>();
+					t.m_Direction = lc["Direction"].as<glm::vec3>();
+					t.m_Range = lc["Range"].as<float>();
+					t.m_Intensity = lc["Intensity"].as<float>();
+
 					t.ReloadShader();
 				}
 			}

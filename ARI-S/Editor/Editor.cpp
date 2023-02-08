@@ -223,7 +223,8 @@ namespace ARIS
 
 	void Editor::NewScene()
 	{
-		m_ActiveScene = std::make_shared<Scene>();
+		m_ActiveScene = std::make_shared<Scene>(Application::Get().GetWindow().GetWidth(),
+			Application::Get().GetWindow().GetHeight());
 		//m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		m_HierarchyPanel.SetContext(m_ActiveScene);
 	}
@@ -233,7 +234,8 @@ namespace ARIS
 		std::string path = FileDialogs::OpenFile("Aris Scene (*.aris)\0*.aris\0");
 		if (!path.empty())
 		{
-			std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
+			std::shared_ptr<Scene> newScene = std::make_shared<Scene>(Application::Get().GetWindow().GetWidth(),
+				Application::Get().GetWindow().GetHeight());
 			//m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			
 			SceneSerializer s(newScene);
