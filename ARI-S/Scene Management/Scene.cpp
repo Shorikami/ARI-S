@@ -257,11 +257,6 @@ namespace ARIS
 
         m_SceneFBO->Activate();
 
-        glDisable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glEnable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
-
         lightingPass->Activate();
         for (unsigned i = 0; i < 6; ++i)
         {
@@ -287,9 +282,9 @@ namespace ARIS
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
-
+        
         glDisable(GL_DEPTH_TEST);
-
+        
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
 
@@ -300,6 +295,9 @@ namespace ARIS
             {
                 auto [transform, light] = view.get<TransformComponent, LightComponent>(entity);
         
+                transform.Scale(glm::vec3(light.GetRange()));
+                transform.Update();
+
                 light.UpdateShader("pos", Vector3(transform.GetTranslation()), 
                                   "color", Vector4(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), 
                                   "eyePos", Vector3(m_Camera.cameraPos),
@@ -307,9 +305,8 @@ namespace ARIS
                                   "intensity", light.GetIntensity(),
                                   "vWidth", _windowWidth,
                                   "vHeight", _windowHeight);
-                transform.Scale(glm::vec3(light.GetRange()));
-                transform.Update();
-                light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
+
+                light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(_windowWidth, _windowHeight));
             }
         }
 

@@ -44,9 +44,6 @@ vec3 LightCalc()
 	vec3 finalDiff = intensity * nDotL * diffTex * color.xyz;
 
 	// specular
-	// correct?
-	//vec3 eyePosition = (view * eyePos).xyz;
-	//vec3 viewDir = normalize(eyePosition - viewPos);
 	vec3 viewDir = normalize(eyePos - fragPos);
 	
 	vec3 reflectDir = reflect(L, norm);
@@ -54,7 +51,7 @@ vec3 LightCalc()
 	vec3 finalSpec = intensity * color.xyz * sp * specTex;
 
 	// attenuation
-	float att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08 * range, 2)));
+	float att = ((1.0f / (dist * dist)) - (1.0f / pow(0.08f * range, 2)));
 	
 	return att * (finalDiff + finalSpec);
 }
@@ -71,10 +68,10 @@ void main()
     // arbitrary scale for the distance check because the
     // influence sphere scales based on the original radius
     // (in this case it's 0.08f)
-	if (dist > 0.08f * range)
-	{
-		discard;
-	}
+	//if (dist > 0.08f * range)
+	//{
+	//	discard;
+	//}
 
-	fragColor = vec4(LightCalc(), 1.0f);
+	fragColor = vec4(vec3(0.5f), 1.0f);
 }
