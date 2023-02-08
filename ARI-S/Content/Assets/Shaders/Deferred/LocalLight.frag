@@ -68,10 +68,10 @@ void main()
     // arbitrary scale for the distance check because the
     // influence sphere scales based on the original radius
     // (in this case it's 0.08f)
-	//if (dist > 0.08f * range)
-	//{
-	//	discard;
-	//}
+	if (dist > 0.08f * range)
+	{
+		discard;
+	}
 
-	fragColor = vec4(vec3(0.5f), 1.0f);
+	fragColor = vec4(LightCalc(), 1.0f);
 }

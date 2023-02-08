@@ -1,6 +1,6 @@
 Scene: Test
 Entities:
-  - Entity: 2111609431927737830
+  - Entity: 4044902682691840459
     TagComponent:
       Tag: Eye of Horus
     TransformComponent:
@@ -11,7 +11,7 @@ Entities:
       Name: Hosino_Origninal_Weapon.obj
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
-  - Entity: 16044736794185012064
+  - Entity: 15461904583370419641
     TagComponent:
       Tag: Supernova
     TransformComponent:
@@ -22,7 +22,7 @@ Entities:
       Name: Aris_Original_Weapon.obj
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
-  - Entity: 10671448151760388228
+  - Entity: 4634364523448003648
     TagComponent:
       Tag: White Fang
     TransformComponent:
@@ -33,7 +33,7 @@ Entities:
       Name: Shiroko_Original_Weapon.obj
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
-  - Entity: 14048498191554888129
+  - Entity: 3391251625140701115
     TagComponent:
       Tag: Plane
     TransformComponent:
@@ -44,7 +44,7 @@ Entities:
       Name: Plane.obj
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
-  - Entity: 4666517870167730181
+  - Entity: 16644188670070201191
     TagComponent:
       Tag: Plane
     TransformComponent:
@@ -55,7 +55,7 @@ Entities:
       Name: Plane.obj
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
-  - Entity: 6944010888572611649
+  - Entity: 9647406153115962896
     TagComponent:
       Tag: Plane
     TransformComponent:
@@ -66,17 +66,17 @@ Entities:
       Name: Plane.obj
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
-  - Entity: 14821271718499934075
+  - Entity: 7299251924808581099
     TagComponent:
       Tag: Local Light
     TransformComponent:
-      Translation: [3.20000005, 2.20000005, 0]
+      Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [100, 100, 100]
+      Scale: [9.00, 9.00, 9.00]
     LightComponent:
       Vertex Path: Deferred/LocalLight.vert
       Fragment Path: Deferred/LocalLight.frag
       Color: [1, 1, 1, 1]
       Direction: [0, 0, 0]
-      Range: 100
+      Range: 9.00
       Intensity: 1.36399996

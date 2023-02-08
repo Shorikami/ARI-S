@@ -78,7 +78,7 @@ namespace ARIS
         : _windowWidth(100)
         , _windowHeight(100)
     {
-        m_Camera = Camera(glm::vec3(0.0f, 5.0f, 0.0f));
+        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
         InitMembers();
 
         float quadVertices[] = {
@@ -106,7 +106,7 @@ namespace ARIS
         : _windowWidth(windowWidth)
         , _windowHeight(windowHeight)
     {
-        m_Camera = Camera(glm::vec3(0.0f, 5.0f, 0.0f));
+        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
         InitMembers();
 
         float quadVertices[] = {
@@ -150,10 +150,10 @@ namespace ARIS
             float g = RandomNum(0.0f, 1.0f);
             float b = RandomNum(0.0f, 1.0f);
 
-            localLights[i].pos = glm::vec4(xPos, yPos, zPos, range);
+            localLights[i].pos = glm::vec4(0.0f, 0.0f, 0.0f, 9.0f);
             localLights[i].color = glm::vec4(r, g, b, 1.0f);
             localLights[i].options.x = intensity;
-            localLights[i].options.y = mult;
+            localLights[i].options.y = 1.0f;
         }
     }
 
@@ -233,24 +233,27 @@ namespace ARIS
 
     int Scene::Render()
     {
-        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
+        int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
+        int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
+        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
+        
         gBuffer->Activate();
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
-
+        
         // render models
         {
             auto view = m_Registry.view<TransformComponent, MeshComponent>();
             for (auto entity : view)
             {
                 auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
-
+        
                 transform.Update();
                 mesh.SetTextures(textures);
-                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(_windowWidth, _windowHeight));
+                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight));
             }
         }
         gBuffer->Unbind();
@@ -263,23 +266,24 @@ namespace ARIS
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);
         }
-
+        
         lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
         lightingPass->SetVec3("lightDir", glm::vec3(-0.2f, -1.0f, -0.3f));
+       
 
-        lightingPass->SetInt("vWidth", _windowWidth);
-        lightingPass->SetInt("vHeight", _windowHeight);
-
+        lightingPass->SetInt("vWidth", sceneWidth);
+        lightingPass->SetInt("vHeight", sceneHeight);
+        
         RenderQuad();
-
+        
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
         glBlitFramebuffer(0, 0, gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height,
             0, 0, m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height,
             GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
+        
         glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO->GetID());
-
+        
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
         
@@ -287,7 +291,7 @@ namespace ARIS
         
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
-
+        
         // render lights
         {
             auto view = m_Registry.view<TransformComponent, LightComponent>();
@@ -297,19 +301,19 @@ namespace ARIS
         
                 transform.Scale(glm::vec3(light.GetRange()));
                 transform.Update();
-
+        
                 light.UpdateShader("pos", Vector3(transform.GetTranslation()), 
                                   "color", Vector4(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), 
                                   "eyePos", Vector3(m_Camera.cameraPos),
                                   "range", light.GetRange(),
                                   "intensity", light.GetIntensity(),
-                                  "vWidth", _windowWidth,
-                                  "vHeight", _windowHeight);
-
-                light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(_windowWidth, _windowHeight));
+                                  "vWidth", sceneWidth,
+                                  "vHeight", sceneHeight);
+        
+                light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight));
             }
         }
-
+        
         m_SceneFBO->Unbind();
 
         return 0;
