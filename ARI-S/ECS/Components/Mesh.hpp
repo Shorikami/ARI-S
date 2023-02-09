@@ -42,19 +42,44 @@ namespace ARIS
 			m_Textures = t;
 		}
 
-		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj)
+		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, Shader other = Shader(), bool useDefault = true)
 		{
-			m_Shader.Activate();
+			if (useDefault)
+			{
+				m_Shader.Activate();
+			}
+			else
+			{
+				other.Activate();
+			}
+			
 
 			for (unsigned i = 0; i < m_Textures.size(); ++i)
 			{
 				m_Textures[i].first.Bind(i);
-				glUniform1i(glGetUniformLocation(m_Shader.m_ID, m_Textures[i].second.c_str()), i);
+
+				if (useDefault)
+				{
+					glUniform1i(glGetUniformLocation(m_Shader.m_ID, m_Textures[i].second.c_str()), i);
+				}
+				else
+				{
+					glUniform1i(glGetUniformLocation(other.m_ID, m_Textures[i].second.c_str()), i);
+				}
 			}
 
-			m_Shader.SetMat4("model", model);
-			m_Shader.SetMat4("view", view);
-			m_Shader.SetMat4("projection", proj);
+			if (useDefault)
+			{
+				m_Shader.SetMat4("model", model);
+				m_Shader.SetMat4("view", view);
+				m_Shader.SetMat4("projection", proj);
+			}
+			else
+			{
+				other.SetMat4("model", model);
+				other.SetMat4("view", view);
+				other.SetMat4("projection", proj);
+			}
 
 			m_Model.GetVAO().Bind();
 			m_Model.GetVAO().Draw(GL_TRIANGLES, static_cast<GLuint>(m_Model.GetIndexCount()), GL_UNSIGNED_INT);

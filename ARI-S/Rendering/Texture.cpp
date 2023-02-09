@@ -44,6 +44,12 @@ namespace ARIS
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat);
 
+		if (repeat == GL_CLAMP_TO_BORDER)
+		{
+			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		}
+
 		if (data != nullptr)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, intForm, w, h, 0, dataForm, GL_UNSIGNED_BYTE, data);
@@ -66,6 +72,12 @@ namespace ARIS
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, repeat);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, repeat);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, repeat);
+
+		if (repeat == GL_CLAMP_TO_BORDER)
+		{
+			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		}
 	
 		stbi_uc* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 	
@@ -158,6 +170,12 @@ namespace ARIS
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, texMin);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
+
+		if (wrapS == GL_CLAMP_TO_BORDER && wrapT == GL_CLAMP_TO_BORDER)
+		{
+			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		}
 	}
 
 	void Texture::Bind()

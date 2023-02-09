@@ -164,38 +164,42 @@ namespace ARIS
 
     int Scene::Init()
     {
-        lightingPass = new Shader(false, "Deferred/LightingPass.vert", "Deferred/LightingPass.frag");
+        lightingPass = new Shader(false, "Shadows/DiffuseWithShadows.vert", "Shadows/DiffuseWithShadows.frag");
+        basicShadows = new Shader(false, "Shadows/BasicShadows.vert", "Shadows/BasicShadows.frag");
 
-        Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
-        Texture t2 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
+        //Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
+        //Texture t2 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
 
         // Object textures
-        textures.push_back(std::make_pair(t1, "diffTex"));
-        textures.push_back(std::make_pair(t2, "specTex"));
+        //textures.push_back(std::make_pair(t1, "diffTex"));
+        //textures.push_back(std::make_pair(t2, "specTex"));
         //
         //groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_diff_512x512.png", GL_LINEAR, GL_REPEAT), "diffTex"));
         //groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_spec_512x512.png", GL_LINEAR, GL_REPEAT), "specTex"));
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
-        for (unsigned i = 0; i < 5; ++i)
-        {
-            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
-                GL_NEAREST, GL_CLAMP_TO_EDGE));
-        }
-        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
-            GL_NEAREST, GL_REPEAT, GL_FLOAT));
+        //for (unsigned i = 0; i < 5; ++i)
+        //{
+        //    gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+        //        GL_NEAREST, GL_CLAMP_TO_EDGE));
+        //}
+        //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+        //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
+
+        sDepthMap = new Texture(2048, 2048, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
         // gBuffer FBO
-        gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        gBuffer->Bind();
-        for (unsigned i = 0; i < gTextures.size() - 1; ++i)
-        {
-            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
-        }
-        gBuffer->DrawBuffers();
-
-        gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
-        gBuffer->Unbind();
+        //gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //gBuffer->Bind();
+        //for (unsigned i = 0; i < gTextures.size() - 1; ++i)
+        //{
+        //    gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
+        //}
+        //gBuffer->DrawBuffers();
+        //
+        //gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
+        //gBuffer->Unbind();
 
         GenerateLocalLights();
 
@@ -215,18 +219,37 @@ namespace ARIS
 
         m_SceneFBO->Unbind();
 
+        // Shadow FBO 
+        sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        sBuffer->Bind();
+        sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+        sBuffer->DrawBuffers();
+        sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cout << "Uh oh! Shadow FBO is incomplete!" << std::endl;
+            sBuffer->Unbind();
+            return -1;
+        }
+
+        sBuffer->Unbind();
+
         return 0;
     }
 
     int Scene::PreRender()
     {
-        lightingPass->Activate();
-        lightingPass->SetInt("gPos", 0);
-        lightingPass->SetInt("gNorm", 1);
-        lightingPass->SetInt("gUVs", 2);
-        lightingPass->SetInt("gAlbedo", 3);
-        lightingPass->SetInt("gSpecular", 4);
-        lightingPass->SetInt("gDepth", 5);
+        //lightingPass->Activate();
+        //lightingPass->SetInt("gPos", 0);
+        //lightingPass->SetInt("gNorm", 1);
+        //lightingPass->SetInt("gUVs", 2);
+        //lightingPass->SetInt("gAlbedo", 3);
+        //lightingPass->SetInt("gSpecular", 4);
+        //lightingPass->SetInt("gDepth", 5);
+
+        basicShadows->Activate();
+        basicShadows->SetInt("sDepth", 0);
 
         return 0;
     }
@@ -237,14 +260,21 @@ namespace ARIS
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
-        
-        gBuffer->Activate();
+
         glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
-        
-        // render models
+
+        // Shadow Pass
+        // Step 1: Light POV to FBO
+        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
+        glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 lightSpaceMat = lightProj * lightView;
+        glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+
+        glCullFace(GL_FRONT);
+        // Render models relative to the shadow shader
+        sBuffer->Activate();
         {
             auto view = m_Registry.view<TransformComponent, MeshComponent>();
             for (auto entity : view)
@@ -253,76 +283,34 @@ namespace ARIS
         
                 transform.Update();
                 mesh.SetTextures(textures);
-                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight));
+                mesh.Draw(transform.GetTransform(), lightView, lightProj, *basicShadows, false);
             }
         }
-        gBuffer->Unbind();
+        sBuffer->Unbind();
+        
+        
+        // Step 2: Render the scene normally
+        glCullFace(GL_BACK);
+        lightingPass->Activate();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
+
+        lightingPass->SetInt("uShadowMap", 0);
+        lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
 
         m_SceneFBO->Activate();
-
-        lightingPass->Activate();
-        for (unsigned i = 0; i < 6; ++i)
         {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);
-        }
-        
-        lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
-        lightingPass->SetVec3("lightDir", lastKnownDir);
-
-        lightingPass->SetInt("vWidth", sceneWidth);
-        lightingPass->SetInt("vHeight", sceneHeight);
-        
-        RenderQuad();
-        
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
-        glBlitFramebuffer(0, 0, gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height,
-            0, 0, m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height,
-            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO->GetID());
-        
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        
-        glDisable(GL_DEPTH_TEST);
-        
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        
-        // render lights
-        {
-            auto view = m_Registry.view<TransformComponent, LightComponent>();
+            auto view = m_Registry.view<TransformComponent, MeshComponent>();
             for (auto entity : view)
             {
-                auto [transform, light] = view.get<TransformComponent, LightComponent>(entity);
-        
-                transform.Scale(glm::vec3(light.GetRange()));
-                transform.Update();
-        
-                light.UpdateShader("pos", Vector3(transform.GetTranslation()), 
-                                  "color", Vector4(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), 
-                                  "eyePos", Vector3(m_Camera.cameraPos),
-                                  "range", light.GetRange(),
-                                  "intensity", light.GetIntensity(),
-                                  "vWidth", sceneWidth,
-                                  "vHeight", sceneHeight,
-                                  "lightDir", Vector3(transform.GetRotation()),
-                                  "type", light.GetType());
+                auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
 
-                if (light.GetType() == 1)
-                {
-                    lastKnownDir = transform.GetRotation();
-                }
-                
-                if (light.GetType() != 1)
-                {
-                    light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight));
-                }
+                transform.Update();
+                mesh.SetTextures(textures);
+                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
             }
         }
-        
         m_SceneFBO->Unbind();
 
         return 0;

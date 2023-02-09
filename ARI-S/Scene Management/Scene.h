@@ -99,14 +99,16 @@ namespace ARIS
         //std::vector<Model*> models;
         //Model *cube, *sphere, *skybox;
 
-        Shader* geometryPass, * lightingPass, * localLight, * flatShader;
+        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows;
         Shader* skyboxShader;
 
         std::vector<Texture*> gTextures;
+        Texture* sDepthMap;
 
         std::vector<std::pair<Texture, std::string>> textures, groundTextures, skyboxTextures;
 
         Framebuffer* gBuffer;
+        Framebuffer* sBuffer;
 
         // ImGUI options
         glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);
