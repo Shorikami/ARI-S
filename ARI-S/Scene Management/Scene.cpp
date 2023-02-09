@@ -268,8 +268,7 @@ namespace ARIS
         }
         
         lightingPass->SetVec3("viewPos", m_Camera.cameraPos);
-        lightingPass->SetVec3("lightDir", glm::vec3(-0.2f, -1.0f, -0.3f));
-       
+        lightingPass->SetVec3("lightDir", lastKnownDir);
 
         lightingPass->SetInt("vWidth", sceneWidth);
         lightingPass->SetInt("vHeight", sceneHeight);
@@ -308,9 +307,19 @@ namespace ARIS
                                   "range", light.GetRange(),
                                   "intensity", light.GetIntensity(),
                                   "vWidth", sceneWidth,
-                                  "vHeight", sceneHeight);
-        
-                light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight));
+                                  "vHeight", sceneHeight,
+                                  "lightDir", Vector3(transform.GetRotation()),
+                                  "type", light.GetType());
+
+                if (light.GetType() == 1)
+                {
+                    lastKnownDir = transform.GetRotation();
+                }
+                
+                if (light.GetType() != 1)
+                {
+                    light.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight));
+                }
             }
         }
         

@@ -26,9 +26,6 @@ vec3 LightCalc()
 	vec3 specTex = texture(gSpecular, fragUV).rgb;
 	float spec = texture(gDepth, fragUV).r;
 
-	// ambient
-	vec3 amb = diff * 0.2f;
-	
 	// diffuse
 	vec3 dir = normalize(-lightDir);
 	float nDotL = max(dot(norm, dir), 0.0);
@@ -41,7 +38,7 @@ vec3 LightCalc()
 	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
 	vec3 finalSpec = sp * spec * specTex;
 	
-	return amb + finalDiff + finalSpec;
+	return finalDiff + finalSpec;
 }
 
 void main()

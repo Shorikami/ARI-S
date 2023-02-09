@@ -177,7 +177,7 @@ namespace ARIS
 			out << YAML::Key << "Vertex Path" << YAML::Value << lc.GetVertexPath();
 			out << YAML::Key << "Fragment Path" << YAML::Value << lc.GetFragmentPath();
 			out << YAML::Key << "Color" << YAML::Value << lc.GetColor();
-			out << YAML::Key << "Direction" << YAML::Value << lc.GetDirection();
+			out << YAML::Key << "Type" << YAML::Value << lc.GetType();
 			out << YAML::Key << "Range" << YAML::Value << lc.GetRange();
 			out << YAML::Key << "Intensity" << YAML::Value << lc.GetIntensity();
 
@@ -285,7 +285,7 @@ namespace ARIS
 					t.m_VertexSrc = vSrc;
 					t.m_FragmentSrc = fSrc;
 					t.m_Color = lc["Color"].as<glm::vec4>();
-					t.m_Direction = lc["Direction"].as<glm::vec3>();
+					t.m_Type = lc["Type"].as<int>();
 					t.m_Range = lc["Range"].as<float>();
 					t.m_Intensity = lc["Intensity"].as<float>();
 

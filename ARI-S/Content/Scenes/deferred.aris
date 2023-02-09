@@ -77,6 +77,6 @@ Entities:
       Vertex Path: Deferred/LocalLight.vert
       Fragment Path: Deferred/LocalLight.frag
       Color: [1, 1, 1, 1]
-      Direction: [0, 0, 0]
+      Type: 0
       Range: 9.00
       Intensity: 1.36399996

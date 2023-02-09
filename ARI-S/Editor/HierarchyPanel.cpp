@@ -357,6 +357,26 @@ namespace ARIS
 					comp.ReloadShader();
 				}
 
+				const char* lights[] = { "Point", "Directional" };
+				static const char* curr = nullptr;
+				if (ImGui::BeginCombo("##light type combo", curr))
+				{
+					for (unsigned n = 0; n < IM_ARRAYSIZE(lights); ++n)
+					{
+						bool isSelected = (curr == lights[n]);
+						if (ImGui::Selectable(lights[n], isSelected))
+						{
+							curr = lights[n];
+							comp.m_Type = std::string(curr).compare("Point") == 0 ? 0 : 1;
+						}
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+
 				ImGui::SliderFloat("Range", &comp.m_Range, 0.0f, 100.0f);
 				ImGui::SliderFloat("Intensity", &comp.m_Intensity, 0.0f, 10.0f);
 			});

@@ -70,7 +70,7 @@ namespace ARIS
 		std::string GetVertexPath() const { return m_VertexSrc; }
 		std::string GetFragmentPath() const { return m_FragmentSrc; }
 
-		glm::vec3 GetDirection() const { return m_Direction; }
+		int GetType() const { return m_Type; }
 		glm::vec4 GetColor() const { return m_Color; }
 
 		float GetRange() const { return m_Range; }
@@ -83,7 +83,6 @@ namespace ARIS
 		std::string m_VertexSrc = std::string(), m_FragmentSrc = std::string();
 
 		unsigned int m_Type = 0;
-		glm::vec3 m_Direction = glm::vec3(0.0f);
 
 		glm::vec4 m_Color = glm::vec4(1.0f);
 		float m_Range = 10.0f;

@@ -118,5 +118,8 @@ namespace ARIS
             m_DisplayLocalLights = true, m_DisplaySkybox = true;
 
         int m_RenderOption = 0, m_SelectedModelIdx = 0;
+
+        // temporary; pls remove this when separate directional lights work
+        glm::vec3 lastKnownDir = glm::vec3(-0.2f, -1.0f, -0.3f);
     };
 }
