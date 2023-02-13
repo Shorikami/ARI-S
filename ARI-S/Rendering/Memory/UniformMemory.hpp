@@ -49,6 +49,12 @@ namespace ARIS
 		T data;
 	};
 
+	class BlurKernel
+	{
+	public:
+		float weights[101];
+	};
+
 	class World
 	{
 	public:

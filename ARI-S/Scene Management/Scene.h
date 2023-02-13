@@ -93,17 +93,19 @@ namespace ARIS
         LocalLight localLights[MAX_LIGHTS];
 
         UniformBuffer<World>* matrixData;
-        UniformBuffer<Lights>* lightData;
-        UniformBuffer<LocalLight>* localLightData;
+        UniformBuffer<BlurKernel>* kernelData;
+        //UniformBuffer<Lights>* lightData;
+        //UniformBuffer<LocalLight>* localLightData;
 
         //std::vector<Model*> models;
         //Model *cube, *sphere, *skybox;
 
-        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows, *debugShadows;
+        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows, *debugShadows,
+            *computeBlur;
         Shader* skyboxShader;
 
         std::vector<Texture*> gTextures;
-        Texture* sDepthMap;
+        Texture* sDepthMap, *blurOutput;
 
         std::vector<std::pair<Texture, std::string>> textures, groundTextures, skyboxTextures;
 

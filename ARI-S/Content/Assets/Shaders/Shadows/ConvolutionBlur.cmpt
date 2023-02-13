@@ -1,0 +1,40 @@
+#version 430
+layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+layout(std140, binding = 3) uniform BlurKernel
+{
+  float weights[101];
+};
+
+uniform int halfKernel;
+
+layout (rgba32f) uniform readonly image2D src;
+layout (rgba32f) uniform writeonly image2D dst;
+
+shared vec4 v[128 + 101];
+
+void main()
+{
+	ivec2 size = imageSize(src);
+	ivec2 gPos = ivec2(gl_GlobalInvocationID.xy);
+	
+	uint i = gl_LocalInvocationID.x;
+	
+	v[i] = imageLoad(src, gPos + (-halfKernel, 0));
+	if (i < 2 * halfKernel)
+	{
+		v[i + 128] = imageLoad(src, gPos + (128 - halfKernel, 0));
+	}
+	
+	barrier();
+	
+	// Compute sum of weights[0 ... 2w] times corresponding pixels v[i ... i+2w]
+	vec4 sum = vec4(0.0f);
+	for (int ii = 0; ii < 2 * halfKernel; ++ii)
+	{
+		sum += weights[ii] * v[i + ii];
+	}
+	
+	// Store sum at gpos in dst image
+	imageStore(dst, gPos, sum);
+}

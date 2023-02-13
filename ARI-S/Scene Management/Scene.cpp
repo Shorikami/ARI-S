@@ -18,11 +18,21 @@
 unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
+#define KERNEL_SIZE 100
+
 namespace ARIS
 {
     float RandomNum(float min, float max)
     {
         return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
+    }
+
+    float Gaussian(float x, float sigma)
+    {
+        float factor = 1.0f / sqrtf(2.0f * glm::pi<float>() * sigma * sigma);
+        float expo = -(powf(x, 2.0f)) / (2.0f * powf(sigma, 2.0f));
+
+        return factor * std::exp(expo);
     }
 
 #pragma region Entity
@@ -99,6 +109,11 @@ namespace ARIS
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
+        for (unsigned i = 0; i < 101; ++i)
+        {
+            kernelData->GetData().weights[i] = Gaussian(i, 10);
+        }
+
         Init();
     }
 
@@ -126,12 +141,19 @@ namespace ARIS
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        
+        for (int i = 0; i < KERNEL_SIZE + 1; ++i)
+        {
+            kernelData->GetData().weights[i] = Gaussian(i - KERNEL_SIZE / 2, 10);
+        }
 
         Init();
     }
 
     void Scene::InitMembers()
     {
+        matrixData = new UniformBuffer<World>(0);
+        kernelData = new UniformBuffer<BlurKernel>(3);
     }
 
     void Scene::GenerateLocalLights()
@@ -167,6 +189,7 @@ namespace ARIS
         lightingPass = new Shader(false, "Shadows/DiffuseWithShadows.vert", "Shadows/DiffuseWithShadows.frag");
         basicShadows = new Shader(false, "Shadows/MomentShadows.vert", "Shadows/MomentShadows.frag");
         debugShadows = new Shader(false, "Shadows/DebugShadows.vert", "Shadows/DebugShadows.frag");
+        computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         //Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
         //Texture t2 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
@@ -187,7 +210,10 @@ namespace ARIS
         //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
         //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
 
-        sDepthMap = new Texture(2048, 2048, GL_RGBA16F, GL_RGBA, nullptr,
+        sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
+
+        blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
         // gBuffer FBO
@@ -235,6 +261,8 @@ namespace ARIS
         }
 
         sBuffer->Unbind();
+
+        kernelData->SetData();
 
         return 0;
     }
@@ -298,9 +326,28 @@ namespace ARIS
             }
         }
         sBuffer->Unbind();
-        
+
         m_SceneFBO->Activate();
-        // Step 2: Render the scene normally
+
+        // Step 2: Blur the shader using a convolution filter
+        computeBlur->Activate();
+        computeBlur->SetInt("halfKernel", KERNEL_SIZE / 2);
+
+        GLint srcLoc = glGetUniformLocation(computeBlur->m_ID, "src");
+        glBindImageTexture(0, sDepthMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+        glUniform1i(srcLoc, 0);
+
+        GLint dstLoc = glGetUniformLocation(computeBlur->m_ID, "dst");
+        glBindImageTexture(1, blurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        glUniform1i(dstLoc, 1);
+
+        glDispatchCompute(2048 / 128, 2048, 1);
+
+        glUseProgram(0);
+
+        
+
+        // Step 3: Render the scene normally
         glCullFace(GL_BACK);
 
 
