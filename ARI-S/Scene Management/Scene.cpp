@@ -165,7 +165,8 @@ namespace ARIS
     int Scene::Init()
     {
         lightingPass = new Shader(false, "Shadows/DiffuseWithShadows.vert", "Shadows/DiffuseWithShadows.frag");
-        basicShadows = new Shader(false, "Shadows/BasicShadows.vert", "Shadows/BasicShadows.frag");
+        basicShadows = new Shader(false, "Shadows/MomentShadows.vert", "Shadows/MomentShadows.frag");
+        debugShadows = new Shader(false, "Shadows/DebugShadows.vert", "Shadows/DebugShadows.frag");
 
         //Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
         //Texture t2 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
@@ -186,7 +187,7 @@ namespace ARIS
         //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
         //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
 
-        sDepthMap = new Texture(2048, 2048, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+        sDepthMap = new Texture(2048, 2048, GL_RGBA16F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
         // gBuffer FBO
@@ -222,9 +223,9 @@ namespace ARIS
         // Shadow FBO 
         sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         sBuffer->Bind();
-        sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+        sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
         sBuffer->DrawBuffers();
-        sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
+        sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -256,6 +257,12 @@ namespace ARIS
 
     int Scene::Render()
     {
+        //std::cout << "1st " << m_Camera.cameraPos << std::endl;
+        //std::cout << "2nd " << m_Camera.cameraPos + m_Camera.front << std::endl;
+        //std::cout << "3rd " << m_Camera.up << std::endl;
+        //std::cout << "front " << m_Camera.front << std::endl;
+        //std::cout << "up " << m_Camera.up << std::endl;
+
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
@@ -267,8 +274,12 @@ namespace ARIS
 
         // Shadow Pass
         // Step 1: Light POV to FBO
-        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
-        glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 lightProj = m_Camera.Perspective(sceneWidth, sceneHeight);
+        glm::mat4 lightView = glm::lookAt(
+            glm::vec3(10.2296f, 6.20311f, -14.2213f),
+            glm::vec3(9.64084f, 5.91074f, -13.4677f), 
+            glm::vec3(-0.180002f, 0.956306f, 0.230392f));
+
         glm::mat4 lightSpaceMat = lightProj * lightView;
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
@@ -288,29 +299,53 @@ namespace ARIS
         }
         sBuffer->Unbind();
         
-        
+        m_SceneFBO->Activate();
         // Step 2: Render the scene normally
         glCullFace(GL_BACK);
-        lightingPass->Activate();
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
 
-        lightingPass->SetInt("uShadowMap", 0);
-        lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
+        int debug = 0;
 
-        m_SceneFBO->Activate();
+        if (debug == 0)
         {
-            auto view = m_Registry.view<TransformComponent, MeshComponent>();
-            for (auto entity : view)
-            {
-                auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+            lightingPass->Activate();
 
-                transform.Update();
-                mesh.SetTextures(textures);
-                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
+
+            lightingPass->SetInt("uShadowMap", 0);
+            lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
+            lightingPass->SetInt("vWidth", sceneWidth);
+            lightingPass->SetInt("vHeight", sceneHeight);
+
+
+            {
+                auto view = m_Registry.view<TransformComponent, MeshComponent>();
+                for (auto entity : view)
+                {
+                    auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+
+                    transform.Update();
+                    mesh.SetTextures(textures);
+                    mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
+                }
             }
         }
+        else
+        {
+            debugShadows->Activate();
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
+
+            debugShadows->SetInt("uShadowMap", 0);
+            debugShadows->SetInt("vWidth", sceneWidth);
+            debugShadows->SetInt("vHeight", sceneHeight);
+
+            RenderQuad();
+        }
+
+
         m_SceneFBO->Unbind();
 
         return 0;
@@ -349,7 +384,12 @@ namespace ARIS
 
     void Scene::OnImGuiRender()
     {
-    
+        if (ImGui::Button("Move to light position and direction"))
+        {
+            m_Camera.cameraPos = glm::vec3(10.2296f, 6.20311f, -14.2213f);
+            m_Camera.front = glm::vec3(-0.58876f, -0.292372f, 0.753578f);
+            m_Camera.up = glm::vec3(-0.180002f, 0.956305f, 0.230392f);
+        }
     }
 
     void Scene::OnEvent(Event& e)

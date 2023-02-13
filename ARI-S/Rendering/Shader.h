@@ -23,8 +23,10 @@ namespace ARIS
 
 		Shader();
 		Shader(bool includeDefaultHeader, const char* vertPath, const char* fragPath, const char* geoPath = nullptr);
+		Shader(bool includeDefaultHeader, const char* cmptPath);
 
 		void Generate(bool includeDefaultHeader, const char* vPath, const char* fPath, const char* gPath = nullptr);
+		void GenerateCompute(bool includeHeader, const char* cmptPath);
 		void Activate();
 
 

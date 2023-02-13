@@ -13,6 +13,9 @@ out vec4 fragColor;
 uniform sampler2D uShadowMap;
 in vec4 shadowCoord;
 
+uniform int vWidth;
+uniform int vHeight;
+
 float Shadow(vec4 v, float bias)
 {
 	//// returns in range [-1, 1]
@@ -46,6 +49,8 @@ float Shadow(vec4 v, float bias)
 
 void main()
 {
+	vec2 uv = gl_FragCoord.xy / vec2(vWidth, vHeight);
+
 	vec3 lightColor = vec3(0.5f);
 	vec3 lightPos = vec3(1.0f);
 
@@ -63,4 +68,5 @@ void main()
 	
 	float shadow = Shadow(shadowCoord, bias);
 	fragColor = ambient + (1.0f - shadow) * diffuse;
+	//fragColor = texture(uShadowMap, shadowIdx.xy);
 }

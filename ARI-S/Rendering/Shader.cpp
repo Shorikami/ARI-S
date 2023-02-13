@@ -21,6 +21,14 @@ namespace ARIS
 		Generate(include, vPath, fPath, gPath);
 	}
 
+	Shader::Shader(bool include, const char* cmptPath)
+		: m_VertSrc(std::string())
+		, m_GeoSrc(std::string())
+		, m_FragSrc(std::string())
+	{
+		GenerateCompute(include, cmptPath);
+	}
+
 	void Shader::Generate(bool include, const char* vPath, const char* fPath, const char* gPath)
 	{
 		int success;
@@ -57,6 +65,27 @@ namespace ARIS
 		{
 			glDeleteShader(gShader);
 		}
+	}
+
+	void Shader::GenerateCompute(bool includeHeader, const char* cmptPath)
+	{
+		int success;
+		char infoLog[512];
+
+		GLuint vShader = Compile(includeHeader, cmptPath, GL_COMPUTE_SHADER, std::string());
+
+		m_ID = glCreateProgram();
+		glAttachShader(m_ID, vShader);
+		glLinkProgram(m_ID);
+
+		glGetProgramiv(m_ID, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			glGetProgramInfoLog(m_ID, 512, NULL, infoLog);
+			std::cout << "Program linking error: " << std::endl << infoLog << std::endl;
+		}
+
+		glDeleteShader(vShader);
 	}
 
 	void Shader::Activate()

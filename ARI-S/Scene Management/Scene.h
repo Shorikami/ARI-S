@@ -99,7 +99,7 @@ namespace ARIS
         //std::vector<Model*> models;
         //Model *cube, *sphere, *skybox;
 
-        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows;
+        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows, *debugShadows;
         Shader* skyboxShader;
 
         std::vector<Texture*> gTextures;
