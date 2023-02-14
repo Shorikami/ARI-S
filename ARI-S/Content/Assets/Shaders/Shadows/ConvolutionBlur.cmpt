@@ -3,7 +3,7 @@ layout(local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 layout(std140, binding = 3) uniform BlurKernel
 {
-  float weights[101];
+  vec4 weights[101];
 };
 
 uniform int halfKernel;
@@ -11,30 +11,89 @@ uniform int halfKernel;
 layout (rgba32f) uniform readonly image2D src;
 layout (rgba32f) uniform writeonly image2D dst;
 
+
+int CACHE = 128 + 2 * halfKernel;
+int LOAD = (CACHE + (128 - 1)) / 128;
+
 shared vec4 v[128 + 101];
 
 void main()
 {
+	//ivec2 size = imageSize(src);
+	//ivec2 gPos = ivec2(gl_GlobalInvocationID.xy);
+	//int origin = int(gl_WorkGroupID.x) * 128 - halfKernel;
+	//
+	//uint i = gl_LocalInvocationID.x;
+	//
+	//v[i] = imageLoad(src, gPos + (-halfKernel, 0));
+	//if (i < 2 * halfKernel)
+	//{
+	//	v[i + 128] = imageLoad(src, gPos + (128 - halfKernel, 0));
+	//}
+	//
+	//memoryBarrierShared();
+	//barrier();
+	//
+	//// Compute sum of weights[0 ... 2w] times corresponding pixels v[i ... i+2w]
+	//vec4 sum = vec4(0.0f);
+	//for (int ii = 0; ii <= 2 * halfKernel; ++ii)
+	//{
+	//	ivec2 pc = gPos + ivec2(ii - halfKernel, 0);
+	//	if (pc.x < 0) pc.x = 0;
+	//	if (pc.x >= size.x) pc.x = size.x - 1;
+	//	
+	//	int local = pc.x - origin;
+	//	
+	//	sum += weights[ii].x * v[local];
+	//	
+	//	//sum += weights[ii].x * v[i + ii];
+	//}
+	
+	// Store sum at gpos in dst image
+	//imageStore(dst, gPos, sum);
+	
 	ivec2 size = imageSize(src);
 	ivec2 gPos = ivec2(gl_GlobalInvocationID.xy);
 	
-	uint i = gl_LocalInvocationID.x;
+	int origin = int(gl_WorkGroupID.x) * 128 - halfKernel;
 	
-	v[i] = imageLoad(src, gPos + (-halfKernel, 0));
-	if (i < 2 * halfKernel)
+	for (int i = 0; i < LOAD; ++i)
 	{
-		v[i + 128] = imageLoad(src, gPos + (128 - halfKernel, 0));
+		int local = int(gl_LocalInvocationID.x) * LOAD + i;
+		
+		if (local < CACHE)
+		{
+			int pc = origin + local;
+			
+			if (pc >= 0 && pc < size.x)
+			{
+				v[local] = imageLoad(src, ivec2(pc, gPos.y));
+			}
+		}
 	}
 	
+	memoryBarrierShared();
 	barrier();
 	
 	// Compute sum of weights[0 ... 2w] times corresponding pixels v[i ... i+2w]
-	vec4 sum = vec4(0.0f);
-	for (int ii = 0; ii < 2 * halfKernel; ++ii)
+	if (gPos.x < size.x && gPos.y < size.y)
 	{
-		sum += weights[ii] * v[i + ii];
+		vec4 sum = vec4(0.0f);
+		
+		for (int i = 0; i <= 2 * halfKernel; ++i)
+		{
+			ivec2 pc = gPos + ivec2(i - halfKernel, 0);
+			if (pc.x < 0) pc.x = 0;
+			if (pc.x >= size.x) pc.x = size.x - 1;
+			
+			int local = pc.x - origin;
+			
+			sum += weights[i].x * v[local];
+		}
+		
+		// Store sum at gpos in dst image
+		imageStore(dst, gPos, sum);
 	}
 	
-	// Store sum at gpos in dst image
-	imageStore(dst, gPos, sum);
+
 }

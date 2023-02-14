@@ -52,7 +52,8 @@ namespace ARIS
 	class BlurKernel
 	{
 	public:
-		float weights[101];
+		//alignas(16) float weights[101];
+		glm::vec4 weights[101] = { }; // x = value
 	};
 
 	class World

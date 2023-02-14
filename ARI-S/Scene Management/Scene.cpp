@@ -12,6 +12,7 @@
 #include "imgui.h"
 
 #include "Math/Vector.h"
+#include "Math/Cholesky.hpp"
 
 //#include "stb_image.h"
 
@@ -19,6 +20,7 @@ unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
 #define KERNEL_SIZE 100
+#define MOMENT_SHADOWS 1
 
 namespace ARIS
 {
@@ -27,12 +29,10 @@ namespace ARIS
         return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
     }
 
-    float Gaussian(float x, float sigma)
+    float Gaussian(float i, float s)
     {
-        float factor = 1.0f / sqrtf(2.0f * glm::pi<float>() * sigma * sigma);
-        float expo = -(powf(x, 2.0f)) / (2.0f * powf(sigma, 2.0f));
-
-        return factor * std::exp(expo);
+        float mult = powf(i / s, 2.0f);
+        return std::exp(-0.5f * mult);
     }
 
 #pragma region Entity
@@ -109,11 +109,6 @@ namespace ARIS
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
-        for (unsigned i = 0; i < 101; ++i)
-        {
-            kernelData->GetData().weights[i] = Gaussian(i, 10);
-        }
-
         Init();
     }
 
@@ -141,11 +136,7 @@ namespace ARIS
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-        
-        for (int i = 0; i < KERNEL_SIZE + 1; ++i)
-        {
-            kernelData->GetData().weights[i] = Gaussian(i - KERNEL_SIZE / 2, 10);
-        }
+       
 
         Init();
     }
@@ -154,6 +145,48 @@ namespace ARIS
     {
         matrixData = new UniformBuffer<World>(0);
         kernelData = new UniformBuffer<BlurKernel>(3);
+
+        //// CHOLESKY MATH TEST
+        //float zTest = 0.005f;
+        //float bTest = 0.08f;
+        //float alpha = 1 * powf(10.0f, -3.0f);
+        //
+        //glm::vec3 output = glm::vec3(1.0f, zTest, zTest * zTest);
+        //glm::vec4 bVec = glm::vec4(bTest, bTest * bTest, bTest * bTest * bTest, bTest * bTest * bTest * bTest);
+        //
+        //glm::vec4 b_ = (1.0f - alpha) * bVec + alpha * glm::vec4(0.5f);
+        //
+        //glm::vec3 col1 = glm::vec3(1, b_.x, b_.y);
+        //glm::vec3 col2 = glm::vec3(b_.x, b_.y, b_.z);
+        //glm::vec3 col3 = glm::vec3(b_.y, b_.z, b_.w);
+        //
+        //glm::mat3 testMat = glm::mat3(col1, col2, col3);
+        //
+        //glm::vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, output.x, output.y, output.z);
+        //
+        //glm::vec3 res = testMat * choleskyVec;
+        //
+        //glm::vec3 cramersTest = Cramers(col1, col2, col3, output);
+        //
+        //glm::vec3 res2 = testMat * cramersTest;
+        //
+        //glm::vec2 quadr = Quadratic(cramersTest.x, cramersTest.y * zTest, cramersTest.z * pow(zTest, 2));
+        //
+        //// END TEST
+    }
+
+    void Scene::ReloadShaders()
+    {
+        delete lightingPass;
+        delete basicShadows;
+        
+#if MOMENT_SHADOWS
+        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
+        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+#else
+        lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
+        basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
+#endif
     }
 
     void Scene::GenerateLocalLights()
@@ -186,9 +219,14 @@ namespace ARIS
 
     int Scene::Init()
     {
-        lightingPass = new Shader(false, "Shadows/DiffuseWithShadows.vert", "Shadows/DiffuseWithShadows.frag");
-        basicShadows = new Shader(false, "Shadows/MomentShadows.vert", "Shadows/MomentShadows.frag");
-        debugShadows = new Shader(false, "Shadows/DebugShadows.vert", "Shadows/DebugShadows.frag");
+#if MOMENT_SHADOWS
+        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
+        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+#else
+        lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
+        basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
+#endif
+        //debugShadows = new Shader(false, "Shadows/DebugShadows.vert", "Shadows/DebugShadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         //Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
@@ -210,8 +248,19 @@ namespace ARIS
         //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
         //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
 
+#if MOMENT_SHADOWS
+
+#else
+
+#endif
+
+#if MOMENT_SHADOWS
         sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
+#else
+        sDepthMap = new Texture(2048, 2048, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
+#endif
 
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
@@ -249,9 +298,16 @@ namespace ARIS
         // Shadow FBO 
         sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         sBuffer->Bind();
+
+#if MOMENT_SHADOWS
         sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
         sBuffer->DrawBuffers();
         sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+#else
+        sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+        sBuffer->DrawBuffers();
+        sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
+#endif
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -261,6 +317,26 @@ namespace ARIS
         }
 
         sBuffer->Unbind();
+
+        // Build the kernel weights
+        for (int i = 0; i <= KERNEL_SIZE; ++i)
+        {
+            int halfWidth = KERNEL_SIZE / 2;
+            int idx = i - halfWidth;
+            kernelData->GetData().weights[i].x = Gaussian(idx, halfWidth / 2);
+        }
+
+        // Normalize the kernel weights so all values sum up to 1
+        float sum = 0.0f;
+        for (int i = 0; i <= KERNEL_SIZE; ++i)
+        {
+            sum += kernelData->GetData().weights[i].x;
+        }
+
+        for (int i = 0; i <= KERNEL_SIZE; ++i)
+        {
+            kernelData->GetData().weights[i].x /= sum;
+        }
 
         kernelData->SetData();
 
@@ -302,7 +378,7 @@ namespace ARIS
 
         // Shadow Pass
         // Step 1: Light POV to FBO
-        glm::mat4 lightProj = m_Camera.Perspective(sceneWidth, sceneHeight);
+        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
         glm::mat4 lightView = glm::lookAt(
             glm::vec3(10.2296f, 6.20311f, -14.2213f),
             glm::vec3(9.64084f, 5.91074f, -13.4677f), 
@@ -329,6 +405,7 @@ namespace ARIS
 
         m_SceneFBO->Activate();
 
+#if MOMENT_SHADOWS
         // Step 2: Blur the shader using a convolution filter
         computeBlur->Activate();
         computeBlur->SetInt("halfKernel", KERNEL_SIZE / 2);
@@ -343,55 +420,42 @@ namespace ARIS
 
         glDispatchCompute(2048 / 128, 2048, 1);
 
-        glUseProgram(0);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        
+        glUseProgram(0);
+#endif
+
 
         // Step 3: Render the scene normally
         glCullFace(GL_BACK);
 
+        lightingPass->Activate();
 
-        int debug = 0;
+        glActiveTexture(GL_TEXTURE0);
 
-        if (debug == 0)
+#if MOMENT_SHADOWS
+        glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
+#else
+        glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
+#endif
+        
+
+        lightingPass->SetInt("uShadowMap", 0);
+        lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
+        lightingPass->SetInt("vWidth", sceneWidth);
+        lightingPass->SetInt("vHeight", sceneHeight);
+
         {
-            lightingPass->Activate();
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
-
-            lightingPass->SetInt("uShadowMap", 0);
-            lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
-            lightingPass->SetInt("vWidth", sceneWidth);
-            lightingPass->SetInt("vHeight", sceneHeight);
-
-
+            auto view = m_Registry.view<TransformComponent, MeshComponent>();
+            for (auto entity : view)
             {
-                auto view = m_Registry.view<TransformComponent, MeshComponent>();
-                for (auto entity : view)
-                {
-                    auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+                auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
 
-                    transform.Update();
-                    mesh.SetTextures(textures);
-                    mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
-                }
+                transform.Update();
+                mesh.SetTextures(textures);
+                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
             }
         }
-        else
-        {
-            debugShadows->Activate();
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
-
-            debugShadows->SetInt("uShadowMap", 0);
-            debugShadows->SetInt("vWidth", sceneWidth);
-            debugShadows->SetInt("vHeight", sceneHeight);
-
-            RenderQuad();
-        }
-
 
         m_SceneFBO->Unbind();
 
@@ -436,6 +500,11 @@ namespace ARIS
             m_Camera.cameraPos = glm::vec3(10.2296f, 6.20311f, -14.2213f);
             m_Camera.front = glm::vec3(-0.58876f, -0.292372f, 0.753578f);
             m_Camera.up = glm::vec3(-0.180002f, 0.956305f, 0.230392f);
+        }
+
+        if (ImGui::Button("Reload Shadow Shaders"))
+        {
+            ReloadShaders();
         }
     }
 

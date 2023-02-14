@@ -18,33 +18,14 @@ uniform int vHeight;
 
 float Shadow(vec4 v, float bias)
 {
-	//// returns in range [-1, 1]
+	// shadowCoord is already converted to [0, 1]
 	//vec3 coords = v.xyz / v.w;
-	//
-	//// returns in range [0, 1]
 	//coords = coords * 0.5f + 0.5f;
 	
-	//if (v.z > 1.0f)
-	//{
-	//	return 0.0f;
-	//}
+	float closest = texture(uShadowMap, v.xy).r;
+	float curr = v.z;
 	
-	//float closestDepth = texture(uShadowMap, v.xy).r;
-	//float currDepth = v.z;
-	//
-	//return currDepth - bias > closestDepth ? 1.0f : 0.0f;
-	
-	vec2 shadowIdx = v.xy / v.w;
-	
-	if (v.w <= 0.0f || (shadowIdx.x < 0.0f || shadowIdx.x > 1.0f) || (shadowIdx.y < 0.0f || shadowIdx.y > 1.0f))
-	{
-		return 0.0f;
-	}
-	
-	float lightDepth = texture(uShadowMap, shadowIdx).r;
-	float pixelDepth = shadowCoord.z;
-	
-	return pixelDepth - bias > lightDepth ? 1.0f : 0.0f;
+	return curr - bias > closest ? 1.0f : 0.0f;
 }
 
 void main()
@@ -68,5 +49,4 @@ void main()
 	
 	float shadow = Shadow(shadowCoord, bias);
 	fragColor = ambient + (1.0f - shadow) * diffuse;
-	//fragColor = texture(uShadowMap, shadowIdx.xy);
 }
