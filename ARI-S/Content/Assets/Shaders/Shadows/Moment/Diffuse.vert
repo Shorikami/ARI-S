@@ -28,5 +28,6 @@ void main()
     vs_out.fragNormal = normalize(normalTransf * vertexNormal);
 
 	gl_Position = projection * view * model * vec4(modelPosition, 1.0f);
+
 	shadowCoord = shadowMatrix * model * vec4(modelPosition, 1.0f);
 }

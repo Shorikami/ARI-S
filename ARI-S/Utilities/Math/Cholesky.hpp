@@ -5,6 +5,33 @@
 
 namespace ARIS
 {
+	float ShadowTest(float root1, float root2, float depth, glm::vec4 b_)
+	{
+		// The diffuse part
+		if (depth <= root1)
+		{
+			return 0.0f;
+		}
+
+		// Inside the shadow
+		else if (depth <= root2)
+		{
+			float num = (depth * root2 - b_.x * (depth + root2) + b_.y);
+			float denom = (root2 - root1) * (depth - root1);
+
+			return (num / denom);
+		}
+
+		// edges of + outside the shadow
+		else
+		{
+			float num = (root1 * root2 - b_.x * (root1 + root2) + b_.y);
+			float denom = (depth - root1) * (depth - root2);
+
+			return 1.0f - (num / denom);
+		}
+	}
+
 	float Det3(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3)
 	{
 		return v1.x * (v2.y * v3.z - v2.z * v3.y) +
@@ -15,8 +42,10 @@ namespace ARIS
 	static glm::vec2 Quadratic(float a, float b, float c)
 	{
 		float discriminant = b * b - 4 * a * c;
-		float x1 = (-b + sqrt(discriminant)) / (2 * a);
-		float x2 = (-b - sqrt(discriminant)) / (2 * a);
+		float t = sqrtf(discriminant);
+
+		float x1 = (-b + t) / (2 * a);
+		float x2 = (-b - t) / (2 * a);
 
 		return glm::vec2(x1, x2);
 	}

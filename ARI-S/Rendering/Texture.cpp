@@ -46,7 +46,7 @@ namespace ARIS
 
 		if (repeat == GL_CLAMP_TO_BORDER)
 		{
-			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 		}
 

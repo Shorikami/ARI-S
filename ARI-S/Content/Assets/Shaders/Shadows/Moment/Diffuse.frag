@@ -4,7 +4,6 @@ in VS_OUT
 {
     vec3 fragDiffuse;
     vec3 fragNormal;
-
 } fs_in;
 
 
@@ -83,12 +82,8 @@ vec3 Cholesky(float m11, float m12, float m13, float m22, float m23, float m33,
 
 float Shadow(vec4 v, float bias)
 {
-	if (v.w <= 0.0f || (v.x < 0.0f || v.x > 1.0f) || (v.y < 0.0f || v.y > 1.0f))
-	{
-		return 0.0f;
-	}
-	
 	vec4 lightDepth = texture(uShadowMap, v.xy);
+  
 	vec4 b_ = (1.0f - bias) * lightDepth + bias * vec4(0.5f);
 	
 	vec3 col1 = vec3(1.0f, b_.x, b_.y);
@@ -149,7 +144,19 @@ void main()
 	float dotP = dot(fs_in.fragNormal, lNormal);
 	float nDotL = max(dotP, 0.0f);
 	vec4 diffuse = vec4(lightColor * nDotL, 1.0f);
-	
+  
 	float shadow = Shadow(shadowCoord, 1.0f * pow(10, -3));
-	fragColor = ambient + (1.0f - shadow) * diffuse;
+  
+  if ((1 - shadow) < 0.0f)
+  {
+    fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+  }
+  else if ((1 - shadow) > 1.0f)
+  {
+    fragColor = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+  }
+  else
+  {
+    fragColor = ambient + (1 - shadow) * diffuse;
+  }
 }

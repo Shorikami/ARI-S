@@ -20,7 +20,7 @@ unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
 #define KERNEL_SIZE 100
-#define MOMENT_SHADOWS 1
+#define MOMENT_SHADOWS 0
 
 namespace ARIS
 {
@@ -146,33 +146,35 @@ namespace ARIS
         matrixData = new UniformBuffer<World>(0);
         kernelData = new UniformBuffer<BlurKernel>(3);
 
-        //// CHOLESKY MATH TEST
-        //float zTest = 0.005f;
-        //float bTest = 0.08f;
-        //float alpha = 1 * powf(10.0f, -3.0f);
-        //
-        //glm::vec3 output = glm::vec3(1.0f, zTest, zTest * zTest);
-        //glm::vec4 bVec = glm::vec4(bTest, bTest * bTest, bTest * bTest * bTest, bTest * bTest * bTest * bTest);
-        //
-        //glm::vec4 b_ = (1.0f - alpha) * bVec + alpha * glm::vec4(0.5f);
-        //
-        //glm::vec3 col1 = glm::vec3(1, b_.x, b_.y);
-        //glm::vec3 col2 = glm::vec3(b_.x, b_.y, b_.z);
-        //glm::vec3 col3 = glm::vec3(b_.y, b_.z, b_.w);
-        //
-        //glm::mat3 testMat = glm::mat3(col1, col2, col3);
-        //
-        //glm::vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, output.x, output.y, output.z);
-        //
-        //glm::vec3 res = testMat * choleskyVec;
-        //
-        //glm::vec3 cramersTest = Cramers(col1, col2, col3, output);
-        //
-        //glm::vec3 res2 = testMat * cramersTest;
-        //
-        //glm::vec2 quadr = Quadratic(cramersTest.x, cramersTest.y * zTest, cramersTest.z * pow(zTest, 2));
-        //
-        //// END TEST
+        // CHOLESKY MATH TEST
+        float zTest = 0.847975643f;
+        float bTest = 0.13018f;
+        float alpha = 1 * powf(10.0f, -3.0f);
+        
+        glm::vec3 output = glm::vec3(1.0f, zTest, zTest * zTest);
+        glm::vec4 bVec = glm::vec4(0.11476f, 0.0178f, 0.00276f, 0.00043f);
+        
+        glm::vec4 b_ = (1.0f - alpha) * bVec + alpha * glm::vec4(0.5f);
+        
+        glm::vec3 col1 = glm::vec3(1, b_.x, b_.y);
+        glm::vec3 col2 = glm::vec3(b_.x, b_.y, b_.z);
+        glm::vec3 col3 = glm::vec3(b_.y, b_.z, b_.w);
+        
+        glm::mat3 testMat = glm::mat3(col1, col2, col3);
+        
+        glm::vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, output.x, output.y, output.z);
+        
+        glm::vec3 res = testMat * choleskyVec;
+        
+        glm::vec3 cramersTest = Cramers(col1, col2, col3, output);
+        
+        glm::vec3 res2 = testMat * cramersTest;
+        
+        glm::vec2 quadr = Quadratic(cramersTest.x, cramersTest.y * zTest, cramersTest.z * pow(zTest, 2));
+        
+        float shadowVal = ShadowTest(quadr.x, quadr.y, zTest, b_);
+
+        // END TEST
     }
 
     void Scene::ReloadShaders()
@@ -370,11 +372,12 @@ namespace ARIS
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
-        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
+        //glEnable(GL_DEPTH_TEST);
+        //glDisable(GL_BLEND);
 
         // Shadow Pass
         // Step 1: Light POV to FBO
@@ -403,6 +406,7 @@ namespace ARIS
         }
         sBuffer->Unbind();
 
+        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         m_SceneFBO->Activate();
 
 #if MOMENT_SHADOWS
@@ -428,7 +432,7 @@ namespace ARIS
 
         // Step 3: Render the scene normally
         glCullFace(GL_BACK);
-
+        
         lightingPass->Activate();
 
         glActiveTexture(GL_TEXTURE0);
