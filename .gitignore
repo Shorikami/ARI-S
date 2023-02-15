@@ -12,3 +12,4 @@ obj/
 **.vcxproj.filters
 **.vcxproj.user
 **.ini
+**.exe

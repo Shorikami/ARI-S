@@ -5,6 +5,11 @@
 
 namespace ARIS
 {
+	glm::vec3 FMA(glm::vec3 a, glm::vec3 b, glm::vec3 c)
+	{
+		return a * b + c;
+	}
+
 	float ShadowTest(float root1, float root2, float depth, glm::vec4 b_)
 	{
 		// The diffuse part
@@ -32,6 +37,15 @@ namespace ARIS
 		}
 	}
 
+	float ShadowTest(float z, glm::vec2 roots, glm::vec4 b)
+	{
+		glm::vec4 vals = (roots.y < z) ? glm::vec4(roots.y, roots.x, 1.0f, 1.0f) :
+			((roots.x < z) ? glm::vec4(roots.x, roots.y, 0.0f, 1.0f) : glm::vec4(0.0f));
+
+		float quotient = (vals.x * roots.y - b.x * (vals.x + roots.y) + b.y) / ((roots.y - vals.y) * (z - roots.x));
+		return vals.y + vals.z * quotient;
+	}
+
 	float Det3(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3)
 	{
 		return v1.x * (v2.y * v3.z - v2.z * v3.y) +
@@ -48,6 +62,18 @@ namespace ARIS
 		float x2 = (-b - t) / (2 * a);
 
 		return glm::vec2(x1, x2);
+	}
+
+	static glm::vec2 Quadratic(glm::vec3 v)
+	{
+		float p = v[1] / v[2];
+		float q = v[0] / v[2];
+		float D = p * p * 0.25f - q;
+		float r = sqrt(D);
+
+		float z1 = -p * 0.5f - r;
+		float z2 = -p * 0.5f + r;
+		return glm::vec2(z1, z2);
 	}
 
 	static glm::vec3 Cramers(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 Z)
@@ -97,6 +123,30 @@ namespace ARIS
 		float c1 = (c_1 - b * c2 - c * c3) / a;
 
 		return glm::vec3(c3, c2, c1);
+	}
+
+	static glm::vec3 Cholesky(glm::vec4 b, float pixelDepth)
+	{
+		float L32D22 = fmaf(-b[0], b[1], b[2]);
+		float D22 = fmaf(-b[0], b[0], b[1]);
+		float sqDepth = fmaf(-b[1], b[1], b[3]);
+
+		float D33D22 = glm::dot(glm::vec2(sqDepth, -L32D22), glm::vec2(D22, L32D22));
+		float InvD22 = 1.0f / D22;
+		float L32 = L32D22 * InvD22;
+
+		glm::vec3 c = glm::vec3(1.0f, pixelDepth, pixelDepth * pixelDepth);
+
+		c[1] -= b.x;
+		c[2] -= b.y + L32 * c[1];
+
+		c[1] *= InvD22;
+		c[2] *= D22 / D33D22;
+
+		c[1] -= L32 * c[2];
+		c[0] -= glm::dot(glm::vec2(c.y, c.z), glm::vec2(b.x, b.y));
+
+		return c;
 	}
 }
 

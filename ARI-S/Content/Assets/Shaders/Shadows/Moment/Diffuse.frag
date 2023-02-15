@@ -42,6 +42,42 @@ vec2 Quadratic(float a, float b, float c)
 	return vec2(x1, x2);
 }
 
+vec2 Quadratic(vec3 v)
+{
+	float p = v[1] / v[2];
+	float q = v[0] / v[2];
+	float D = p * p * 0.25f - q;
+	float r = sqrt(D);
+
+	float z1 = -p * 0.5f - r;
+	float z2 = -p * 0.5f + r;
+	return vec2(z1, z2);
+}
+
+vec3 Cholesky(vec4 b, float pixelDepth)
+{
+	float L32D22 = fma(-b[0], b[1], b[2]);
+	float D22 = fma(-b[0], b[0], b[1]);
+	float sqDepth = fma(-b[1], b[1], b[3]);
+
+	float D33D22 = dot(vec2(sqDepth, -L32D22), vec2(D22, L32D22));
+	float InvD22 = 1.0f / D22;
+	float L32 = L32D22 * InvD22;
+
+	vec3 c = vec3(1.0f, pixelDepth, pixelDepth * pixelDepth);
+
+	c[1] -= b.x;
+	c[2] -= b.y + L32 * c[1];
+
+	c[1] *= InvD22;
+	c[2] *= D22 / D33D22;
+
+	c[1] -= L32 * c[2];
+	c[0] -= dot(vec2(c.y, c.z), vec2(b.x, b.y));
+
+	return c;
+}
+
 vec3 Cholesky(float m11, float m12, float m13, float m22, float m23, float m33, 
 			  float z1, float z2, float z3)
 {
@@ -102,32 +138,49 @@ float Shadow(vec4 v, float bias)
 	//					   choleskyVec.y * pixelDepth, 
 	//					   choleskyVec.z);
 	
+	vec3 choleskyVec = Cholesky(b_, pixelDepth);
+	
 	vec3 cramersVec = Cramers(col1, col2, col3, rightHand);
 	vec2 roots = Quadratic(cramersVec.x, cramersVec.y * pixelDepth, cramersVec.z * pixelDepth * pixelDepth);
 	
-	// The diffuse part
-	if (pixelDepth <= roots.x)
-	{
-		return 0.0f;
-	}
+	vec3 ve = vec3(choleskyVec.x, choleskyVec.y, choleskyVec.z);
+	roots = Quadratic(ve);
 	
-	// Inside the shadow
-	else if (pixelDepth <= roots.y)
-	{
-		float num = (pixelDepth * roots.y - b_.x * (pixelDepth + roots.y) + b_.y);
-		float denom = (roots.y - roots.x) * (pixelDepth - roots.x);
-		
-		return (num / denom);
-	}
+	float res = 1.0f;
 	
-	// edges of + outside the shadow
-	else
-	{
-		float num = (roots.x * roots.y - b_.x * (roots.x + roots.y) + b_.y);
-		float denom = (pixelDepth - roots.x) * (pixelDepth - roots.y);
-		
-		return 1.0f - (num / denom);
-	}
+	vec4 vals = (roots.y < pixelDepth) ? vec4(roots.x, pixelDepth, 1.0f, 1.0f) :
+		((roots.x < pixelDepth) ? vec4(pixelDepth, roots.x, 0.0f, 1.0f) : vec4(0.0f));
+
+	float quotient = (vals[0] * roots.y - b_[0] * (vals.x + roots.y) + b_[1]) / ((roots.y - vals.y) * (pixelDepth - roots.x));
+	
+	res = vals.y + vals.z * quotient;
+	
+	return clamp(res, 0.0f, 1.0f);
+
+	
+	//// The diffuse part
+	//if (pixelDepth <= roots.x)
+	//{
+	//	return 0.0f;
+	//}
+	//
+	//// Inside the shadow
+	//else if (pixelDepth <= roots.y)
+	//{
+	//	float num = (pixelDepth * roots.y - b_.x * (pixelDepth + roots.y) + b_.y);
+	//	float denom = (roots.y - roots.x) * (pixelDepth - roots.x);
+	//	
+	//	return (num / denom);
+	//}
+	//
+	//// edges of + outside the shadow
+	//else
+	//{
+	//	float num = (roots.x * roots.y - b_.x * (roots.x + roots.y) + b_.y);
+	//	float denom = (pixelDepth - roots.x) * (pixelDepth - roots.y);
+	//	
+	//	return 1.0f - (num / denom);
+	//}
 }
 
 void main()
@@ -147,16 +200,16 @@ void main()
   
 	float shadow = Shadow(shadowCoord, 1.0f * pow(10, -3));
   
-  if ((1 - shadow) < 0.0f)
-  {
-    fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-  }
-  else if ((1 - shadow) > 1.0f)
-  {
-    fragColor = vec4(0.0f, 0.0f, 1.0f, 1.0f);
-  }
-  else
-  {
-    fragColor = ambient + (1 - shadow) * diffuse;
-  }
+	if ((1 - shadow) < 0.0f)
+	{
+		fragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	}
+	else if ((1 - shadow) > 1.0f)
+	{
+		fragColor = vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	}
+	else
+	{
+		fragColor = ambient + (1 - shadow) * diffuse;
+	}
 }

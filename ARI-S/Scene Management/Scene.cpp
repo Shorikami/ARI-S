@@ -20,7 +20,7 @@ unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
 #define KERNEL_SIZE 100
-#define MOMENT_SHADOWS 0
+#define MOMENT_SHADOWS 1
 
 namespace ARIS
 {
@@ -163,16 +163,26 @@ namespace ARIS
         glm::mat3 testMat = glm::mat3(col1, col2, col3);
         
         glm::vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, output.x, output.y, output.z);
+        glm::vec3 choleskyTwoVec = Cholesky(b_, zTest);
         
-        glm::vec3 res = testMat * choleskyVec;
-        
+        glm::vec3 res = testMat * glm::vec3(choleskyVec.z, choleskyVec.y, choleskyVec.x);
+        glm::vec3 resres = testMat * choleskyTwoVec;
+
         glm::vec3 cramersTest = Cramers(col1, col2, col3, output);
-        
         glm::vec3 res2 = testMat * cramersTest;
         
-        glm::vec2 quadr = Quadratic(cramersTest.x, cramersTest.y * zTest, cramersTest.z * pow(zTest, 2));
+        glm::vec2 quadr = Quadratic(cramersTest.x, cramersTest.y, cramersTest.z);
+
+        // These should equal to each other
+        glm::vec2 quadr2 = Quadratic(choleskyVec.z, choleskyVec.y, choleskyVec.x);
+        glm::vec2 quadr3 = Quadratic(choleskyTwoVec);
+
+        // These should both equal 0
+        float quadrTest = choleskyTwoVec.z * powf(quadr3.x, 2.0f) + choleskyTwoVec.y * quadr3.x + choleskyTwoVec.x;
+        float quadrTest2 = choleskyTwoVec.z * powf(quadr3.y, 2.0f) + choleskyTwoVec.y * quadr3.y + choleskyTwoVec.x;
         
-        float shadowVal = ShadowTest(quadr.x, quadr.y, zTest, b_);
+        float shadowVal = ShadowTest(quadr2.x, quadr2.y, zTest, b_);
+        float shadowVal2 = ShadowTest(zTest, quadr2, b_);
 
         // END TEST
     }
