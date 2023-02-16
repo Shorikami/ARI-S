@@ -37,13 +37,37 @@ namespace ARIS
 		}
 	}
 
-	float ShadowTest(float z, glm::vec2 roots, glm::vec4 b)
+	float Hamburger(float z, glm::vec2 roots, glm::vec4 b)
 	{
 		glm::vec4 vals = (roots.y < z) ? glm::vec4(roots.y, roots.x, 1.0f, 1.0f) :
 			((roots.x < z) ? glm::vec4(roots.x, roots.y, 0.0f, 1.0f) : glm::vec4(0.0f));
 
 		float quotient = (vals.x * roots.y - b.x * (vals.x + roots.y) + b.y) / ((roots.y - vals.y) * (z - roots.x));
-		return vals.y + vals.z * quotient;
+		return vals.z + vals.w * quotient;
+	}
+
+	float Hausdorff(float z, glm::vec2 roots, glm::vec4 b)
+	{
+		float res = 1.0f;
+		if(roots.x < 0.0f || roots.y > 1.0f)
+		{
+		    float zFree = ((b[2] - b[1]) * z + b[2] - b[3]) / ((b[1] - b[0]) * z + b[1] - b[2]);
+		    float w1Factor = (z > zFree) ? 1.0f : 0.0f;
+		    res = (b[1] - b[0] + (b[2] - b[0] - (zFree + 1.0f) * (b[1] - b[0])) * (zFree - w1Factor - z)
+		    / (z * (z - zFree))) / (zFree - w1Factor) + 1.0f - b[0];
+		}
+
+		// Use the solution with three deltas
+		else    
+		{
+			glm::vec4 vals = (roots.y < z) ? glm::vec4(roots.y, roots.x, 1.0f, 1.0f) :
+				((roots.x < z) ? glm::vec4(roots.x, roots.y, 0.0f, 1.0f) : glm::vec4(0.0f));
+
+			float quotient = (vals.x * roots.y - b.x * (vals.x + roots.y) + b.y) / ((roots.y - vals.y) * (z - roots.x));
+			res = vals.z + vals.w * quotient;
+		}
+
+		return res;
 	}
 
 	float Det3(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3)
@@ -61,6 +85,10 @@ namespace ARIS
 		float x1 = (-b + t) / (2 * a);
 		float x2 = (-b - t) / (2 * a);
 
+		if (x1 > x2)
+		{
+			return glm::vec2(x2, x1);
+		}
 		return glm::vec2(x1, x2);
 	}
 
@@ -73,6 +101,12 @@ namespace ARIS
 
 		float z1 = -p * 0.5f - r;
 		float z2 = -p * 0.5f + r;
+
+		if (z1 > z2)
+		{
+			return glm::vec2(z2, z1);
+		}
+
 		return glm::vec2(z1, z2);
 	}
 
@@ -122,7 +156,7 @@ namespace ARIS
 		float c2 = (c_2 - e * c3) / d;
 		float c1 = (c_1 - b * c2 - c * c3) / a;
 
-		return glm::vec3(c3, c2, c1);
+		return glm::vec3(c1, c2, c3);
 	}
 
 	static glm::vec3 Cholesky(glm::vec4 b, float pixelDepth)

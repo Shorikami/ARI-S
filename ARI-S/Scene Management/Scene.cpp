@@ -18,9 +18,9 @@
 
 unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
+bool useMomentShadows = true;
 
 #define KERNEL_SIZE 100
-#define MOMENT_SHADOWS 1
 
 namespace ARIS
 {
@@ -136,7 +136,6 @@ namespace ARIS
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-       
 
         Init();
     }
@@ -147,12 +146,13 @@ namespace ARIS
         kernelData = new UniformBuffer<BlurKernel>(3);
 
         // CHOLESKY MATH TEST
-        float zTest = 0.847975643f;
-        float bTest = 0.13018f;
+        //float zTest = 0.847975643f;
+        float zTest = 0.10808f - (0.5f * 0.001f);
+        float depth = 0.04955f;
         float alpha = 1 * powf(10.0f, -3.0f);
         
         glm::vec3 output = glm::vec3(1.0f, zTest, zTest * zTest);
-        glm::vec4 bVec = glm::vec4(0.11476f, 0.0178f, 0.00276f, 0.00043f);
+        glm::vec4 bVec = glm::vec4(depth, powf(depth, 2), powf(depth, 3), powf(depth, 4));
         
         glm::vec4 b_ = (1.0f - alpha) * bVec + alpha * glm::vec4(0.5f);
         
@@ -165,24 +165,24 @@ namespace ARIS
         glm::vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, output.x, output.y, output.z);
         glm::vec3 choleskyTwoVec = Cholesky(b_, zTest);
         
-        glm::vec3 res = testMat * glm::vec3(choleskyVec.z, choleskyVec.y, choleskyVec.x);
+        glm::vec3 res = testMat * choleskyVec;
         glm::vec3 resres = testMat * choleskyTwoVec;
 
         glm::vec3 cramersTest = Cramers(col1, col2, col3, output);
         glm::vec3 res2 = testMat * cramersTest;
         
-        glm::vec2 quadr = Quadratic(cramersTest.x, cramersTest.y, cramersTest.z);
-
         // These should equal to each other
+        glm::vec2 quadr = Quadratic(cramersTest.z, cramersTest.y, cramersTest.x);
         glm::vec2 quadr2 = Quadratic(choleskyVec.z, choleskyVec.y, choleskyVec.x);
         glm::vec2 quadr3 = Quadratic(choleskyTwoVec);
 
         // These should both equal 0
-        float quadrTest = choleskyTwoVec.z * powf(quadr3.x, 2.0f) + choleskyTwoVec.y * quadr3.x + choleskyTwoVec.x;
-        float quadrTest2 = choleskyTwoVec.z * powf(quadr3.y, 2.0f) + choleskyTwoVec.y * quadr3.y + choleskyTwoVec.x;
+        float quadrTest = choleskyVec.z * powf(quadr2.x, 2.0f) + choleskyVec.y * quadr2.x + choleskyVec.x;
+        float quadrTest2 = choleskyVec.z * powf(quadr2.y, 2.0f) + choleskyVec.y * quadr2.y + choleskyVec.x;
         
         float shadowVal = ShadowTest(quadr2.x, quadr2.y, zTest, b_);
-        float shadowVal2 = ShadowTest(zTest, quadr2, b_);
+        float shadowVal2 = Hamburger(zTest, quadr2, b_);
+        float shadowVal3 = Hausdorff(zTest, quadr2, b_);
 
         // END TEST
     }
@@ -192,13 +192,16 @@ namespace ARIS
         delete lightingPass;
         delete basicShadows;
         
-#if MOMENT_SHADOWS
-        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
-        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
-#else
-        lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
-        basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
-#endif
+        if (useMomentShadows)
+        {
+            lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
+            basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        }
+        else
+        {
+            lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
+            basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
+        }
     }
 
     void Scene::GenerateLocalLights()
@@ -231,25 +234,24 @@ namespace ARIS
 
     int Scene::Init()
     {
-#if MOMENT_SHADOWS
-        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
-        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
-#else
-        lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
-        basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
-#endif
+        if (useMomentShadows)
+        {
+            lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
+            basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        }
+        else
+        {
+            lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
+            basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
+        }
+
         //debugShadows = new Shader(false, "Shadows/DebugShadows.vert", "Shadows/DebugShadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
-        //Texture t1 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
-        //Texture t2 = Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT);
-
-        // Object textures
-        //textures.push_back(std::make_pair(t1, "diffTex"));
-        //textures.push_back(std::make_pair(t2, "specTex"));
-        //
-        //groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_diff_512x512.png", GL_LINEAR, GL_REPEAT), "diffTex"));
-        //groundTextures.push_back(std::make_pair(new Texture("Materials/Textures/metal_roof_spec_512x512.png", GL_LINEAR, GL_REPEAT), "specTex"));
+        auto shirokoTex = std::make_pair(Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT), "diffTex");
+        auto arisTex = std::make_pair(Texture("Content/Assets/Models/BA/Aris/Texture2D/Aris_Original_Weapon.png", GL_LINEAR, GL_REPEAT), "diffTex");
+        auto hoshinoTex = std::make_pair(Texture("Content/Assets/Models/BA/Hoshino/Texture2D/Hoshino_Original_Weapon.png", GL_LINEAR, GL_REPEAT), "diffTex");
+        auto ground = std::make_pair(Texture("Materials/Textures/metal_roof_diff_512x512.png"), "diffTex");
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         //for (unsigned i = 0; i < 5; ++i)
@@ -259,20 +261,16 @@ namespace ARIS
         //}
         //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
         //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
-
-#if MOMENT_SHADOWS
-
-#else
-
-#endif
-
-#if MOMENT_SHADOWS
-        sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
-            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
-#else
-        sDepthMap = new Texture(2048, 2048, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
-            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
-#endif
+        if (useMomentShadows)
+        {
+            sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
+                GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
+        }
+        else
+        {
+            sDepthMap = new Texture(2048, 2048, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+                GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
+        }
 
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
@@ -311,15 +309,18 @@ namespace ARIS
         sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         sBuffer->Bind();
 
-#if MOMENT_SHADOWS
-        sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
-        sBuffer->DrawBuffers();
-        sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
-#else
-        sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
-        sBuffer->DrawBuffers();
-        sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
-#endif
+        if (useMomentShadows)
+        {
+            sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
+            sBuffer->DrawBuffers();
+            sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+        }
+        else
+        {
+            sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+            sBuffer->DrawBuffers();
+            sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
+        }
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -391,7 +392,7 @@ namespace ARIS
 
         // Shadow Pass
         // Step 1: Light POV to FBO
-        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
+        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, m_Camera.n, m_Camera.f);
         glm::mat4 lightView = glm::lookAt(
             glm::vec3(10.2296f, 6.20311f, -14.2213f),
             glm::vec3(9.64084f, 5.91074f, -13.4677f), 
@@ -410,7 +411,6 @@ namespace ARIS
                 auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
         
                 transform.Update();
-                mesh.SetTextures(textures);
                 mesh.Draw(transform.GetTransform(), lightView, lightProj, *basicShadows, false);
             }
         }
@@ -419,25 +419,26 @@ namespace ARIS
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         m_SceneFBO->Activate();
 
-#if MOMENT_SHADOWS
-        // Step 2: Blur the shader using a convolution filter
-        computeBlur->Activate();
-        computeBlur->SetInt("halfKernel", KERNEL_SIZE / 2);
+        if (useMomentShadows)
+        {
+            // Step 2: Blur the shader using a convolution filter
+            computeBlur->Activate();
+            computeBlur->SetInt("halfKernel", KERNEL_SIZE / 2);
 
-        GLint srcLoc = glGetUniformLocation(computeBlur->m_ID, "src");
-        glBindImageTexture(0, sDepthMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-        glUniform1i(srcLoc, 0);
+            GLint srcLoc = glGetUniformLocation(computeBlur->m_ID, "src");
+            glBindImageTexture(0, sDepthMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+            glUniform1i(srcLoc, 0);
 
-        GLint dstLoc = glGetUniformLocation(computeBlur->m_ID, "dst");
-        glBindImageTexture(1, blurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-        glUniform1i(dstLoc, 1);
+            GLint dstLoc = glGetUniformLocation(computeBlur->m_ID, "dst");
+            glBindImageTexture(1, blurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+            glUniform1i(dstLoc, 1);
 
-        glDispatchCompute(2048 / 128, 2048, 1);
+            glDispatchCompute(2048 / 128, 2048, 1);
 
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        glUseProgram(0);
-#endif
+            glUseProgram(0);
+        }
 
 
         // Step 3: Render the scene normally
@@ -447,12 +448,14 @@ namespace ARIS
 
         glActiveTexture(GL_TEXTURE0);
 
-#if MOMENT_SHADOWS
-        glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
-#else
-        glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
-#endif
-        
+        if (useMomentShadows)
+        {
+            glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
+        }
 
         lightingPass->SetInt("uShadowMap", 0);
         lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
@@ -466,7 +469,6 @@ namespace ARIS
                 auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
 
                 transform.Update();
-                mesh.SetTextures(textures);
                 mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
             }
         }
@@ -519,6 +521,11 @@ namespace ARIS
         if (ImGui::Button("Reload Shadow Shaders"))
         {
             ReloadShaders();
+        }
+
+        if (ImGui::Button("Switch between regular/moment"))
+        {
+            useMomentShadows = !useMomentShadows;
         }
     }
 

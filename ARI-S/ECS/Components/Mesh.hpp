@@ -37,7 +37,7 @@ namespace ARIS
 			m_Model.BuildArrays();
 		}
 
-		void SetTextures(std::vector< std::pair<Texture, std::string>> t)
+		void SetTextures(std::vector<std::pair<Texture, std::string>> t)
 		{
 			m_Textures = t;
 		}

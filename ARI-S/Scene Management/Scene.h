@@ -107,7 +107,7 @@ namespace ARIS
         std::vector<Texture*> gTextures;
         Texture* sDepthMap, *blurOutput;
 
-        std::vector<std::pair<Texture, std::string>> textures, groundTextures, skyboxTextures;
+        std::vector<std::pair<Texture, std::string>> skyboxTextures;
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;
