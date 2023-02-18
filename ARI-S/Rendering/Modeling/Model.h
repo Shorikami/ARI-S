@@ -36,11 +36,13 @@ namespace ARIS
 		void operator=(const Model& other);
 
 		void BuildArrays();
+		void InitializeID(int entityID);
+
 		void DestroyArrays();
 
 		std::string GetName() const { return m_Name; }
 
-		VertexArray GetVAO() const { return m_VertexArray; }
+		VertexArray GetVAO() const& { return m_VertexArray; }
 
 		size_t GetVertexCount() { return m_Vertices.size(); }
 		size_t GetIndexCount() { return m_Indices.size(); }

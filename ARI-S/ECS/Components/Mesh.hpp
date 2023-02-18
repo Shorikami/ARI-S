@@ -37,12 +37,19 @@ namespace ARIS
 			m_Model.BuildArrays();
 		}
 
+		void SetEntityID(uint64_t entityID)
+		{
+			int id = static_cast<int>(entityID);
+			m_Model.InitializeID(id);
+		}
+
 		void SetTextures(std::vector<std::pair<Texture, std::string>> t)
 		{
 			m_Textures = t;
 		}
 
-		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, Shader other = Shader(), bool useDefault = true)
+		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, 
+			Shader other = Shader(), bool useDefault = true, int entityID = -1)
 		{
 			if (useDefault)
 			{
@@ -81,9 +88,17 @@ namespace ARIS
 				other.SetMat4("projection", proj);
 			}
 
-			m_Model.GetVAO().Bind();
-			m_Model.GetVAO().Draw(GL_TRIANGLES, static_cast<GLuint>(m_Model.GetIndexCount()), GL_UNSIGNED_INT);
-			m_Model.GetVAO().Clear();
+			std::vector<glm::vec3> test(m_Model.GetVertexCount(), glm::vec3(0.0f));
+			VertexArray vao = m_Model.GetVAO();
+			vao.Bind();
+
+			std::vector<int> id(m_Model.GetVertexCount(), entityID);
+			vao["EntityID"].Bind();
+			vao["EntityID"].UpdateData<GLint>(0, static_cast<GLuint>(m_Model.GetVertexCount()), id.data());
+			vao["EntityID"].Unbind();
+
+			vao.Draw(GL_TRIANGLES, static_cast<GLuint>(m_Model.GetIndexCount()), GL_UNSIGNED_INT);
+			vao.Clear();
 		}
 
 		void ReloadShader()

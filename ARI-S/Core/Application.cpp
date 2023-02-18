@@ -21,8 +21,8 @@ namespace ARIS
 		props.s_Width = windowWidth;
 		props.s_Height = windowHeight;
 		props.s_MajorVer = 4;
-		props.s_MinorVer = 3;
-		props.s_Title = "Hayase Renderer";
+		props.s_MinorVer = 5;
+		props.s_Title = "ARI-S";
 
 		m_Window = Window::Generate(props);
 		m_Window->SetEventCallback(BIND_EVENT_FUNC(Application::OnEvent));

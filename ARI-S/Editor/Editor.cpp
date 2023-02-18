@@ -13,6 +13,13 @@
 
 #include "FileDialogs.h"
 
+#include "ImGuizmo.h"
+
+#include "InputPoll.h"
+#include "Tools.h"
+
+#include "Math/Math.h"
+
 namespace ARIS
 {
 	Editor::Editor()
@@ -53,6 +60,15 @@ namespace ARIS
 
 		m_ActiveScene = std::make_shared<Scene>(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 		m_HierarchyPanel.SetContext(m_ActiveScene);
+
+		//m_Framebuffer = new Framebuffer(w, h, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//m_Framebuffer->Bind();
+		//m_Framebuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
+		//m_Framebuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32I, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+		//m_Framebuffer->DrawBuffers();
+		//m_Framebuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+		//
+		//m_Framebuffer->Unbind();
 	}
 
 	void Editor::OnDetach()
@@ -66,21 +82,49 @@ namespace ARIS
 	{
 		m_ActiveScene->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 
-		Framebuffer* fbo = m_ActiveScene.get()->GetSceneFBO();
+		//if (FramebufferSpecs spec = m_ActiveScene->GetSceneFBO()->GetSpecs(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
+		//	&& (spec.s_Width != m_ViewportSize.x || spec.s_Height != m_ViewportSize.y))
+		//{
+		//	m_ActiveScene->GetSceneFBO()->Resize(static_cast<uint32_t>(m_ViewportSize.x),
+		//		static_cast<uint32_t>(m_ViewportSize.y));
+		//}
 
-		if (m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && 
-			(fbo->GetSpecs().s_Width != m_ViewportSize.x || fbo->GetSpecs().s_Height != m_ViewportSize.y))
-		{
-			fbo->Resize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
-		}
+		//m_Framebuffer->Bind();
+		//m_Framebuffer->ClearAttachment(1, -1);
+		//m_Framebuffer->Unbind();
 
-		BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+		BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
 		if (m_ViewportFocused)
 		{
 			m_ActiveScene->GetCamera().Update(dt);
 		}
 
 		m_ActiveScene.get()->Update(dt);
+
+		auto [mx, my] = ImGui::GetMousePos();
+		mx -= m_VPBounds[0].x;
+		my -= m_VPBounds[0].y;
+		
+		glm::vec2 vpSize = m_VPBounds[1] - m_VPBounds[0];
+		my = vpSize.y - my;
+		
+		int mouseX = static_cast<int>(mx);
+		int mouseY = static_cast<int>(my);
+		
+		if (mouseX >= 0 && mouseY >= 0 &&
+			mouseX < static_cast<int>(vpSize.x) && mouseY < static_cast<int>(vpSize.y))
+		{
+			int pixel = m_ActiveScene->GetSceneFBO()->ReadPixel(1, mouseX, mouseY);
+			if (pixel == -1)
+			{
+				m_HoveredEntity = Entity();
+			}
+			else
+			{
+				m_HoveredEntity = Entity((entt::entity)pixel, m_ActiveScene.get());
+			}
+		}
+		m_ActiveScene->GetSceneFBO()->Unbind();
 	}
 
 	void Editor::Begin()
@@ -153,6 +197,15 @@ namespace ARIS
 	{
 		m_ActiveScene.get()->OnImGuiRender();
 
+		ImGui::Begin("Debug");
+#if 1
+		std::string name = "None";
+		if (m_HoveredEntity)
+			name = m_HoveredEntity.GetComponent<TagComponent>().s_Tag;
+		ImGui::Text("Hovered Entity: %s", name.c_str());
+#endif	
+		ImGui::End();
+
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -188,6 +241,11 @@ namespace ARIS
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
 		ImGui::Begin("Viewport");
+		auto vpMinRegion = ImGui::GetWindowContentRegionMin();
+		auto vpMaxRegion = ImGui::GetWindowContentRegionMax();
+		auto vpOffset = ImGui::GetWindowPos();
+		m_VPBounds[0] = { vpMinRegion.x + vpOffset.x, vpMinRegion.y + vpOffset.y };
+		m_VPBounds[1] = { vpMaxRegion.x + vpOffset.x, vpMaxRegion.y + vpOffset.y };
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
@@ -197,9 +255,55 @@ namespace ARIS
 		
 		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment().m_ID;
 		ImGui::Image(reinterpret_cast<void*>(fbTex), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-		ImGui::PopStyleVar();
+		
+		Entity selectedEntity = m_HierarchyPanel.GetSelectedEntity();
+		if (selectedEntity && m_GizmoType != -1)
+		{
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+
+			ImGuizmo::SetRect(m_VPBounds[0].x, m_VPBounds[0].y,
+				m_VPBounds[1].x - m_VPBounds[0].x, m_VPBounds[1].y - m_VPBounds[0].y);
+
+			auto cam = m_ActiveScene->GetCamera();
+			auto fbo = m_ActiveScene->GetSceneFBO();
+
+			const glm::mat4& proj = cam.Perspective(fbo->GetSpecs().s_Width, fbo->GetSpecs().s_Height);
+			glm::mat4 view = cam.View();
+
+			auto& tc = selectedEntity.GetComponent<TransformComponent>();
+			glm::mat4 tr = tc.GetTransform();
+
+			bool snap = InputPoll::IsKeyPressed(KeyTags::LeftControl);
+			float snapVal = 0.5f;
+
+			if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+			{
+				snapVal = 45.0f;
+			}
+
+			float snapVals[3] = { snapVal, snapVal, snapVal };
+
+			ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), (ImGuizmo::OPERATION)m_GizmoType,
+				ImGuizmo::LOCAL, glm::value_ptr(tr), nullptr, snap ? snapVals : nullptr);
+
+			if (ImGuizmo::IsUsing())
+			{
+				glm::vec3 tra, rot, sc;
+				Math::Decompose(tr, tra, rot, sc);
+
+				glm::vec3 deltaRot = rot - tc.m_Rotation;
+				tc.m_Translation = tra;
+				tc.m_Rotation += deltaRot;
+				tc.m_Scale = sc;
+			}
+
+		}
 
 		ImGui::End();
+		ImGui::PopStyleVar();
+
+		//ImGui::End();
 	}
 
 	void Editor::OnEvent(Event& e)
@@ -219,6 +323,117 @@ namespace ARIS
 
 			m_ActiveScene.get()->OnEvent(e);
 		}
+
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT_FUNC(Editor::OnKeyPressed));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_EVENT_FUNC(Editor::OnMouseButtonPressed));
+	}
+
+	bool Editor::OnKeyPressed(KeyPressedEvent& e)
+	{
+		if (e.IsRepeat())
+		{
+			return false;
+		}
+
+		bool ctrl = InputPoll::IsKeyPressed(KeyTags::LeftControl) || InputPoll::IsKeyPressed(KeyTags::RightControl);
+		bool shift = InputPoll::IsKeyPressed(KeyTags::LeftShift) || InputPoll::IsKeyPressed(KeyTags::RightShift);
+
+		switch (e.GetKeyCode())
+		{
+			case KeyTags::N:
+			{
+				if (ctrl)
+				{
+					NewScene();
+				}
+				break;
+			}
+
+			case KeyTags::O:
+			{
+				if (ctrl)
+				{
+					OpenScene();
+				}
+				break;
+			}
+
+			case KeyTags::S:
+			{
+				if (ctrl)
+				{
+					if (shift)
+					{
+						SaveSceneAs();
+					}
+				}
+				break;
+			}
+
+			case KeyTags::Q:
+			{
+				if (!ImGuizmo::IsUsing())
+				{
+					m_GizmoType = -1;
+				}
+				break;
+			}
+
+			case KeyTags::W:
+			{
+				if (!ImGuizmo::IsUsing())
+				{
+					m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+				}
+				break;
+			}
+			case KeyTags::E:
+			{
+				if (!ImGuizmo::IsUsing())
+				{
+					m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+				}
+				break;
+			}
+			case KeyTags::R:
+			{
+				if (!ImGuizmo::IsUsing())
+				{
+					m_GizmoType = ImGuizmo::OPERATION::SCALE;
+				}
+				break;
+			}
+
+			//case KeyTags::Delete:
+			//{
+			//	if (Application::Get()->GetActiveWidgetID() == 0)
+			//	{
+			//		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+			//		if (selectedEntity)
+			//		{
+			//			m_SceneHierarchyPanel.SetSelectedEntity({});
+			//			m_ActiveScene->DestroyEntity(selectedEntity);
+			//		}
+			//	}
+			//	break;
+			//}
+		}
+
+		return false;
+	}
+
+	bool Editor::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+		if (e.GetMouseButton() == MouseTags::ButtonLeft)
+		{
+			if (m_ViewportHovered && !ImGuizmo::IsOver() && !InputPoll::IsKeyPressed(KeyTags::LeftAlt))
+			{
+				m_HierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+			}
+		}
+
+		return false;
 	}
 
 	void Editor::NewScene()

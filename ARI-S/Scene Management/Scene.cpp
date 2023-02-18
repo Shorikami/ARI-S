@@ -292,9 +292,10 @@ namespace ARIS
         // Scene FBO (for the editor)
         m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_SceneFBO->Bind();
-        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32I, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
         m_SceneFBO->DrawBuffers();
-        m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+        m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -313,11 +314,11 @@ namespace ARIS
         {
             sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
             sBuffer->DrawBuffers();
-            sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+            sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
         }
         else
         {
-            sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA, GL_UNSIGNED_BYTE);
+            sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
             sBuffer->DrawBuffers();
             sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
         }
@@ -383,6 +384,8 @@ namespace ARIS
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
+        glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         glEnable(GL_CULL_FACE);
@@ -392,7 +395,7 @@ namespace ARIS
 
         // Shadow Pass
         // Step 1: Light POV to FBO
-        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, m_Camera.n, m_Camera.f);
+        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
         glm::mat4 lightView = glm::lookAt(
             glm::vec3(10.2296f, 6.20311f, -14.2213f),
             glm::vec3(9.64084f, 5.91074f, -13.4677f), 
@@ -418,6 +421,8 @@ namespace ARIS
 
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         m_SceneFBO->Activate();
+
+        m_SceneFBO->ClearAttachment(1, -1);
 
         if (useMomentShadows)
         {
@@ -469,11 +474,12 @@ namespace ARIS
                 auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
 
                 transform.Update();
-                mesh.Draw(transform.GetTransform(), m_Camera.View(), m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false);
+                mesh.Draw(transform.GetTransform(), m_Camera.View(), 
+                    m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false, (int)entity);
             }
         }
 
-        m_SceneFBO->Unbind();
+        //m_SceneFBO->Unbind();
 
         return 0;
     }
@@ -485,6 +491,16 @@ namespace ARIS
 
     void Scene::OnViewportResize(uint32_t w, uint32_t h)
     {
+        if (_windowWidth == w && _windowHeight == h)
+        {
+            return;
+        }
+
+        _windowWidth = w;
+        _windowHeight = h;
+
+        m_SceneFBO->Resize(static_cast<uint32_t>(_windowWidth), static_cast<uint32_t>(_windowHeight));
+
         return;
     }
 

@@ -41,6 +41,7 @@ namespace ARIS
 
 		friend class SceneSerializer;
 		friend class HierarchyPanel;
+		friend class Editor;
 	};
 }
 

@@ -41,15 +41,17 @@ namespace ARIS
 	struct FramebufferTexture
 	{
 		FramebufferTexture() = default;
-		FramebufferTexture(GLenum att, GLenum form, GLenum type)
+		FramebufferTexture(GLenum att, GLenum inter, GLenum data, GLenum type)
 			: s_AttachType(att)
-			, s_Format(form)
+			, s_Internal(inter)
+			, s_DataForm(data)
 			, s_Type(type)
 		{
 		}
 
 		GLenum s_AttachType = 0;
-		GLenum s_Format = 0;
+		GLenum s_Internal = 0;
+		GLenum s_DataForm = 0;
 		GLenum s_Type = 0;
 	};
 
@@ -154,7 +156,10 @@ namespace ARIS
 
 			for (size_t i = 0; i < m_Specs.s_Attachments.s_Attachments.size(); ++i)
 			{
-				AllocateAttachTexture(GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i), GL_RGBA, GL_UNSIGNED_BYTE, true);
+				GLenum internalF = m_Specs.s_Attachments.s_Attachments[i].s_Internal;
+				GLenum dataF = m_Specs.s_Attachments.s_Attachments[i].s_DataForm;
+
+				AllocateAttachTexture(GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i), internalF, dataF, GL_UNSIGNED_BYTE, true);
 			}
 
 			if (m_ColorAttachments.size() > 0)
@@ -164,7 +169,7 @@ namespace ARIS
 			
 			if (m_Specs.s_Attachments.s_DepthFormat != 0)
 			{
-				AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_FLOAT, true);
+				AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT, true);
 			}
 
 			int res = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -186,6 +191,11 @@ namespace ARIS
 
 		void Resize(uint32_t width, uint32_t height)
 		{
+			if (width == 0 || height == 0)
+			{
+				return;
+			}
+
 			m_Specs.s_Width = width;
 			m_Specs.s_Height = height;
 
@@ -205,16 +215,18 @@ namespace ARIS
 		//	m_RBOs.push_back(rbo);
 		//}
 
-		void AllocateAttachTexture(GLenum attachType, GLenum format, GLenum type, bool reallocate = false)
+		void AllocateAttachTexture(GLenum attachType, GLenum internalForm, GLenum dataForm, 
+			GLenum type, bool reallocate = false)
 		{
 			std::string name = "texture" + std::to_string(m_ColorAttachments.size());
 			Texture tex(name);
 			tex.m_Width = m_Specs.s_Width;
 			tex.m_Height = m_Specs.s_Height;
-			tex.m_DataFormat = tex.m_InternalFormat = format;
+			tex.m_DataFormat = dataForm;
+			tex.m_InternalFormat = internalForm;
 
 			tex.Bind();
-			tex.Allocate(format, m_Specs.s_Width, m_Specs.s_Height, type);
+			tex.Allocate(internalForm, dataForm, m_Specs.s_Width, m_Specs.s_Height, type);
 			Texture::SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER);
 
 			//float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -228,7 +240,7 @@ namespace ARIS
 				
 				if (!reallocate)
 				{
-					m_Specs.s_Attachments.s_DepthFormat = format;
+					m_Specs.s_Attachments.s_DepthFormat = dataForm;
 				}
 			}
 			else
@@ -237,7 +249,7 @@ namespace ARIS
 
 				if (!reallocate)
 				{
-					m_Specs.s_Attachments.s_Attachments.push_back(FramebufferTexture(attachType, format, type));
+					m_Specs.s_Attachments.s_Attachments.push_back(FramebufferTexture(attachType, internalForm, dataForm, type));
 				}
 			}
 		}
@@ -253,7 +265,7 @@ namespace ARIS
 			else
 			{
 				m_ColorAttachments.push_back(t);
-				m_Specs.s_Attachments.s_Attachments.push_back(FramebufferTexture(type, GL_RGBA, GL_UNSIGNED_BYTE));
+				m_Specs.s_Attachments.s_Attachments.push_back(FramebufferTexture(type, t.m_InternalFormat, t.m_DataFormat, GL_UNSIGNED_BYTE));
 			}
 		}
 
@@ -267,6 +279,22 @@ namespace ARIS
 			}
 			
 			glDrawBuffers(static_cast<GLsizei>(m_ColorAttachments.size()), drawBuffers.data());
+		}
+
+		void ClearAttachment(uint32_t attachmentIdx, int val)
+		{
+			GLuint id = m_ColorAttachments[attachmentIdx].m_ID;
+			GLenum format = m_ColorAttachments[attachmentIdx].m_DataFormat;
+
+			glClearTexImage(id, 0, format, GL_INT, &val);
+		}
+
+		int ReadPixel(uint32_t attachmentIdx, int x, int y)
+		{
+			glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIdx);
+			int pixel;
+			glReadPixels(x, y, 1, 1, m_ColorAttachments[attachmentIdx].m_DataFormat, GL_INT, &pixel);
+			return pixel;
 		}
 
 		void Cleanup()

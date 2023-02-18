@@ -34,14 +34,23 @@ namespace ARIS
 		void OpenScene();
 		void SaveSceneAs();
 
+		bool OnKeyPressed(KeyPressedEvent& e);
+		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
+
 	private:
 		Framebuffer* m_Framebuffer;
 		glm::vec2 m_ViewportSize = glm::vec2(0.0f);
+		glm::vec2 m_VPBounds[2];
+
 		std::shared_ptr<Scene> m_ActiveScene;
+
+		Entity m_HoveredEntity;
 
 		bool m_BlockEvents = true;
 
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
+
+		int m_GizmoType = -1;
 
 		HierarchyPanel m_HierarchyPanel;
 	};

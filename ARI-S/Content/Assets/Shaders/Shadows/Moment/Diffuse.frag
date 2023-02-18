@@ -1,4 +1,4 @@
-#version 430 core
+#version 450 core
 
 in VS_OUT
 {
@@ -7,11 +7,13 @@ in VS_OUT
     vec2 texCoords;
     
     vec4 shadowCoord;
-    
 } fs_in;
 
+in flat int vEntityID;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
+layout(location = 1) out int test;
+
 
 uniform sampler2D diffTex;
 uniform sampler2D uShadowMap;
@@ -99,55 +101,55 @@ float Shadow(vec4 v, float bias)
 	
 	float res = 1.0f;
   
-  // Hausdorff
-  if (roots.x < 0.0f || roots.y > 1.0f)
-  {
-    //return 0.0f;
-    float zFree = ((b_[2] - b_[1]) * pixelDepth + b_[2] - b_[3]) / ((b_[1] - b_[0]) * pixelDepth + b_[1] - b_[2]);
-		
-    float w1Factor = (pixelDepth > zFree) ? 1.0f : 0.0f;
-		
-    res = (b_[1] - b_[0] + (b_[2] - b_[0] - (zFree + 1.0f) * (b_[1] - b_[0])) * (zFree - w1Factor - pixelDepth)
-		    / (pixelDepth * (pixelDepth - zFree))) / (zFree - w1Factor) + 1.0f - b_[0];
-  }
-  
-  // Hamburger
-  else
-  {
-    return 0.5f;
-  	//vec4 vals = (roots.y < pixelDepth) ? vec4(roots.x, pixelDepth, 1.0f, 1.0f) :
-		//((roots.x < pixelDepth) ? vec4(pixelDepth, roots.x, 0.0f, 1.0f) : vec4(0.0f));
-    //
-    //float quotient = (vals[0] * roots.y - b_[0] * (vals[0] + roots.y) + b_[1]) / ((roots.y - vals[1]) * (pixelDepth - roots[1]));
-    //
-    //res = vals[2] + vals[3] * quotient;
-  }
-  
-	//// The diffuse part
-	//if (pixelDepth <= roots.x)
+	//// Hausdorff
+	//if (roots.x < 0.0f || roots.y > 1.0f)
 	//{
-	//	res = 0.0f;
+	//	//return 0.0f;
+	//	float zFree = ((b_[2] - b_[1]) * pixelDepth + b_[2] - b_[3]) / ((b_[1] - b_[0]) * pixelDepth + b_[1] - b_[2]);
+	//		
+	//	float w1Factor = (pixelDepth > zFree) ? 1.0f : 0.0f;
+	//		
+	//	res = (b_[1] - b_[0] + (b_[2] - b_[0] - (zFree + 1.0f) * (b_[1] - b_[0])) * (zFree - w1Factor - pixelDepth)
+	//			/ (pixelDepth * (pixelDepth - zFree))) / (zFree - w1Factor) + 1.0f - b_[0];
 	//}
 	//
-	//// Inside the shadow
-	//else if (pixelDepth <= roots.y)
-	//{
-	//	float num = (pixelDepth * roots.y - b_[0] * (pixelDepth + roots.y) + b_[1]);
-	//	float denom = (roots.y - roots.x) * (pixelDepth - roots.x);
-	//	
-	//	res = roots.x + (num / denom);
-	//}
-	//
-	//// edges of + outside the shadow
+	//// Hamburger
 	//else
 	//{
-	//	float num = (roots.x * roots.y - b_[0] * (roots.x + roots.y) + b_[1]);
-	//	float denom = (pixelDepth - roots.x) * (pixelDepth - roots.y);
-	//	
-	//	res = 1 - pixelDepth + 1.0f * (num / denom);
+	//	return 0.5f;
+	//	//vec4 vals = (roots.y < pixelDepth) ? vec4(roots.x, pixelDepth, 1.0f, 1.0f) :
+	//		//((roots.x < pixelDepth) ? vec4(pixelDepth, roots.x, 0.0f, 1.0f) : vec4(0.0f));
+	//	//
+	//	//float quotient = (vals[0] * roots.y - b_[0] * (vals[0] + roots.y) + b_[1]) / ((roots.y - vals[1]) * (pixelDepth - roots[1]));
+	//	//
+	//	//res = vals[2] + vals[3] * quotient;
 	//}
   
-  return 1 - clamp(res, 0.0f, 1.0f);
+	// The diffuse part
+	if (pixelDepth <= roots.x)
+	{
+		res = 0.0f;
+	}
+	
+	// Inside the shadow
+	else if (pixelDepth <= roots.y)
+	{
+		float num = (pixelDepth * roots.y - b_[0] * (pixelDepth + roots.y) + b_[1]);
+		float denom = (roots.y - roots.x) * (pixelDepth - roots.x);
+		
+		res = (num / denom);
+	}
+	
+	// edges of + outside the shadow
+	else
+	{
+		float num = (roots.x * roots.y - b_[0] * (roots.x + roots.y) + b_[1]);
+		float denom = (pixelDepth - roots.x) * (pixelDepth - roots.y);
+		
+		res = 1 - (num / denom);
+	}
+  
+  return clamp(res, 0.0f, 1.0f);
 }
 
 void main()
@@ -166,5 +168,7 @@ void main()
 	vec4 diffuse = vec4(lightColor * nDotL, 1.0f);
   
 	float shadow = Shadow(fs_in.shadowCoord, 1.0f * pow(10, -3));
-	fragColor = ambient + shadow * diffuse;
+
+	fragColor = ambient + /* (1 - shadow) * */ diffuse;
+	test = vEntityID;
 }

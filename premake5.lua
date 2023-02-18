@@ -21,6 +21,7 @@ IncludeDir["stb"] = "Libraries/stb"
 IncludeDir["tinygltf"] = "Libraries/tinygltf"
 IncludeDir["tinyobj"] = "Libraries/tinyobjloader"
 IncludeDir["YAML_CPP"] = "Libraries/yaml-cpp/include"
+IncludeDir["ImGuizmo"] = "Libraries/ImGuizmo"
 
 include "Libraries/GLFW"
 include "Libraries/Glad"
@@ -72,7 +73,10 @@ project "ARI-S"
 		"Libraries/tinygltf/**.h",
 		"Libraries/tinygltf/**.hpp",
 		
-		"Libraries/tinyobjloader/**.h"
+		"Libraries/tinyobjloader/**.h",
+		
+		"Libraries/ImGuizmo/**.h",
+		"Libraries/ImGuizmo/**.cpp"
 	}
 	
 	includedirs
@@ -97,7 +101,8 @@ project "ARI-S"
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.tinygltf}",
 		"%{IncludeDir.tinyobj}",
-		"%{IncludeDir.YAML_CPP}"
+		"%{IncludeDir.YAML_CPP}",
+		"%{IncludeDir.ImGuizmo}"
 	}
 	
 	links
@@ -108,6 +113,9 @@ project "ARI-S"
 		"YAML-CPP",
 		"opengl32.lib"
 	}
+	
+	filter "files:Libraries/ImGuizmo/**.cpp"
+		flags {"NoPCH"}
 	
 	filter "system:windows"
 		cppdialect "C++17"

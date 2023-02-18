@@ -1,4 +1,4 @@
-#version 430 core
+#version 450 core
 
 layout(location = 0) out vec4 sDepth;
 
@@ -12,15 +12,14 @@ vec4 Moments(float fragDepth)
 
 void main()
 {
-	float depth = shadowPos.z / shadowPos.w;
-	depth = depth * 0.5f + 0.5f;
+	//float depth = shadowPos.z / shadowPos.w;
+	//depth = depth * 0.5f + 0.5f;
+	float depth = shadowPos.z;
+
+	float z0 = -1.0f;
+	float z1 = 1.0f;
 	
-	sDepth = Moments(depth);
+	float final = (depth - z0) / (z1 - z0);
 	
-	//float depth = ((gl_DepthRange.diff * (shadowPos.z / shadowPos.w)) +
-	//gl_DepthRange.near + gl_DepthRange.far) / 2.0f;
-	//
-	//sDepth = vec4(vec3(gl_FragCoord.z, pow(gl_FragCoord.z, 2), pow(gl_FragCoord.z, 3)), pow(gl_FragCoord.z, 4));
-	//
-	//sDepth = vec4(depth, pow(depth, 2), pow(depth, 3), pow(depth, 4));
+	sDepth = Moments(final);
 }

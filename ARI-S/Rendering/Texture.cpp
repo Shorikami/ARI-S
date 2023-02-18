@@ -46,7 +46,7 @@ namespace ARIS
 
 		if (repeat == GL_CLAMP_TO_BORDER)
 		{
-			float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 		}
 
@@ -157,9 +157,9 @@ namespace ARIS
 	}
 
 	// Empty texture
-	void Texture::Allocate(GLenum format, GLuint w, GLuint h, GLenum type)
+	void Texture::Allocate(GLenum interForm, GLenum dataForm, GLuint w, GLuint h, GLenum type)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, type, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, interForm, w, h, 0, dataForm, type, NULL);
 	}
 
 	void Texture::SetParameters(GLenum texMin, GLenum texMag, GLenum wrapS, GLenum wrapT)

@@ -249,7 +249,7 @@ namespace ARIS
 					name = tag["Tag"].as<std::string>();
 				}
 
-				Entity deserializedEntity = m_Scene->CreateEntity(name);
+				Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
 				auto tc = e["TransformComponent"];
 				if (tc)
@@ -270,6 +270,7 @@ namespace ARIS
 					std::string fSrc = mc["Fragment Path"].as<std::string>();
 
 					t.m_Model = *ModelBuilder::Get().GetModelTable()[name];
+					uint64_t test = deserializedEntity.GetUUID();
 					t.m_VertexSrc = vSrc;
 					t.m_FragmentSrc = fSrc;
 					t.ReloadShader();

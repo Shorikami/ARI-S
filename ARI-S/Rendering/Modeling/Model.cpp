@@ -61,48 +61,66 @@ namespace ARIS
 
 	void Model::BuildArrays()
 	{
-        const char* idx = "Index";
-        const char* vert = "Vertex";
-        const char* norm = "Normal";
-        const char* uv = "TexCoords";
 
         m_VertexArray.Generate();
         m_VertexArray.Bind();
 
-        m_VertexArray[idx] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
-        m_VertexArray[idx].Generate();
-        m_VertexArray[idx].Bind();
-        m_VertexArray[idx].SetData<GLuint>(m_Indices.size(), m_Indices.data(), GL_STATIC_DRAW);
+        m_VertexArray["Index"] = VertexBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        m_VertexArray["Index"].Generate();
+        m_VertexArray["Index"].Bind();
+        m_VertexArray["Index"].SetData<GLuint>(m_Indices.size(), m_Indices.data(), GL_STATIC_DRAW);
 
-        m_VertexArray[vert] = VertexBuffer(GL_ARRAY_BUFFER);
-        m_VertexArray[vert].Generate();
-        m_VertexArray[vert].Bind();
-        m_VertexArray[vert].SetData<glm::vec3>(m_Vertices.size(), m_Vertices.data(), GL_STATIC_DRAW);
-        m_VertexArray[vert].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
+        m_VertexArray["Vertex"] = VertexBuffer(GL_ARRAY_BUFFER);
+        m_VertexArray["Vertex"].Generate();
+        m_VertexArray["Vertex"].Bind();
+        m_VertexArray["Vertex"].SetData<glm::vec3>(m_Vertices.size(), m_Vertices.data(), GL_STATIC_DRAW);
+        m_VertexArray["Vertex"].SetAttPointer<GLfloat>(0, 3, GL_FLOAT, 3, 0);
 
-        m_VertexArray[vert].Unbind();
+        m_VertexArray["Vertex"].Unbind();
 
         if (m_Normals.size() > 0)
         {
-            m_VertexArray[norm] = VertexBuffer(GL_ARRAY_BUFFER);
-            m_VertexArray[norm].Generate();
-            m_VertexArray[norm].Bind();
-            m_VertexArray[norm].SetData<glm::vec3>(m_Normals.size(), m_Normals.data(), GL_STATIC_DRAW);
-            m_VertexArray[norm].SetAttPointer<GLfloat>(1, 3, GL_FLOAT, 3, 0);
-            m_VertexArray[norm].Unbind();
+            m_VertexArray["Normal"] = VertexBuffer(GL_ARRAY_BUFFER);
+            m_VertexArray["Normal"].Generate();
+            m_VertexArray["Normal"].Bind();
+            m_VertexArray["Normal"].SetData<glm::vec3>(m_Normals.size(), m_Normals.data(), GL_STATIC_DRAW);
+            m_VertexArray["Normal"].SetAttPointer<GLfloat>(1, 3, GL_FLOAT, 3, 0);
+            m_VertexArray["Normal"].Unbind();
         }
 
-        
-        m_VertexArray[uv] = VertexBuffer(GL_ARRAY_BUFFER);
-        m_VertexArray[uv].Generate();
-        m_VertexArray[uv].Bind();
-        m_VertexArray[uv].SetData<glm::vec2>(m_UVs.size(), m_UVs.data(), GL_STATIC_DRAW);
-        m_VertexArray[uv].SetAttPointer<GLfloat>(2, 2, GL_FLOAT, 2, 0);
+        if (m_UVs.size() > 0)
+        {
+            m_VertexArray["UV"] = VertexBuffer(GL_ARRAY_BUFFER);
+            m_VertexArray["UV"].Generate();
+            m_VertexArray["UV"].Bind();
+            m_VertexArray["UV"].SetData<glm::vec2>(m_UVs.size(), m_UVs.data(), GL_STATIC_DRAW);
+            m_VertexArray["UV"].SetAttPointer<GLfloat>(2, 2, GL_FLOAT, 2, 0);
+            m_VertexArray["UV"].Unbind();
+        }
 
-        m_VertexArray[uv].Unbind();
+        m_VertexArray["EntityID"] = VertexBuffer(GL_ARRAY_BUFFER);
+        m_VertexArray["EntityID"].Generate();
+        m_VertexArray["EntityID"].Bind();
+        m_VertexArray["EntityID"].SetData<GLint>(m_Vertices.size(), nullptr, GL_DYNAMIC_DRAW);
+        m_VertexArray["EntityID"].SetAttPointer<GLint>(3, 1, GL_INT, 1, 0);
+        m_VertexArray["EntityID"].Unbind();
 
         m_VertexArray.Clear();
 	}
+
+    void Model::InitializeID(int id)
+    {
+        std::vector<int> data(m_Vertices.size(), id);
+
+        m_VertexArray.Bind();
+        m_VertexArray["EntityID"] = VertexBuffer(GL_ARRAY_BUFFER);
+        m_VertexArray["EntityID"].Generate();
+        m_VertexArray["EntityID"].Bind();
+        m_VertexArray["EntityID"].SetData<GLint>(m_Vertices.size(), data.data(), GL_STATIC_DRAW);
+        m_VertexArray["EntityID"].SetAttPointer<GLint>(3, 1, GL_INT, 1, 0);
+        m_VertexArray["EntityID"].Unbind();
+        m_VertexArray.Clear();
+    }
 
     void Model::DestroyArrays()
     {

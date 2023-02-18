@@ -54,7 +54,7 @@ namespace ARIS
 
         virtual void OnViewportResize(uint32_t w, uint32_t h);
 
-        Framebuffer* GetSceneFBO() { return m_SceneFBO; }
+        Framebuffer*& GetSceneFBO() { return m_SceneFBO; }
         Camera& GetCamera() { return m_Camera; }
     public:
         void OnImGuiRender() override;

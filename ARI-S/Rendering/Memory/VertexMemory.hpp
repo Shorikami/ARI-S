@@ -84,7 +84,15 @@ namespace ARIS
 		template<typename T>
 		void SetAttPointer(GLuint idx, GLint size, GLenum type, GLuint stride, GLuint offset, GLuint divisor = 0)
 		{
-			glVertexAttribPointer(idx, size, type, GL_FALSE, stride * sizeof(T), (void*)(offset * sizeof(T)));
+			if (type == GL_INT)
+			{
+				glVertexAttribIPointer(idx, size, type, stride * sizeof(T), (void*)(offset * sizeof(T)));
+			}
+			else
+			{
+				glVertexAttribPointer(idx, size, type, GL_FALSE, stride * sizeof(T), (void*)(offset * sizeof(T)));
+			}
+			
 			glEnableVertexAttribArray(idx);
 
 			if (divisor > 0)
@@ -98,18 +106,14 @@ namespace ARIS
 	{
 	public:
 		GLuint id = 0;
-		std::map<const char*, VertexBuffer> buffers;
+		std::map<std::string, VertexBuffer> buffers;
 
 		// Operator overload for locating a specific buffer
 		// in a vertex array
-		VertexBuffer& operator[](const char* key)
-		{
-			return buffers[key];
-		}
 
 		VertexBuffer& operator[](std::string key)
 		{
-			return buffers[key.c_str()];
+			return buffers[key];
 		}
 
 
