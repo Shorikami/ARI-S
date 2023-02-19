@@ -6,6 +6,7 @@
 #include "Scene.h"
 
 #include "HierarchyPanel.h"
+#include "ContentBrowser.h"
 
 #include <glm.hpp>
 
@@ -53,6 +54,7 @@ namespace ARIS
 		int m_GizmoType = -1;
 
 		HierarchyPanel m_HierarchyPanel;
+		ContentBrowser m_ContentBrowser;
 	};
 }
 

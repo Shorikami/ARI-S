@@ -238,6 +238,7 @@ namespace ARIS
 		ImGui::End();
 
 		m_HierarchyPanel.OnImGuiRender();
+		m_ContentBrowser.OnImGuiRender();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0,0 });
 		ImGui::Begin("Viewport");
