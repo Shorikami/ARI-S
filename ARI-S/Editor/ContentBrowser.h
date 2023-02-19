@@ -3,6 +3,8 @@
 
 #include <filesystem>
 
+#include "Texture.h"
+
 namespace ARIS
 {
 	class ContentBrowser
@@ -13,8 +15,10 @@ namespace ARIS
 		void OnImGuiRender();
 
 	private:
+		std::filesystem::path m_BaseDir;
 		std::filesystem::path m_CurrentDir;
 
+		Texture m_DirIcon, m_FileIcon;
 	};
 }
 

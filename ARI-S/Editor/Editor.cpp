@@ -22,6 +22,9 @@
 
 namespace ARIS
 {
+	// TODO: Change later
+	extern const std::filesystem::path s_AssetPath;
+
 	Editor::Editor()
 		: Layer("Editor")
 		, m_ActiveScene(nullptr)
@@ -51,7 +54,7 @@ namespace ARIS
 		GLFWwindow* window = static_cast<GLFWwindow*>(app.GetWindow().GetWindow());
 
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 430");
+		ImGui_ImplOpenGL3_Init("#version 450");
 
 		CustomizeColors();
 
@@ -257,6 +260,19 @@ namespace ARIS
 		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment().m_ID;
 		ImGui::Image(reinterpret_cast<void*>(fbTex), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+			{
+				const wchar_t* path = (const wchar_t*)payload->Data;
+				OpenScene(std::filesystem::path(s_AssetPath) / path);
+			}
+			
+
+			ImGui::EndDragDropTarget();
+		}
+
+
 		Entity selectedEntity = m_HierarchyPanel.GetSelectedEntity();
 		if (selectedEntity && m_GizmoType != -1)
 		{
@@ -450,17 +466,19 @@ namespace ARIS
 		std::string path = FileDialogs::OpenFile("Aris Scene (*.aris)\0*.aris\0");
 		if (!path.empty())
 		{
-			std::shared_ptr<Scene> newScene = std::make_shared<Scene>(Application::Get().GetWindow().GetWidth(),
-				Application::Get().GetWindow().GetHeight());
-			//m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			
-			SceneSerializer s(newScene);
-			if (s.Deserialize(path))
-			{
-				m_ActiveScene = newScene;
-				m_HierarchyPanel.SetContext(m_ActiveScene);
-			}
+			OpenScene(path);
 		}
+	}
+
+	void Editor::OpenScene(const std::filesystem::path& path)
+	{
+		m_ActiveScene = std::make_shared<Scene>(Application::Get().GetWindow().GetWidth(),
+			Application::Get().GetWindow().GetHeight());
+		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_HierarchyPanel.SetContext(m_ActiveScene);
+
+		SceneSerializer s(m_ActiveScene);
+		s.Deserialize(path.string());
 	}
 
 	void Editor::SaveSceneAs()
