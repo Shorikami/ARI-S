@@ -43,35 +43,23 @@ namespace ARIS
 			m_Model.InitializeID(id);
 		}
 
-		void SetTextures(std::vector<std::pair<Texture, std::string>> t)
-		{
-			m_Textures = t;
-		}
+		//void SetTextures(std::vector<std::pair<Texture, std::string>> t)
+		//{
+		//	m_Textures = t;
+		//}
 
 		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, 
 			Shader other = Shader(), bool useDefault = true, int entityID = -1)
 		{
-			if (useDefault)
-			{
-				m_Shader.Activate();
-			}
-			else
-			{
-				other.Activate();
-			}
-			
+			Shader shaderInUse = useDefault ? m_Shader : other;
+			shaderInUse.Activate();
 
-			for (unsigned i = 0; i < m_Textures.size(); ++i)
+			if (m_DiffuseTex)
 			{
-				m_Textures[i].first.Bind(i);
-
-				if (useDefault)
+				if (m_DiffuseTex->m_IsLoaded)
 				{
-					glUniform1i(glGetUniformLocation(m_Shader.m_ID, m_Textures[i].second.c_str()), i);
-				}
-				else
-				{
-					glUniform1i(glGetUniformLocation(other.m_ID, m_Textures[i].second.c_str()), i);
+					m_DiffuseTex->Bind(7);
+					glUniform1i(glGetUniformLocation(shaderInUse.m_ID, "diffTex"), 7);
 				}
 			}
 
@@ -99,6 +87,14 @@ namespace ARIS
 
 			vao.Draw(GL_TRIANGLES, static_cast<GLuint>(m_Model.GetIndexCount()), GL_UNSIGNED_INT);
 			vao.Clear();
+
+			if (m_DiffuseTex)
+			{
+				if (m_DiffuseTex->m_IsLoaded)
+				{
+					m_DiffuseTex->Unbind();
+				}
+			}
 		}
 
 		void ReloadShader()
@@ -118,7 +114,11 @@ namespace ARIS
 
 		std::string m_VertexSrc = std::string(), m_FragmentSrc = std::string();
 
-		std::vector<std::pair<Texture, std::string>> m_Textures;
+		std::shared_ptr<Texture> m_DiffuseTex;
+		std::shared_ptr<Texture> m_NormalTex;
+		std::shared_ptr<Texture> m_Metallic;
+		std::shared_ptr<Texture> m_Roughness;
+
 		glm::vec4 m_Ambient, m_Albedo, m_Specular;
 
 		friend class SceneSerializer;

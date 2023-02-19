@@ -13,6 +13,8 @@
 
 namespace ARIS
 {
+	extern const std::filesystem::path s_AssetPath;
+
 #pragma region staticFuncs
 	template<typename T, typename Function>
 	static void DrawComponent(const std::string& name, Entity e, Function func)
@@ -320,6 +322,23 @@ namespace ARIS
 					}
 				}
 				ImGui::EndCombo();
+			}
+
+			ImGui::Button("Diffuse Texture", ImVec2(100.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+					std::shared_ptr<Texture> tex = std::make_shared<Texture>(texPath.string(), GL_LINEAR, GL_REPEAT);
+
+					if (tex->m_IsLoaded)
+					{
+						comp.m_DiffuseTex = tex;
+					}
+				}
+				ImGui::EndDragDropTarget();
 			}
 
 			std::string vBuf = comp.m_VertexSrc, fBuf = comp.m_FragmentSrc;

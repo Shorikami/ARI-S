@@ -30,6 +30,7 @@ void main()
 	
 	  mat3 normalTransf = mat3(transpose(inverse(model)));
       vs_out.fragNormal = normalize(normalTransf * aNorm);
+	  vs_out.texCoords = aTexCoords;
 
 	  gl_Position = projection * view * model * vec4(aPos, 1.0f);
 

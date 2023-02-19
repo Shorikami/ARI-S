@@ -14,9 +14,8 @@ in flat int vEntityID;
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out int test;
 
-
-uniform sampler2D diffTex;
 uniform sampler2D uShadowMap;
+uniform sampler2D diffTex;
 
 uniform int vWidth;
 uniform int vHeight;
@@ -165,7 +164,7 @@ void main()
 	vec3 lNormal = normalize(lightPos);
 	float dotP = dot(fs_in.fragNormal, lNormal);
 	float nDotL = max(dotP, 0.0f);
-	vec4 diffuse = vec4(lightColor * nDotL, 1.0f);
+	vec4 diffuse = /* vec4(lightColor, 1.0f) * */ nDotL * texture(diffTex, fs_in.texCoords);
   
 	float shadow = Shadow(fs_in.shadowCoord, 1.0f * pow(10, -3));
 

@@ -309,6 +309,19 @@ namespace ARIS
 
     void ModelBuilder::BuildTexCoords(Model& model)
     {
-    
+        // Planar mapping only; TODO: Add some more
+        size_t vertexCount = model.m_Vertices.size();
+        for (size_t v = 0; v < vertexCount; ++v)
+        {
+            glm::vec3 V = model.m_Vertices[v];
+            glm::vec2 uv(0.0f);
+
+            float min = -1.0f, max = 1.0f;
+
+            uv.x = (V.x - min) / (max - min);
+            uv.y = (V.y - min) / (max - min);
+
+            model.m_UVs.push_back(uv);
+        }
     }
 }

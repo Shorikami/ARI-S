@@ -8,6 +8,11 @@ namespace ARIS
 {
 	Texture::Texture()
 		: m_ID(0)
+		, m_Width(0)
+		, m_Height(0)
+		, m_InternalFormat(0)
+		, m_DataFormat(0)
+		, m_IsLoaded(false)
 	{
 	}
 
