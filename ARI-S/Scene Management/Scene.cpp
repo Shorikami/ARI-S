@@ -22,7 +22,7 @@ bool useMomentShadows = true;
 float nearPlane = 0.1f, farPlane = 100.0f;
 float lightW = 10.0f, lightH = 10.0f;
 
-#define KERNEL_SIZE 100
+int kernelSize = 10;
 
 namespace ARIS
 {
@@ -334,28 +334,6 @@ namespace ARIS
 
         sBuffer->Unbind();
 
-        // Build the kernel weights
-        for (int i = 0; i <= KERNEL_SIZE; ++i)
-        {
-            int halfWidth = KERNEL_SIZE / 2;
-            int idx = i - halfWidth;
-            kernelData->GetData().weights[i].x = Gaussian(idx, halfWidth / 2);
-        }
-
-        // Normalize the kernel weights so all values sum up to 1
-        float sum = 0.0f;
-        for (int i = 0; i <= KERNEL_SIZE; ++i)
-        {
-            sum += kernelData->GetData().weights[i].x;
-        }
-
-        for (int i = 0; i <= KERNEL_SIZE; ++i)
-        {
-            kernelData->GetData().weights[i].x /= sum;
-        }
-
-        kernelData->SetData();
-
         return 0;
     }
 
@@ -434,8 +412,34 @@ namespace ARIS
         if (useMomentShadows)
         {
             // Step 2: Blur the shader using a convolution filter
+            memset(kernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
+
+            // Build the kernel weights
+            for (int i = 0; i <= kernelSize * kernelSize; ++i)
+            {
+                int halfWidth = (kernelSize * kernelSize) / 2;
+
+                int idx = i - halfWidth;
+                kernelData->GetData().weights[i].x = 
+                    Gaussian(idx, (kernelSize % 2 == 0 ? halfWidth : (kernelSize + 1)) / 2);
+            }
+
+            // Normalize the kernel weights so all values sum up to 1
+            float sum = 0.0f;
+            for (int i = 0; i <= kernelSize * kernelSize; ++i)
+            {
+                sum += kernelData->GetData().weights[i].x;
+            }
+
+            for (int i = 0; i <= kernelSize * kernelSize; ++i)
+            {
+                kernelData->GetData().weights[i].x /= sum;
+            }
+
+            kernelData->SetData();
+
             computeBlur->Activate();
-            computeBlur->SetInt("halfKernel", KERNEL_SIZE / 2);
+            computeBlur->SetInt("halfKernel", (kernelSize * kernelSize) / 2);
 
             GLint srcLoc = glGetUniformLocation(computeBlur->m_ID, "src");
             glBindImageTexture(0, sDepthMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
@@ -553,6 +557,7 @@ namespace ARIS
         ImGui::SliderFloat("Light Max Depth", &farPlane, 1.0f, 100.0f);
         ImGui::SliderFloat("Light Min Depth", &nearPlane, 0.0f, farPlane);
         ImGui::Separator();
+        ImGui::SliderInt("Kernel Size", &kernelSize, 1, 10);
 
         ImGui::Text("Shadow Map");
         ImGui::Image((void*)(intptr_t)sDepthMap->m_ID, ImVec2 { 255, 255 },
