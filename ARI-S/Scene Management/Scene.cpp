@@ -19,10 +19,11 @@
 unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 bool useMomentShadows = true;
-float nearPlane = 0.1f, farPlane = 100.0f;
+float nearPlane = 0.1f, farPlane = 25.0f;
 float lightW = 10.0f, lightH = 10.0f;
 
 int kernelSize = 10;
+int gaussianWeight = 10;
 
 namespace ARIS
 {
@@ -421,7 +422,7 @@ namespace ARIS
 
                 int idx = i - halfWidth;
                 kernelData->GetData().weights[i].x = 
-                    Gaussian(idx, (kernelSize % 2 == 0 ? halfWidth : (kernelSize + 1)) / 2);
+                    Gaussian(idx, gaussianWeight);
             }
 
             // Normalize the kernel weights so all values sum up to 1
@@ -557,7 +558,7 @@ namespace ARIS
         ImGui::SliderFloat("Light Max Depth", &farPlane, 1.0f, 100.0f);
         ImGui::SliderFloat("Light Min Depth", &nearPlane, 0.0f, farPlane);
         ImGui::Separator();
-        ImGui::SliderInt("Kernel Size", &kernelSize, 1, 10);
+        ImGui::SliderInt("Gaussian Blur Amount", &gaussianWeight, 1, 50);
 
         ImGui::Text("Shadow Map");
         ImGui::Image((void*)(intptr_t)sDepthMap->m_ID, ImVec2 { 255, 255 },
