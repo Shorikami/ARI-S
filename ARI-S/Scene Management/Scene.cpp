@@ -19,6 +19,8 @@
 unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 bool useMomentShadows = true;
+float nearPlane = 0.1f, farPlane = 100.0f;
+float lightW = 10.0f, lightH = 10.0f;
 
 #define KERNEL_SIZE 100
 
@@ -384,7 +386,7 @@ namespace ARIS
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
-        glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+        //glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -395,7 +397,7 @@ namespace ARIS
 
         // Shadow Pass
         // Step 1: Light POV to FBO
-        glm::mat4 lightProj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
+        glm::mat4 lightProj = glm::ortho(-lightW, lightW, -lightH, lightH, nearPlane, farPlane);
         glm::mat4 lightView = glm::lookAt(
             glm::vec3(10.2296f, 6.20311f, -14.2213f),
             glm::vec3(9.64084f, 5.91074f, -13.4677f), 
@@ -414,6 +416,11 @@ namespace ARIS
                 auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
         
                 transform.Update();
+                basicShadows->Activate();
+                basicShadows->SetFloat("nearP", nearPlane);
+                basicShadows->SetFloat("farP", farPlane);
+
+                glUseProgram(0);
                 mesh.Draw(transform.GetTransform(), lightView, lightProj, *basicShadows, false);
             }
         }
@@ -448,6 +455,17 @@ namespace ARIS
 
         // Step 3: Render the scene normally
         glCullFace(GL_BACK);
+
+        auto view = m_Registry.view<TransformComponent, LightComponent>();
+        for (auto entity : view)
+        {
+            auto [transform, light] = view.get<TransformComponent, LightComponent>(entity);
+
+            transform.Update();
+            //light.Draw(transform.GetTranslation(), transform.GetRotation(),
+            //    m_Camera.View(),
+            //    m_Camera.Perspective(sceneWidth, sceneHeight));
+        }
         
         lightingPass->Activate();
 
@@ -527,6 +545,25 @@ namespace ARIS
 
     void Scene::OnImGuiRender()
     {
+        ImGui::Begin("Shadow Debugging");
+
+        ImGui::SliderFloat("Light Width", &lightW, 1.0f, 1000.0f);
+        ImGui::SliderFloat("Light Height", &lightH, 1.0f, 1000.0f);
+        ImGui::Separator();
+        ImGui::SliderFloat("Light Max Depth", &farPlane, 1.0f, 100.0f);
+        ImGui::SliderFloat("Light Min Depth", &nearPlane, 0.0f, farPlane);
+        ImGui::Separator();
+
+        ImGui::Text("Shadow Map");
+        ImGui::Image((void*)(intptr_t)sDepthMap->m_ID, ImVec2 { 255, 255 },
+            ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+        ImGui::Text("Blurred Map");
+        ImGui::Image((void*)(intptr_t)blurOutput->m_ID, ImVec2 { 255, 255 },
+            ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+        ImGui::Separator();
+
         if (ImGui::Button("Move to light position and direction"))
         {
             m_Camera.cameraPos = glm::vec3(10.2296f, 6.20311f, -14.2213f);
@@ -543,6 +580,8 @@ namespace ARIS
         {
             useMomentShadows = !useMomentShadows;
         }
+
+        ImGui::End();
     }
 
     void Scene::OnEvent(Event& e)

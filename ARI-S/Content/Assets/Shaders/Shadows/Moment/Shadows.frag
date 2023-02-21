@@ -4,6 +4,9 @@ layout(location = 0) out vec4 sDepth;
 
 in vec4 shadowPos;
 
+uniform float nearP;
+uniform float farP;
+
 vec4 Moments(float fragDepth)
 {
 	float sq = fragDepth * fragDepth;
@@ -12,14 +15,10 @@ vec4 Moments(float fragDepth)
 
 void main()
 {
-	//float depth = shadowPos.z / shadowPos.w;
+	float depth = shadowPos.z / shadowPos.w;
 	//depth = depth * 0.5f + 0.5f;
-	float depth = shadowPos.z;
-
-	float z0 = -1.0f;
-	float z1 = 1.0f;
 	
-	float final = (depth - z0) / (z1 - z0);
+	float relative = (depth - -1) / (1 - -1);
 	
-	sDepth = Moments(final);
+	sDepth = Moments(relative);
 }

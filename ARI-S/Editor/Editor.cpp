@@ -200,15 +200,6 @@ namespace ARIS
 	{
 		m_ActiveScene.get()->OnImGuiRender();
 
-		ImGui::Begin("Debug");
-#if 1
-		std::string name = "None";
-		if (m_HoveredEntity)
-			name = m_HoveredEntity.GetComponent<TagComponent>().s_Tag;
-		ImGui::Text("Hovered Entity: %s", name.c_str());
-#endif	
-		ImGui::End();
-
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -257,8 +248,9 @@ namespace ARIS
 		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
 		
-		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment().m_ID;
-		ImGui::Image(reinterpret_cast<void*>(fbTex), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment(0).m_ID;
+		ImGui::Image((void*)(intptr_t)fbTex, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, 
+			ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		
 		if (ImGui::BeginDragDropTarget())
 		{

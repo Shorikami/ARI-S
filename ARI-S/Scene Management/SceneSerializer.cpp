@@ -174,8 +174,8 @@ namespace ARIS
 			out << YAML::BeginMap;
 
 			auto& lc = e.GetComponent<LightComponent>();
-			out << YAML::Key << "Vertex Path" << YAML::Value << lc.GetVertexPath();
-			out << YAML::Key << "Fragment Path" << YAML::Value << lc.GetFragmentPath();
+			//out << YAML::Key << "Vertex Path" << YAML::Value << lc.GetVertexPath();
+			//out << YAML::Key << "Fragment Path" << YAML::Value << lc.GetFragmentPath();
 			out << YAML::Key << "Color" << YAML::Value << lc.GetColor();
 			out << YAML::Key << "Type" << YAML::Value << lc.GetType();
 			out << YAML::Key << "Range" << YAML::Value << lc.GetRange();
@@ -280,17 +280,17 @@ namespace ARIS
 				if (lc)
 				{
 					auto& t = deserializedEntity.AddComponent<LightComponent>();
-					std::string vSrc = lc["Vertex Path"].as<std::string>();
-					std::string fSrc = lc["Fragment Path"].as<std::string>();
+					//std::string vSrc = lc["Vertex Path"].as<std::string>();
+					//std::string fSrc = lc["Fragment Path"].as<std::string>();
 
-					t.m_VertexSrc = vSrc;
-					t.m_FragmentSrc = fSrc;
+					//t.m_VertexSrc = vSrc;
+					//t.m_FragmentSrc = fSrc;
 					t.m_Color = lc["Color"].as<glm::vec4>();
 					t.m_Type = lc["Type"].as<int>();
 					t.m_Range = lc["Range"].as<float>();
 					t.m_Intensity = lc["Intensity"].as<float>();
 
-					t.ReloadShader();
+					//t.ReloadShader();
 				}
 			}
 		}

@@ -61,7 +61,6 @@ namespace ARIS
 
 	void Model::BuildArrays()
 	{
-
         m_VertexArray.Generate();
         m_VertexArray.Bind();
 

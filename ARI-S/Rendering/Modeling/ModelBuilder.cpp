@@ -142,6 +142,45 @@ namespace ARIS
         }
     }
 
+    // https://stackoverflow.com/questions/14396788/how-can-i-generate-indices-from-vertex-list-in-linear-time
+    void ModelBuilder::CreateFrustum(Model& model)
+    {
+        std::vector<glm::vec3> vectors =
+        {
+            // near face
+            {-1, -1, -1.f},
+            {1, -1, -1.f},
+            {1, 1, -1.f},
+            {-1, 1, -1.f},
+
+            // far face
+            {-1, -1, 1.f},
+            {1, -1, 1.f},
+            {1, 1, 1.f},
+            {-1, 1, 1.f}
+        };
+
+        model.m_Vertices = vectors;
+
+        std::vector<unsigned int> indices =
+        {
+            0, 1,
+            1, 2,
+            2, 3,
+            3, 0,
+            4, 5,
+            5, 6,
+            6, 7,
+            7, 4,
+            0, 4,
+            1, 5,
+            2, 6,
+            3, 7
+        };
+
+        model.m_Indices = indices;
+    }
+
     void ModelBuilder::LoadOBJ(std::string path, Model& model)
     {
         tinyobj::attrib_t attrib;

@@ -7,7 +7,22 @@ namespace ARIS
 {
 	class ModelBuilder
 	{
+		typedef std::pair<glm::vec3, int> VertexPair;
+
 	public:
+		struct Compare
+		{
+			float eps = 0.00001f;
+
+			bool operator() (const VertexPair& p1, const VertexPair& p2) const
+			{
+				if (fabs(p1.first.x - p2.first.x) > eps) return p1.first.x < p2.first.x;
+				if (fabs(p1.first.y - p2.first.y) > eps) return p1.first.y < p2.first.y;
+				if (fabs(p1.first.z - p2.first.z) > eps) return p1.first.z < p2.first.z;
+				return false;
+			}
+		};
+
 		ModelBuilder();
 		~ModelBuilder();
 
@@ -22,6 +37,7 @@ namespace ARIS
 		std::unordered_map<std::string, Model*> GetModelTable() { return m_ModelTable; }
 
 		static void CreateSphere(float radius, unsigned divisions, Model& model);
+		static void CreateFrustum(Model& model);
 
 	private:
 		void BuildNormals(Model& m);

@@ -23,10 +23,10 @@ uniform int vHeight;
 vec2 Quadratic(vec3 v)
 {
 	float p = v[1] / v[2];
-  float q = v[0] / v[2];
-  
-  float D = (p * p * 0.25f) - q;
-  float r = sqrt(D);
+	float q = v[0] / v[2];
+	
+	float D = (p * p * 0.25f) - q;
+	float r = sqrt(D);
 
 	float x1 = -p * 0.5f - r;
 	float x2 = -p * 0.5f + r;
@@ -40,10 +40,10 @@ vec2 Quadratic(float a, float b, float c)
 	float x1 = (-b + sqrt(discriminant)) / (2 * a);
 	float x2 = (-b - sqrt(discriminant)) / (2 * a);
   
-  if (x1 > x2)
-  {
-    return vec2(x2, x1);
-  }
+	if (x1 > x2)
+	{
+		return vec2(x2, x1);
+	}
   
 	return vec2(x1, x2);
 }
@@ -89,72 +89,41 @@ vec3 Cholesky(float m11, float m12, float m13, float m22, float m23, float m33,
 float Shadow(vec4 v, float bias)
 {
 	vec4 lightDepth = texture(uShadowMap, v.xy);
-  
+
 	vec4 b_ = (1.0f - bias) * lightDepth + bias * vec4(0.5f);
 	float pixelDepth = v.z;
 	
 	vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, 
 								1.0f, pixelDepth, pixelDepth * pixelDepth);
 	
-	vec2 roots = Quadratic(choleskyVec.x, choleskyVec.y, choleskyVec.z);
-	
-	float res = 1.0f;
-  
-	//// Hausdorff
-	//if (roots.x < 0.0f || roots.y > 1.0f)
-	//{
-	//	//return 0.0f;
-	//	float zFree = ((b_[2] - b_[1]) * pixelDepth + b_[2] - b_[3]) / ((b_[1] - b_[0]) * pixelDepth + b_[1] - b_[2]);
-	//		
-	//	float w1Factor = (pixelDepth > zFree) ? 1.0f : 0.0f;
-	//		
-	//	res = (b_[1] - b_[0] + (b_[2] - b_[0] - (zFree + 1.0f) * (b_[1] - b_[0])) * (zFree - w1Factor - pixelDepth)
-	//			/ (pixelDepth * (pixelDepth - zFree))) / (zFree - w1Factor) + 1.0f - b_[0];
-	//}
-	//
-	//// Hamburger
-	//else
-	//{
-	//	return 0.5f;
-	//	//vec4 vals = (roots.y < pixelDepth) ? vec4(roots.x, pixelDepth, 1.0f, 1.0f) :
-	//		//((roots.x < pixelDepth) ? vec4(pixelDepth, roots.x, 0.0f, 1.0f) : vec4(0.0f));
-	//	//
-	//	//float quotient = (vals[0] * roots.y - b_[0] * (vals[0] + roots.y) + b_[1]) / ((roots.y - vals[1]) * (pixelDepth - roots[1]));
-	//	//
-	//	//res = vals[2] + vals[3] * quotient;
-	//}
-  
-	// The diffuse part
+	vec2 roots = Quadratic(choleskyVec.z, choleskyVec.y, choleskyVec.x);
+
 	if (pixelDepth <= roots.x)
 	{
-		res = 0.0f;
+		return 0.0f;
 	}
 	
-	// Inside the shadow
 	else if (pixelDepth <= roots.y)
 	{
 		float num = (pixelDepth * roots.y - b_[0] * (pixelDepth + roots.y) + b_[1]);
 		float denom = (roots.y - roots.x) * (pixelDepth - roots.x);
 		
-		res = (num / denom);
+		return (num / denom);
 	}
 	
-	// edges of + outside the shadow
 	else
 	{
 		float num = (roots.x * roots.y - b_[0] * (roots.x + roots.y) + b_[1]);
 		float denom = (pixelDepth - roots.x) * (pixelDepth - roots.y);
 		
-		res = 1 - (num / denom);
+		return 1 - (num / denom);
 	}
-  
-  return clamp(res, 0.0f, 1.0f);
 }
 
 void main()
 {
 	vec3 lightColor = vec3(1.0f);
-	vec3 lightPos = vec3(1.0f);
+	vec3 lightPos = vec3(10.2296f, 6.20311f, -14.2213f);
 
     // Ambient
 	float ambientStrength = 0.9f;
@@ -164,10 +133,26 @@ void main()
 	vec3 lNormal = normalize(lightPos);
 	float dotP = dot(fs_in.fragNormal, lNormal);
 	float nDotL = max(dotP, 0.0f);
-	vec4 diffuse = /* vec4(lightColor, 1.0f) * */ nDotL * texture(diffTex, fs_in.texCoords);
+	vec4 diffuse = vec4(lightColor, 1.0f) * nDotL;
+	
+	vec4 blur = texture(uShadowMap, fs_in.shadowCoord.xy);
   
 	float shadow = Shadow(fs_in.shadowCoord, 1.0f * pow(10, -3));
-
-	fragColor = ambient + /* (1 - shadow) * */ diffuse;
+	
+	float currDepth = fs_in.shadowCoord.z;
+	float maximum = float(currDepth - 1.0f * pow(10, -3) <= blur.x);
+	
+	fragColor = ambient + max(1 - shadow, maximum) * diffuse;
+	
+	//float m1 = blur.x;
+	//float m2 = blur.y;
+	//float variance = max(m2 - (m1 * m1), 0.0f);
+	//vec3 currDepth = fs_in.shadowCoord.xyz / fs_in.shadowCoord.w;
+	//
+	//float maxD = float(currDepth.z <= m1);
+	//
+	//float s = variance / (variance + pow((currDepth.z - m1), 2));
+	//
+	//fragColor = ambient + (max(s, maxD)) * diffuse;
 	test = vEntityID;
 }
