@@ -133,7 +133,7 @@ void main()
 	vec3 lNormal = normalize(lightPos);
 	float dotP = dot(fs_in.fragNormal, lNormal);
 	float nDotL = max(dotP, 0.0f);
-	vec4 diffuse = vec4(lightColor, 1.0f) * nDotL;
+	vec4 diffuse = vec4(lightColor, 1.0f) * nDotL * texture(diffTex, fs_in.texCoords);
 	
 	vec4 blur = texture(uShadowMap, fs_in.shadowCoord.xy);
   

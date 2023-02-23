@@ -18,7 +18,7 @@
 
 unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
-bool useMomentShadows = true;
+
 float nearPlane = 0.1f, farPlane = 25.0f;
 float lightW = 10.0f, lightH = 10.0f;
 
@@ -170,12 +170,8 @@ namespace ARIS
         
         glm::vec3 res = testMat * choleskyVec;
         glm::vec3 resres = testMat * choleskyTwoVec;
-
-        glm::vec3 cramersTest = Cramers(col1, col2, col3, output);
-        glm::vec3 res2 = testMat * cramersTest;
         
         // These should equal to each other
-        glm::vec2 quadr = Quadratic(cramersTest.z, cramersTest.y, cramersTest.x);
         glm::vec2 quadr2 = Quadratic(choleskyVec.z, choleskyVec.y, choleskyVec.x);
         glm::vec2 quadr3 = Quadratic(choleskyTwoVec);
 
@@ -194,17 +190,11 @@ namespace ARIS
     {
         delete lightingPass;
         delete basicShadows;
+        delete computeBlur;
         
-        if (useMomentShadows)
-        {
-            lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
-            basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
-        }
-        else
-        {
-            lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
-            basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
-        }
+        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
+        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
 
     void Scene::GenerateLocalLights()
@@ -237,24 +227,9 @@ namespace ARIS
 
     int Scene::Init()
     {
-        if (useMomentShadows)
-        {
-            lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
-            basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
-        }
-        else
-        {
-            lightingPass = new Shader(false, "Shadows/Basic/Diffuse.vert", "Shadows/Basic/Diffuse.frag");
-            basicShadows = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
-        }
-
-        //debugShadows = new Shader(false, "Shadows/DebugShadows.vert", "Shadows/DebugShadows.frag");
+        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
+        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
-
-        auto shirokoTex = std::make_pair(Texture("Content/Assets/Models/BA/Shiroko/Texture2D/Shiroko_Original_Weapon.png", GL_LINEAR, GL_REPEAT), "diffTex");
-        auto arisTex = std::make_pair(Texture("Content/Assets/Models/BA/Aris/Texture2D/Aris_Original_Weapon.png", GL_LINEAR, GL_REPEAT), "diffTex");
-        auto hoshinoTex = std::make_pair(Texture("Content/Assets/Models/BA/Hoshino/Texture2D/Hoshino_Original_Weapon.png", GL_LINEAR, GL_REPEAT), "diffTex");
-        auto ground = std::make_pair(Texture("Materials/Textures/metal_roof_diff_512x512.png"), "diffTex");
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         //for (unsigned i = 0; i < 5; ++i)
@@ -264,16 +239,9 @@ namespace ARIS
         //}
         //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
         //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
-        if (useMomentShadows)
-        {
-            sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
-                GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
-        }
-        else
-        {
-            sDepthMap = new Texture(2048, 2048, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
-                GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
-        }
+
+        sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
 
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
@@ -313,18 +281,9 @@ namespace ARIS
         sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         sBuffer->Bind();
 
-        if (useMomentShadows)
-        {
-            sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
-            sBuffer->DrawBuffers();
-            sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
-        }
-        else
-        {
-            sBuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
-            sBuffer->DrawBuffers();
-            sBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *sDepthMap);
-        }
+        sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
+        sBuffer->DrawBuffers();
+        sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         {
@@ -383,7 +342,8 @@ namespace ARIS
             glm::vec3(-0.180002f, 0.956306f, 0.230392f));
 
         glm::mat4 lightSpaceMat = lightProj * lightView;
-        glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+        glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f)) 
+            * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
         glCullFace(GL_FRONT);
         // Render models relative to the shadow shader
@@ -410,53 +370,49 @@ namespace ARIS
 
         m_SceneFBO->ClearAttachment(1, -1);
 
-        if (useMomentShadows)
+        // Step 2: Blur the shader using a convolution filter
+        memset(kernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
+
+        // Build the kernel weights
+        for (int i = 0; i <= kernelSize * kernelSize; ++i)
         {
-            // Step 2: Blur the shader using a convolution filter
-            memset(kernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
+            int halfWidth = (kernelSize * kernelSize) / 2;
 
-            // Build the kernel weights
-            for (int i = 0; i <= kernelSize * kernelSize; ++i)
-            {
-                int halfWidth = (kernelSize * kernelSize) / 2;
-
-                int idx = i - halfWidth;
-                kernelData->GetData().weights[i].x = 
-                    Gaussian(idx, gaussianWeight);
-            }
-
-            // Normalize the kernel weights so all values sum up to 1
-            float sum = 0.0f;
-            for (int i = 0; i <= kernelSize * kernelSize; ++i)
-            {
-                sum += kernelData->GetData().weights[i].x;
-            }
-
-            for (int i = 0; i <= kernelSize * kernelSize; ++i)
-            {
-                kernelData->GetData().weights[i].x /= sum;
-            }
-
-            kernelData->SetData();
-
-            computeBlur->Activate();
-            computeBlur->SetInt("halfKernel", (kernelSize * kernelSize) / 2);
-
-            GLint srcLoc = glGetUniformLocation(computeBlur->m_ID, "src");
-            glBindImageTexture(0, sDepthMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-            glUniform1i(srcLoc, 0);
-
-            GLint dstLoc = glGetUniformLocation(computeBlur->m_ID, "dst");
-            glBindImageTexture(1, blurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-            glUniform1i(dstLoc, 1);
-
-            glDispatchCompute(2048 / 128, 2048, 1);
-
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-            glUseProgram(0);
+            int idx = i - halfWidth;
+            kernelData->GetData().weights[i].x =
+                Gaussian(idx, gaussianWeight);
         }
 
+        // Normalize the kernel weights so all values sum up to 1
+        float sum = 0.0f;
+        for (int i = 0; i <= kernelSize * kernelSize; ++i)
+        {
+            sum += kernelData->GetData().weights[i].x;
+        }
+
+        for (int i = 0; i <= kernelSize * kernelSize; ++i)
+        {
+            kernelData->GetData().weights[i].x /= sum;
+        }
+
+        kernelData->SetData();
+
+        computeBlur->Activate();
+        computeBlur->SetInt("halfKernel", (kernelSize * kernelSize) / 2);
+
+        GLint srcLoc = glGetUniformLocation(computeBlur->m_ID, "src");
+        glBindImageTexture(0, sDepthMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+        glUniform1i(srcLoc, 0);
+
+        GLint dstLoc = glGetUniformLocation(computeBlur->m_ID, "dst");
+        glBindImageTexture(1, blurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        glUniform1i(dstLoc, 1);
+
+        glDispatchCompute(2048 / 128, 2048, 1);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glUseProgram(0);
 
         // Step 3: Render the scene normally
         glCullFace(GL_BACK);
@@ -475,15 +431,7 @@ namespace ARIS
         lightingPass->Activate();
 
         glActiveTexture(GL_TEXTURE0);
-
-        if (useMomentShadows)
-        {
-            glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
-        }
-        else
-        {
-            glBindTexture(GL_TEXTURE_2D, sDepthMap->m_ID);
-        }
+        glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
         lightingPass->SetInt("uShadowMap", 0);
         lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
@@ -580,11 +528,6 @@ namespace ARIS
         if (ImGui::Button("Reload Shadow Shaders"))
         {
             ReloadShaders();
-        }
-
-        if (ImGui::Button("Switch between regular/moment"))
-        {
-            useMomentShadows = !useMomentShadows;
         }
 
         ImGui::End();

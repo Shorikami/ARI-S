@@ -1,11 +1,104 @@
 Scene: Test
 Entities:
-  - Entity: 17164035264920795033
+  - Entity: 11384973501980615642
     TagComponent:
-      Tag: Empty Entity
+      Tag: Local Light
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Scale: [9, 9, 9]
+    LightComponent:
+      Color: [1, 1, 1, 1]
+      Type: 0
+      Range: 9
+      Intensity: 1.36399996
+  - Entity: 12180330849759156372
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [3.29999995, 4.0999999, 1]
+      Rotation: [4.71238899, 0, 0]
+      Scale: [10, 0.100000001, 5]
+    MeshComponent:
+      Name: cube2.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 17109187548238653833
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [3, 0, -4]
+      Rotation: [0, 0, 0]
+      Scale: [10, 0.100000001, 5]
+    MeshComponent:
+      Name: cube2.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 8663240138564891356
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [-6.9000001, 4.5999999, -4]
+      Rotation: [0, 0, 4.71238899]
+      Scale: [4.5999999, 0.100000001, 5]
+    MeshComponent:
+      Name: cube2.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 6497034949192003676
+    TagComponent:
+      Tag: White Fang
+    TransformComponent:
+      Translation: [-5, 4.4000001, -6.69999981]
+      Rotation: [0, -1.57079637, 0]
+      Scale: [5.99999809, 6, 5.99999809]
+    MeshComponent:
+      Name: Shiroko_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Shiroko\Texture2D\Shiroko_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 7430654964310599025
+    TagComponent:
+      Tag: Supernova
+    TransformComponent:
+      Translation: [7, 1.29999995, -5.4000001]
+      Rotation: [0, 0, -0.109955743]
+      Scale: [6, 6, 6]
     MeshComponent:
       Name: Aris_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Aris\Texture2D\Aris_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 1066889142520085911
+    TagComponent:
+      Tag: Eye of Horus
+    TransformComponent:
+      Translation: [-0.400000006, 1.79999995, -6.5999999]
+      Rotation: [0, 3.14159274, 0]
+      Scale: [10, 10, 10]
+    MeshComponent:
+      Name: Hosino_Origninal_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Hoshino\Texture2D\Hoshino_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A

@@ -36,7 +36,7 @@ namespace ARIS
 
 		unsigned m_ID;
 		//aiTextureType type;
-		std::string dir, path, name;
+		std::string dir, m_Path, name;
 
 		//GLuint m_ID, m_BindPort;
 		GLuint m_Width, m_Height;

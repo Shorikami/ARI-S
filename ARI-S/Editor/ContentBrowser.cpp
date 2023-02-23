@@ -11,8 +11,8 @@ namespace ARIS
 	ContentBrowser::ContentBrowser()
 		: m_CurrentDir(s_AssetPath)
 	{
-		m_DirIcon = Texture("Resources/Icons/ContentBrowser/hoshino.png", GL_LINEAR, GL_REPEAT);
-		m_FileIcon = Texture("Resources/Icons/ContentBrowser/c.png", GL_LINEAR, GL_REPEAT);
+		m_DirIcon = Texture("Resources/Icons/ContentBrowser/folder.png", GL_LINEAR, GL_REPEAT);
+		m_FileIcon = Texture("Resources/Icons/ContentBrowser/file.png", GL_LINEAR, GL_REPEAT);
 	}
 
 	void ContentBrowser::OnImGuiRender()

@@ -165,6 +165,33 @@ namespace ARIS
 			out << YAML::Key << "Vertex Path" << YAML::Value << mc.GetVertexPath();
 			out << YAML::Key << "Fragment Path" << YAML::Value << mc.GetFragmentPath();
 
+			std::string texPath = std::string("N/A"), 
+				normPath = std::string("N/A"),
+				metPath = std::string("N/A"),
+				roughPath = std::string("N/A");
+
+			if (mc.GetDiffuseTex())
+			{
+				texPath = mc.GetDiffuseTex()->m_Path;
+			}
+			if (mc.GetNormalTex())
+			{
+				normPath = mc.GetNormalTex()->m_Path;
+			}
+			if (mc.GetMetallicTex())
+			{
+				metPath = mc.GetMetallicTex()->m_Path;
+			}
+			if (mc.GetRoughnessTex())
+			{
+				roughPath = mc.GetRoughnessTex()->m_Path;
+			}
+
+			out << YAML::Key << "Diffuse Path" << YAML::Value << texPath;
+			out << YAML::Key << "Normal Path" << YAML::Value << normPath;
+			out << YAML::Key << "Metallic Path" << YAML::Value << metPath;
+			out << YAML::Key << "Roughness Path" << YAML::Value << roughPath;
+
 			out << YAML::EndMap;
 		}
 
@@ -269,8 +296,32 @@ namespace ARIS
 					std::string vSrc = mc["Vertex Path"].as<std::string>();
 					std::string fSrc = mc["Fragment Path"].as<std::string>();
 
+					std::string diffTex = mc["Diffuse Path"].as<std::string>();
+					std::string normTex = mc["Normal Path"].as<std::string>();
+					std::string metTex = mc["Metallic Path"].as<std::string>();
+					std::string roughTex = mc["Roughness Path"].as<std::string>();
+
 					t.m_Model = *ModelBuilder::Get().GetModelTable()[name];
-					uint64_t test = deserializedEntity.GetUUID();
+
+					if (diffTex != "N/A")
+					{
+						t.m_DiffuseTex = std::make_shared<Texture>(diffTex, GL_LINEAR, GL_REPEAT);
+					}
+					if (normTex != "N/A")
+					{
+						t.m_DiffuseTex = std::make_shared<Texture>(normTex, GL_LINEAR, GL_REPEAT);
+					}
+					if (metTex != "N/A")
+					{
+						t.m_DiffuseTex = std::make_shared<Texture>(metTex, GL_LINEAR, GL_REPEAT);
+					}
+					if (roughTex != "N/A")
+					{
+						t.m_DiffuseTex = std::make_shared<Texture>(roughTex, GL_LINEAR, GL_REPEAT);
+					}
+					
+
+
 					t.m_VertexSrc = vSrc;
 					t.m_FragmentSrc = fSrc;
 					t.ReloadShader();

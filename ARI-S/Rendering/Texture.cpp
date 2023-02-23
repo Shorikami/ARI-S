@@ -24,7 +24,7 @@ namespace ARIS
 
 	Texture::Texture(std::string dir, std::string path)
 		: dir(dir)
-		, path(path)
+		, m_Path(path)
 	{
 		Generate();
 	}
@@ -91,6 +91,7 @@ namespace ARIS
 			m_IsLoaded = true;
 			m_Width = width;
 			m_Height = height;
+			m_Path = path;
 	
 			GLenum dataFormat = 0;
 			if (channels == 4)
@@ -128,7 +129,7 @@ namespace ARIS
 		stbi_set_flip_vertically_on_load(flip);
 
 		int width, height, nChannels;
-		unsigned char* data = stbi_load((dir + "/" + path).c_str(), &width, &height, &nChannels, 0);
+		unsigned char* data = stbi_load((dir + "/" + m_Path).c_str(), &width, &height, &nChannels, 0);
 
 		GLenum colorMode = GL_RGB;
 
@@ -155,7 +156,7 @@ namespace ARIS
 		}
 		else
 		{
-			std::cout << "Image not loaded at " << path << std::endl;
+			std::cout << "Image not loaded at " << m_Path << std::endl;
 		}
 
 		stbi_image_free(data);

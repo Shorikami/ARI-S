@@ -106,6 +106,11 @@ namespace ARIS
 		std::string GetVertexPath() const { return m_VertexSrc; }
 		std::string GetFragmentPath() const { return m_FragmentSrc; }
 
+		std::shared_ptr<Texture> GetDiffuseTex() { return m_DiffuseTex; }
+		std::shared_ptr<Texture> GetNormalTex() { return m_NormalTex; }
+		std::shared_ptr<Texture> GetMetallicTex() { return m_Metallic; }
+		std::shared_ptr<Texture> GetRoughnessTex() { return m_Roughness; }
+
 		std::string GetName() const { return m_Model.GetName(); }
 
 	private:

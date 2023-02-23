@@ -1,9 +1,0 @@
-Scene: Test
-Entities:
-  - Entity: 5803225616143332817
-    TagComponent:
-      Tag: test
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]

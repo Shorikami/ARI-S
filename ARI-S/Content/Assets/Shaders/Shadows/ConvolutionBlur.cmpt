@@ -12,88 +12,50 @@ layout (rgba32f) uniform readonly image2D src;
 layout (rgba32f) uniform writeonly image2D dst;
 
 
-int CACHE = 128 + 2 * halfKernel;
-int LOAD = (CACHE + (128 - 1)) / 128;
+int cache = 128 + 2 * halfKernel;
+int load = (cache + (128 - 1)) / 128;
 
 shared vec4 v[128 + 101];
 
 void main()
 {
-	//ivec2 size = imageSize(src);
-	//ivec2 gPos = ivec2(gl_GlobalInvocationID.xy);
-	//int origin = int(gl_WorkGroupID.x) * 128 - halfKernel;
-	//
-	//uint i = gl_LocalInvocationID.x;
-	//
-	//v[i] = imageLoad(src, gPos + (-halfKernel, 0));
-	//if (i < 2 * halfKernel)
-	//{
-	//	v[i + 128] = imageLoad(src, gPos + (128 - halfKernel, 0));
-	//}
-	//
-	//memoryBarrierShared();
-	//barrier();
-	//
-	//// Compute sum of weights[0 ... 2w] times corresponding pixels v[i ... i+2w]
-	//vec4 sum = vec4(0.0f);
-	//for (int ii = 0; ii <= 2 * halfKernel; ++ii)
-	//{
-	//	ivec2 pc = gPos + ivec2(ii - halfKernel, 0);
-	//	if (pc.x < 0) pc.x = 0;
-	//	if (pc.x >= size.x) pc.x = size.x - 1;
-	//	
-	//	int local = pc.x - origin;
-	//	
-	//	sum += weights[ii].x * v[local];
-	//	
-	//	//sum += weights[ii].x * v[i + ii];
-	//}
-	
-	// Store sum at gpos in dst image
-	//imageStore(dst, gPos, sum);
-	
 	ivec2 size = imageSize(src);
 	ivec2 gPos = ivec2(gl_GlobalInvocationID.xy);
-	
 	int origin = int(gl_WorkGroupID.x) * 128 - halfKernel;
 	
-	for (int i = 0; i < LOAD; ++i)
+	for (int i = 0; i < load; ++i)
 	{
-		int local = int(gl_LocalInvocationID.x) * LOAD + i;
+		int local = int(gl_LocalInvocationID.x) * load + i;
 		
-		if (local < CACHE)
+		// Check to see if within bounds
+		if (local < cache)
 		{
-			int pc = origin + local;
+			int px = origin + local;
 			
-			if (pc >= 0 && pc < size.x)
+			if (px >= 0 && px < size.x)
 			{
-				v[local] = imageLoad(src, ivec2(pc, gPos.y));
+				v[local] = imageLoad(src, ivec2(px, gPos.y));
 			}
 		}
 	}
 	
-	memoryBarrierShared();
 	barrier();
 	
-	// Compute sum of weights[0 ... 2w] times corresponding pixels v[i ... i+2w]
-	if (gPos.x < size.x && gPos.y < size.y)
+	vec4 sum = vec4(0.0f);
+	for (int i = 0; i <= 2 * halfKernel; ++i)
 	{
-		vec4 sum = vec4(0.0f);
+		ivec2 px = gPos + ivec2(i - halfKernel, 0);
 		
-		for (int i = 0; i <= 2 * halfKernel; ++i)
-		{
-			ivec2 pc = gPos + ivec2(i - halfKernel, 0);
-			if (pc.x < 0) pc.x = 0;
-			if (pc.x >= size.x) pc.x = size.x - 1;
-			
-			int local = pc.x - origin;
-			
-			sum += weights[i].x * v[local];
-		}
+		// Prevents blinking artifacts on edges of shadow map
+		if (px.x < 0) px.x = 0;
+		if (px.x >= size.x) px.x = size.x - 1;
 		
-		// Store sum at gpos in dst image
-		imageStore(dst, gPos, sum);
+		int localPos = px.x - origin;
+		
+		// Compute sum
+		sum += weights[i].x * v[localPos];
 	}
-	
-
+		
+	// Store sum at gpos in dst image
+	imageStore(dst, gPos, sum);
 }
