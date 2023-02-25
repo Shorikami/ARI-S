@@ -82,9 +82,12 @@ namespace ARIS
         void InitMembers();
         void ReloadShaders();
 
+        void GenerateBasicShapes();
         void GenerateLocalLights();
 
         void RenderLocalLights();
+
+        GLuint skyboxVAO, skyboxVBO;
         void RenderSkybox();
 
         GLuint quadVAO, quadVBO;
@@ -97,17 +100,12 @@ namespace ARIS
         //UniformBuffer<Lights>* lightData;
         //UniformBuffer<LocalLight>* localLightData;
 
-        //std::vector<Model*> models;
-        //Model *cube, *sphere, *skybox;
-
         Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows, *debugShadows,
             *computeBlur;
         Shader* skyboxShader;
 
         std::vector<Texture*> gTextures;
-        Texture* sDepthMap, *blurOutput;
-
-        std::vector<std::pair<Texture, std::string>> skyboxTextures;
+        Texture* sDepthMap, *blurOutput, *skybox;
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;
