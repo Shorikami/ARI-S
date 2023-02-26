@@ -38,7 +38,7 @@ namespace ARIS
         float lastX, lastY;
         bool firstMouse;
 
-        bool rotateCamera = false;
+        bool enableCameraMovement = false;
 
         Camera(glm::vec3 pos = glm::vec3(0.0f));
 
@@ -48,6 +48,7 @@ namespace ARIS
         void UpdateCameraDir(double dx, double dy);
         void UpdateCameraPos(CameraDirection d, double dt);
         void UpdateCameraZoom(double dy);
+        void UpdateCameraSpeed(double dy);
 
         __inline glm::mat4 View() { return glm::lookAt(cameraPos, cameraPos + front, up); };
         //__inline glm::mat4 Perspective()
@@ -75,6 +76,8 @@ namespace ARIS
 
         bool OnMouseMoved(MouseMovedEvent& e);
         bool OnMouseScrolled(MouseScrolledEvent& e);
+        bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
+        bool OnMouseButtonReleased(MouseButtonReleasedEvent& e);
     };
 }
 

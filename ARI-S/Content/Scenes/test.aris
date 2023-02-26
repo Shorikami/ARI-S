@@ -4,8 +4,8 @@ Entities:
     TagComponent:
       Tag: Local Light
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
+      Translation: [12.7383842, 3.8499999, -13.2639923]
+      Rotation: [-0.785398185, 3.30216289, 0]
       Scale: [9, 9, 9]
     LightComponent:
       Color: [1, 1, 1, 1]

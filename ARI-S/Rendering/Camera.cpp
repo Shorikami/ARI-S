@@ -29,28 +29,32 @@ namespace ARIS
 	{
 		double time = static_cast<double>(dt.GetSeconds());
 
-		if (InputPoll::IsKeyPressed(KeyTags::W))
-			UpdateCameraPos(CameraDirection::FORWARD, time);
-		if (InputPoll::IsKeyPressed(KeyTags::S))
-			UpdateCameraPos(CameraDirection::BACKWARDS, time);
-		if (InputPoll::IsKeyPressed(KeyTags::A))
-			UpdateCameraPos(CameraDirection::LEFT, time);
-		if (InputPoll::IsKeyPressed(KeyTags::D))
-			UpdateCameraPos(CameraDirection::RIGHT, time);			
+		if (enableCameraMovement)
+		{
+			if (InputPoll::IsKeyPressed(KeyTags::W))
+				UpdateCameraPos(CameraDirection::FORWARD, time);
+			if (InputPoll::IsKeyPressed(KeyTags::S))
+				UpdateCameraPos(CameraDirection::BACKWARDS, time);
+			if (InputPoll::IsKeyPressed(KeyTags::A))
+				UpdateCameraPos(CameraDirection::LEFT, time);
+			if (InputPoll::IsKeyPressed(KeyTags::D))
+				UpdateCameraPos(CameraDirection::RIGHT, time);
+		}	
 	}
 
 	void Camera::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
 
-		dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT_FUNC(Camera::OnKeyPressed));
 		dispatcher.Dispatch<MouseMovedEvent>(BIND_EVENT_FUNC(Camera::OnMouseMoved));
 		dispatcher.Dispatch<MouseScrolledEvent>(BIND_EVENT_FUNC(Camera::OnMouseScrolled));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(BIND_EVENT_FUNC(Camera::OnMouseButtonPressed));
+		dispatcher.Dispatch<MouseButtonReleasedEvent>(BIND_EVENT_FUNC(Camera::OnMouseButtonReleased));
 	}
 
 	void Camera::UpdateCameraDir(double dx, double dy)
 	{
-		if (rotateCamera)
+		if (enableCameraMovement)
 		{
 			yaw += static_cast<float>(dx);
 			pitch += static_cast<float>(dy);
@@ -105,6 +109,23 @@ namespace ARIS
 		}
 	}
 
+	void Camera::UpdateCameraSpeed(double dy)
+	{
+		float mult = dy * 0.2f;
+		if (speed >= 0.2f && speed <= 20.0f)
+		{
+			speed += mult;
+		}
+		else if (speed < 0.2f)
+		{
+			speed = 0.2f;
+		}
+		else
+		{
+			speed = 20.0f;
+		}
+	}
+
 	void Camera::UpdateCameraVectors()
 	{
 		glm::vec3 dir;
@@ -118,15 +139,6 @@ namespace ARIS
 
 		up = glm::vec3(0.0f, 1.0f, 0.0f);
 		right = glm::normalize(glm::cross(front, up));
-	}
-
-	bool Camera::OnKeyPressed(KeyPressedEvent& e)
-	{
-		if (e.GetKeyCode() == KeyTags::GraveAccent && !e.IsRepeat())
-		{
-			rotateCamera = !rotateCamera;
-		}
-		return 0;
 	}
 
 	bool Camera::OnMouseMoved(MouseMovedEvent& e)
@@ -150,7 +162,30 @@ namespace ARIS
 
 	bool Camera::OnMouseScrolled(MouseScrolledEvent& e)
 	{
-		UpdateCameraZoom(e.GetYOffset());
+		if (enableCameraMovement)
+		{
+			UpdateCameraSpeed(e.GetYOffset());
+		}
+
+		return 0;
+	}
+
+	bool Camera::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+		if (e.GetMouseButton() == MouseTags::ButtonRight)
+		{
+			enableCameraMovement = true;
+		}
+
+		return 0;
+	}
+
+	bool Camera::OnMouseButtonReleased(MouseButtonReleasedEvent& e)
+	{
+		if (e.GetMouseButton() == MouseTags::ButtonRight)
+		{
+			enableCameraMovement = false;
+		}
 
 		return 0;
 	}
