@@ -8,6 +8,8 @@
 #include "HierarchyPanel.h"
 #include "ContentBrowser.h"
 
+#include "Cameras/EditorCamera.h"
+
 #include <glm.hpp>
 
 namespace ARIS
@@ -43,6 +45,8 @@ namespace ARIS
 		Framebuffer* m_Framebuffer;
 		glm::vec2 m_ViewportSize = glm::vec2(0.0f);
 		glm::vec2 m_VPBounds[2];
+
+		EditorCamera m_EditorCamera;
 
 		std::shared_ptr<Scene> m_ActiveScene;
 

@@ -6,7 +6,7 @@
 #include "Window.h"
 #include "FrameMemory.hpp"
 #include "Timer.h"
-#include "Camera.h"
+#include "Cameras/EditorCamera.h"
 #include "UUID.hpp"
 #include "Layer.h"
 
@@ -41,21 +41,24 @@ namespace ARIS
         Entity FindEntityByName(std::string_view name);
         Entity FindEntityByUUID(UUID uuid);
 
-        virtual int Init();
-        virtual int Display();
+        int Init();
 
-        virtual void Update(DeltaTime dt);
+        void UpdateEditor(DeltaTime dt, EditorCamera& edCam);
+        //void UpdateRuntime(DeltaTime dt);
 
-        virtual void CleanUp();
+        void CleanUp();
 
-        virtual int PreRender();
-        virtual int Render();
-        virtual int PostRender();
+        int PreRender();
+
+        int RenderEditor(EditorCamera& editorCam);
+        //int RenderRuntime();
+
+        int PostRender();
 
         virtual void OnViewportResize(uint32_t w, uint32_t h);
 
         Framebuffer*& GetSceneFBO() { return m_SceneFBO; }
-        Camera& GetCamera() { return m_Camera; }
+
     public:
         void OnImGuiRender() override;
         void OnEvent(Event& e) override;
@@ -65,7 +68,6 @@ namespace ARIS
 
         Framebuffer* m_SceneFBO;
         DeltaTime m_DT;
-        Camera m_Camera;
 
         entt::registry m_Registry;
         
@@ -85,10 +87,10 @@ namespace ARIS
         void GenerateBasicShapes();
         void GenerateLocalLights();
 
-        void RenderLocalLights();
+        //void RenderLocalLights();
 
         GLuint skyboxVAO, skyboxVBO;
-        void RenderSkybox();
+        void RenderSkybox(glm::mat4 view, glm::mat4 proj);
 
         GLuint quadVAO, quadVBO;
         void RenderQuad();

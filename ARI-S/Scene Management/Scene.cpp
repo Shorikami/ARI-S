@@ -91,7 +91,6 @@ namespace ARIS
         : _windowWidth(100)
         , _windowHeight(100)
     {
-        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
         InitMembers();
 
         Init();
@@ -101,7 +100,6 @@ namespace ARIS
         : _windowWidth(windowWidth)
         , _windowHeight(windowHeight)
     {
-        m_Camera = Camera(glm::vec3(-6.0f, 1.0f, 0.0f));
         InitMembers();
 
         Init();
@@ -380,7 +378,7 @@ namespace ARIS
         return 0;
     }
 
-    int Scene::Render()
+    int Scene::RenderEditor(EditorCamera& editorCam)
     {
         //std::cout << "1st " << m_Camera.cameraPos << std::endl;
         //std::cout << "2nd " << m_Camera.cameraPos + m_Camera.front << std::endl;
@@ -527,8 +525,8 @@ namespace ARIS
 
                 // Update and render them relative to the light
                 objTr.Update();
-                mesh.Draw(objTr.GetTransform(), m_Camera.View(),
-                    m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false, (int)entity);
+                mesh.Draw(objTr.GetTransform(), editorCam.GetViewMatrix(),
+                    editorCam.GetProjection(), *lightingPass, false, (int)entity);
             }
         }
 
@@ -544,7 +542,7 @@ namespace ARIS
         //    }
         //}
 
-        RenderSkybox();
+        RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
 
         //m_SceneFBO->Unbind();
 
@@ -576,20 +574,14 @@ namespace ARIS
         return;
     }
 
-    int Scene::Display()
-    {
-        PreRender();
-        Render();
-        PostRender();
 
-        return -1;
-    }
-
-    void Scene::Update(DeltaTime dt)
+    void Scene::UpdateEditor(DeltaTime dt, EditorCamera& edCam)
     {
         m_DT = dt.GetSeconds();
 
-        Display();
+        PreRender();
+        RenderEditor(edCam);
+        PostRender();
     }
 
     void Scene::OnImGuiRender()
@@ -614,13 +606,6 @@ namespace ARIS
 
         ImGui::Separator();
 
-        if (ImGui::Button("Move to light position and direction"))
-        {
-            m_Camera.cameraPos = glm::vec3(10.2296f, 6.20311f, -14.2213f);
-            m_Camera.front = glm::vec3(-0.58876f, -0.292372f, 0.753578f);
-            m_Camera.up = glm::vec3(-0.180002f, 0.956305f, 0.230392f);
-        }
-
         if (ImGui::Button("Reload Shadow Shaders"))
         {
             ReloadShaders();
@@ -634,59 +619,59 @@ namespace ARIS
         //m_Camera.OnEvent(e);
     }
 
-    void Scene::RenderLocalLights()
-    {
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
+    //void Scene::RenderLocalLights()
+    //{
+    //    glEnable(GL_CULL_FACE);
+    //    glCullFace(GL_FRONT);
+    //
+    //    glDisable(GL_DEPTH_TEST);
+    //
+    //    glEnable(GL_BLEND);
+    //    glBlendFunc(GL_ONE, GL_ONE);
+    //
+    //    localLight->Activate();
+    //    localLight->SetVec3("eyePos", m_Camera.cameraPos);
+    //
+    //    localLight->SetInt("vWidth", _windowWidth);
+    //    localLight->SetInt("vHeight", _windowHeight);
+    //
+    //    glUseProgram(0);
+    //
+    //    //for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
+    //    //{
+    //    //    localLightData->GetData().pos = localLights[i].pos;
+    //    //    localLightData->GetData().color = localLights[i].color;
+    //    //    localLightData->GetData().options = localLights[i].options;
+    //    //    localLightData->SetData();
+    //    //
+    //    //    sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
+    //    //
+    //    //    sphere->Draw(localLight->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
+    //    //}
+    //    //
+    //    //glEnable(GL_CULL_FACE);
+    //    //glCullFace(GL_BACK);
+    //    //glEnable(GL_DEPTH_TEST);
+    //    //glDisable(GL_BLEND);
+    //    //
+    //    //for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
+    //    //{
+    //    //    localLightData->GetData().pos = localLights[i].pos;
+    //    //    localLightData->GetData().color = localLights[i].color;
+    //    //    localLightData->SetData();
+    //    //
+    //    //    sphere->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
+    //    //    sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
+    //    //
+    //    //    if (m_DisplayDebugRanges)
+    //    //    {
+    //    //        sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
+    //    //        sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height), {}, GL_LINES);
+    //    //    }
+    //    //}
+    //}
 
-        glDisable(GL_DEPTH_TEST);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-
-        localLight->Activate();
-        localLight->SetVec3("eyePos", m_Camera.cameraPos);
-
-        localLight->SetInt("vWidth", _windowWidth);
-        localLight->SetInt("vHeight", _windowHeight);
-
-        glUseProgram(0);
-
-        //for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
-        //{
-        //    localLightData->GetData().pos = localLights[i].pos;
-        //    localLightData->GetData().color = localLights[i].color;
-        //    localLightData->GetData().options = localLights[i].options;
-        //    localLightData->SetData();
-        //
-        //    sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
-        //
-        //    sphere->Draw(localLight->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
-        //}
-        //
-        //glEnable(GL_CULL_FACE);
-        //glCullFace(GL_BACK);
-        //glEnable(GL_DEPTH_TEST);
-        //glDisable(GL_BLEND);
-        //
-        //for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
-        //{
-        //    localLightData->GetData().pos = localLights[i].pos;
-        //    localLightData->GetData().color = localLights[i].color;
-        //    localLightData->SetData();
-        //
-        //    sphere->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
-        //    sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
-        //
-        //    if (m_DisplayDebugRanges)
-        //    {
-        //        sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
-        //        sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height), {}, GL_LINES);
-        //    }
-        //}
-    }
-
-    void Scene::RenderSkybox()
+    void Scene::RenderSkybox(glm::mat4 view, glm::mat4 proj)
     {
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
@@ -701,8 +686,8 @@ namespace ARIS
 
         skyboxShader->Activate();
 
-        skyboxShader->SetMat4("view", glm::mat4(glm::mat3(m_Camera.View())));
-        skyboxShader->SetMat4("projection", m_Camera.Perspective(sceneWidth, sceneHeight));
+        skyboxShader->SetMat4("view", glm::mat4(glm::mat3(view)));
+        skyboxShader->SetMat4("projection", proj);
 
         glBindVertexArray(skyboxVAO);
         glActiveTexture(GL_TEXTURE0);

@@ -64,6 +64,8 @@ namespace ARIS
 		m_ActiveScene = std::make_shared<Scene>(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 		m_HierarchyPanel.SetContext(m_ActiveScene);
 
+		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
+
 		//m_Framebuffer = new Framebuffer(w, h, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//m_Framebuffer->Bind();
 		//m_Framebuffer->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE);
@@ -85,24 +87,19 @@ namespace ARIS
 	{
 		m_ActiveScene->OnViewportResize(static_cast<uint32_t>(m_ViewportSize.x), static_cast<uint32_t>(m_ViewportSize.y));
 
-		//if (FramebufferSpecs spec = m_ActiveScene->GetSceneFBO()->GetSpecs(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
-		//	&& (spec.s_Width != m_ViewportSize.x || spec.s_Height != m_ViewportSize.y))
-		//{
-		//	m_ActiveScene->GetSceneFBO()->Resize(static_cast<uint32_t>(m_ViewportSize.x),
-		//		static_cast<uint32_t>(m_ViewportSize.y));
-		//}
+		if (FramebufferSpecs spec = m_ActiveScene->GetSceneFBO()->GetSpecs(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
+			&& (spec.s_Width != m_ViewportSize.x || spec.s_Height != m_ViewportSize.y))
+		{
+			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+		}
 
 		//m_Framebuffer->Bind();
 		//m_Framebuffer->ClearAttachment(1, -1);
 		//m_Framebuffer->Unbind();
 
-		BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
-		if (m_ViewportFocused)
-		{
-			m_ActiveScene->GetCamera().Update(dt);
-		}
+		m_EditorCamera.OnUpdate(dt);
+		m_ActiveScene->UpdateEditor(dt, m_EditorCamera);
 
-		m_ActiveScene.get()->Update(dt);
 
 		auto [mx, my] = ImGui::GetMousePos();
 		mx -= m_VPBounds[0].x;
@@ -245,6 +242,8 @@ namespace ARIS
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
 
+		BlockEvents(!m_ViewportHovered);
+
 		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
 		
@@ -274,11 +273,10 @@ namespace ARIS
 			ImGuizmo::SetRect(m_VPBounds[0].x, m_VPBounds[0].y,
 				m_VPBounds[1].x - m_VPBounds[0].x, m_VPBounds[1].y - m_VPBounds[0].y);
 
-			auto cam = m_ActiveScene->GetCamera();
 			auto fbo = m_ActiveScene->GetSceneFBO();
 
-			const glm::mat4& proj = cam.Perspective(fbo->GetSpecs().s_Width, fbo->GetSpecs().s_Height);
-			glm::mat4 view = cam.View();
+			const glm::mat4& proj = m_EditorCamera.GetProjection();
+			glm::mat4 view = m_EditorCamera.GetViewMatrix();
 
 			auto& tc = selectedEntity.GetComponent<TransformComponent>();
 			glm::mat4 tr = tc.GetTransform();
@@ -323,15 +321,8 @@ namespace ARIS
 			e.m_Handled |= e.IsInCategory(CategoryMouse) & io.WantCaptureMouse;
 			e.m_Handled |= e.IsInCategory(CategoryKeyboard) & io.WantCaptureKeyboard;
 		}
-		else
-		{
-			if (m_ViewportFocused)
-			{
-				m_ActiveScene->GetCamera().OnEvent(e);
-			}
 
-			m_ActiveScene.get()->OnEvent(e);
-		}
+		m_EditorCamera.OnEvent(e);
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(BIND_EVENT_FUNC(Editor::OnKeyPressed));
