@@ -386,7 +386,8 @@ namespace ARIS
 						if (ImGui::Selectable(lights[n], isSelected))
 						{
 							curr = lights[n];
-							comp.m_Type = std::string(curr).compare("Point") == 0 ? 0 : 1;
+							comp.m_Type = std::string(curr).compare("Point") == 0 ? 
+								LightComponent::LightType::POINT : LightComponent::LightType::DIRECTIONAL;
 						}
 						if (isSelected)
 						{

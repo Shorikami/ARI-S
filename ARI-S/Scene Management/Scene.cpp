@@ -296,15 +296,15 @@ namespace ARIS
 
         skybox = new Texture();
         {
-            std::string common = "Content/Assets/Textures/Skyboxes/Day/skybox_";
+            std::string common = "Content/Assets/Textures/Skyboxes/Night/skybox_";
             std::vector<std::string> faces;
 
-            faces.push_back(common + "right.jpg");
-            faces.push_back(common + "left.jpg");
-            faces.push_back(common + "top.jpg");
-            faces.push_back(common + "bottom.jpg");
-            faces.push_back(common + "front.jpg");
-            faces.push_back(common + "back.jpg");
+            faces.push_back(common + "right.png");
+            faces.push_back(common + "left.png");
+            faces.push_back(common + "top.png");
+            faces.push_back(common + "bottom.png");
+            faces.push_back(common + "front.png");
+            faces.push_back(common + "back.png");
 
             skybox->LoadCubemap(faces);
         }
@@ -393,6 +393,7 @@ namespace ARIS
 
         //glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
 
+        // IMPORTANT TO DO THIS: Color will blend with BG if this is anything else but vec4(0)
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         glEnable(GL_CULL_FACE);
@@ -402,34 +403,48 @@ namespace ARIS
 
         // Shadow Pass
         // Step 1: Light POV to FBO
-        glm::mat4 lightProj = glm::ortho(-lightW, lightW, -lightH, lightH, nearPlane, farPlane);
-        glm::mat4 lightView = glm::lookAt(
-            glm::vec3(10.2296f, 6.20311f, -14.2213f),
-            glm::vec3(9.64084f, 5.91074f, -13.4677f), 
-            glm::vec3(-0.180002f, 0.956306f, 0.230392f));
-
-        glm::mat4 lightSpaceMat = lightProj * lightView;
+        //glm::mat4 lightProj = 
+        //glm::mat4 lightView = glm::lookAt(
+        //    glm::vec3(10.2296f, 6.20311f, -14.2213f),
+        //    glm::vec3(9.64084f, 5.91074f, -13.4677f), 
+        //    glm::vec3(-0.180002f, 0.956306f, 0.230392f));
+        //
+        //glm::mat4 lightSpaceMat = lightProj * lightView;
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f)) 
             * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
         glCullFace(GL_FRONT);
         // Render models relative to the shadow shader
         sBuffer->Activate();
+
+        // For all lights...
+        auto v = m_Registry.view<TransformComponent, LightComponent>();
+        for (auto entity : v)
         {
-            auto view = m_Registry.view<TransformComponent, MeshComponent>();
-            for (auto entity : view)
+            auto [transform, light] = v.get<TransformComponent, LightComponent>(entity);
+
+            // Update light matrices + transform
+            transform.Update();
+            light.Update(transform.GetTranslation(), transform.GetRotation());
+
+            // For all meshes...
+            auto obj = m_Registry.view<TransformComponent, MeshComponent>();
+            for (auto entity : obj)
             {
-                auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
-        
-                transform.Update();
+                auto [objTr, mesh] = obj.get<TransformComponent, MeshComponent>(entity);
+
+                // Update and render them relative to the light
+                objTr.Update();
                 basicShadows->Activate();
                 basicShadows->SetFloat("nearP", nearPlane);
                 basicShadows->SetFloat("farP", farPlane);
 
                 glUseProgram(0);
-                mesh.Draw(transform.GetTransform(), lightView, lightProj, *basicShadows, false);
+                mesh.Draw(objTr.GetTransform(), light.GetViewMatrix(), light.GetProjectionMatrix(), *basicShadows, false);
             }
         }
+
+
         sBuffer->Unbind();
 
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
@@ -483,39 +498,51 @@ namespace ARIS
 
         // Step 3: Render the scene normally
         glCullFace(GL_BACK);
-
-        auto view = m_Registry.view<TransformComponent, LightComponent>();
-        for (auto entity : view)
-        {
-            auto [transform, light] = view.get<TransformComponent, LightComponent>(entity);
-
-            transform.Update();
-            //light.Draw(transform.GetTranslation(), transform.GetRotation(),
-            //    m_Camera.View(),
-            //    m_Camera.Perspective(sceneWidth, sceneHeight));
-        }
         
         lightingPass->Activate();
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
-        lightingPass->SetInt("uShadowMap", 0);
-        lightingPass->SetMat4("shadowMatrix", matB * lightSpaceMat);
-        lightingPass->SetInt("vWidth", sceneWidth);
-        lightingPass->SetInt("vHeight", sceneHeight);
-
+        // For all lights...(TODO: correct?)
+        auto lView = m_Registry.view<TransformComponent, LightComponent>();
+        for (auto entity : lView)
         {
-            auto view = m_Registry.view<TransformComponent, MeshComponent>();
-            for (auto entity : view)
-            {
-                auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+            auto [transform, light] = lView.get<TransformComponent, LightComponent>(entity);
 
-                transform.Update();
-                mesh.Draw(transform.GetTransform(), m_Camera.View(), 
+            // Update light matrices + transform
+            transform.Update();
+            light.Update(transform.GetTranslation(), transform.GetRotation());
+
+            lightingPass->SetInt("uShadowMap", 0);
+            lightingPass->SetMat4("shadowMatrix", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
+            lightingPass->SetInt("vWidth", sceneWidth);
+            lightingPass->SetInt("vHeight", sceneHeight);
+
+            // For all meshes...
+            auto obj = m_Registry.view<TransformComponent, MeshComponent>();
+            for (auto entity : obj)
+            {
+                auto [objTr, mesh] = obj.get<TransformComponent, MeshComponent>(entity);
+
+                // Update and render them relative to the light
+                objTr.Update();
+                mesh.Draw(objTr.GetTransform(), m_Camera.View(),
                     m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false, (int)entity);
             }
         }
+
+        //{
+        //    auto view = m_Registry.view<TransformComponent, MeshComponent>();
+        //    for (auto entity : view)
+        //    {
+        //        auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
+        //
+        //        transform.Update();
+        //        mesh.Draw(transform.GetTransform(), m_Camera.View(), 
+        //            m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false, (int)entity);
+        //    }
+        //}
 
         RenderSkybox();
 
