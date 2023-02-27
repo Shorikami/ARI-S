@@ -195,18 +195,34 @@ namespace ARIS
 			out << YAML::EndMap;
 		}
 
-		if (e.HasComponent<LightComponent>())
+		if (e.HasComponent<PointLightComponent>())
 		{
-			out << YAML::Key << "LightComponent";
+			out << YAML::Key << "PointLightComponent";
 			out << YAML::BeginMap;
 
-			auto& lc = e.GetComponent<LightComponent>();
+			auto& lc = e.GetComponent<PointLightComponent>();
 			//out << YAML::Key << "Vertex Path" << YAML::Value << lc.GetVertexPath();
 			//out << YAML::Key << "Fragment Path" << YAML::Value << lc.GetFragmentPath();
 			out << YAML::Key << "Color" << YAML::Value << lc.GetColor();
-			out << YAML::Key << "Type" << YAML::Value << (int)lc.GetType();
 			out << YAML::Key << "Range" << YAML::Value << lc.GetRange();
 			out << YAML::Key << "Intensity" << YAML::Value << lc.GetIntensity();
+
+			out << YAML::EndMap;
+		}
+
+		if (e.HasComponent<DirectionLightComponent>())
+		{
+			out << YAML::Key << "DirectionLightComponent";
+			out << YAML::BeginMap;
+
+			auto& lc = e.GetComponent<DirectionLightComponent>();
+			//out << YAML::Key << "Vertex Path" << YAML::Value << lc.GetVertexPath();
+			//out << YAML::Key << "Fragment Path" << YAML::Value << lc.GetFragmentPath();
+			out << YAML::Key << "Color" << YAML::Value << lc.GetColor();
+			out << YAML::Key << "Width" << YAML::Value << lc.GetWidth();
+			out << YAML::Key << "Height" << YAML::Value << lc.GetHeight();
+			out << YAML::Key << "Near" << YAML::Value << lc.GetNear();
+			out << YAML::Key << "Far" << YAML::Value << lc.GetFar();
 
 			out << YAML::EndMap;
 		}
@@ -327,19 +343,36 @@ namespace ARIS
 					t.ReloadShader();
 				}
 
-				auto lc = e["LightComponent"];
+				auto lc = e["PointLightComponent"];
 				if (lc)
 				{
-					auto& t = deserializedEntity.AddComponent<LightComponent>();
+					auto& t = deserializedEntity.AddComponent<PointLightComponent>();
 					//std::string vSrc = lc["Vertex Path"].as<std::string>();
 					//std::string fSrc = lc["Fragment Path"].as<std::string>();
 
 					//t.m_VertexSrc = vSrc;
 					//t.m_FragmentSrc = fSrc;
 					t.m_Color = lc["Color"].as<glm::vec4>();
-					t.m_Type = static_cast<LightComponent::LightType>(lc["Type"].as<int>());
 					t.m_Range = lc["Range"].as<float>();
 					t.m_Intensity = lc["Intensity"].as<float>();
+
+					//t.ReloadShader();
+				}
+
+				auto dl = e["DirectionLightComponent"];
+				if (dl)
+				{
+					auto& t = deserializedEntity.AddComponent<DirectionLightComponent>();
+					//std::string vSrc = lc["Vertex Path"].as<std::string>();
+					//std::string fSrc = lc["Fragment Path"].as<std::string>();
+
+					//t.m_VertexSrc = vSrc;
+					//t.m_FragmentSrc = fSrc;
+					t.m_Color = dl["Color"].as<glm::vec4>();
+					t.m_Width = dl["Width"].as<float>();
+					t.m_Height = dl["Height"].as<float>();
+					t.m_Near = dl["Near"].as<float>();
+					t.m_Far = dl["Far"].as<float>();
 
 					//t.ReloadShader();
 				}

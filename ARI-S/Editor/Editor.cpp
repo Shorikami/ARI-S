@@ -114,7 +114,7 @@ namespace ARIS
 		if (mouseX >= 0 && mouseY >= 0 &&
 			mouseX < static_cast<int>(vpSize.x) && mouseY < static_cast<int>(vpSize.y))
 		{
-			int pixel = m_ActiveScene->GetSceneFBO()->ReadPixel(1, mouseX, mouseY);
+			int pixel = m_ActiveScene->GetGBuffer()->ReadPixel(5, mouseX, mouseY);
 			if (pixel == -1)
 			{
 				m_HoveredEntity = Entity();

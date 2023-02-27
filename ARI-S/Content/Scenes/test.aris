@@ -1,17 +1,29 @@
 Scene: Test
 Entities:
+  - Entity: 8975308583578878574
+    TagComponent:
+      Tag: Point Light
+    TransformComponent:
+      Translation: [-0.97318089, 4.33895493, -3.10180759]
+      Rotation: [0.0436332263, 0, 0]
+      Scale: [100, 100, 100]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 100
+      Intensity: 10
   - Entity: 11384973501980615642
     TagComponent:
-      Tag: Local Light
+      Tag: Directional Light
     TransformComponent:
       Translation: [12.7383842, 3.8499999, -13.2639923]
       Rotation: [-0.785398185, 3.30216289, 0]
       Scale: [9, 9, 9]
-    LightComponent:
+    DirectionLightComponent:
       Color: [1, 1, 1, 1]
-      Type: 0
-      Range: 9
-      Intensity: 1.36399996
+      Width: 10
+      Height: 10
+      Near: 0.100000001
+      Far: 25
   - Entity: 12180330849759156372
     TagComponent:
       Tag: Cube

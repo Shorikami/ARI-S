@@ -19,9 +19,6 @@
 unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
-float nearPlane = 0.1f, farPlane = 25.0f;
-float lightW = 10.0f, lightH = 10.0f;
-
 int kernelSize = 10;
 int gaussianWeight = 10;
 
@@ -108,54 +105,19 @@ namespace ARIS
     void Scene::InitMembers()
     {
         matrixData = new UniformBuffer<World>(0);
+        lightData = new UniformBuffer<Lights>(1);
+        localLightData = new UniformBuffer<LocalLight>(2);
         kernelData = new UniformBuffer<BlurKernel>(3);
-
-        // CHOLESKY MATH TEST
-        //float zTest = 0.847975643f;
-        float zTest = 0.10808f - (0.5f * 0.001f);
-        float depth = 0.04955f;
-        float alpha = 1 * powf(10.0f, -3.0f);
-        
-        glm::vec3 output = glm::vec3(1.0f, zTest, zTest * zTest);
-        glm::vec4 bVec = glm::vec4(depth, powf(depth, 2), powf(depth, 3), powf(depth, 4));
-        
-        glm::vec4 b_ = (1.0f - alpha) * bVec + alpha * glm::vec4(0.5f);
-        
-        glm::vec3 col1 = glm::vec3(1, b_.x, b_.y);
-        glm::vec3 col2 = glm::vec3(b_.x, b_.y, b_.z);
-        glm::vec3 col3 = glm::vec3(b_.y, b_.z, b_.w);
-        
-        glm::mat3 testMat = glm::mat3(col1, col2, col3);
-        
-        glm::vec3 choleskyVec = Cholesky(1.0f, b_.x, b_.y, b_.y, b_.z, b_.w, output.x, output.y, output.z);
-        glm::vec3 choleskyTwoVec = Cholesky(b_, zTest);
-        
-        glm::vec3 res = testMat * choleskyVec;
-        glm::vec3 resres = testMat * choleskyTwoVec;
-        
-        // These should equal to each other
-        glm::vec2 quadr2 = Quadratic(choleskyVec.z, choleskyVec.y, choleskyVec.x);
-        glm::vec2 quadr3 = Quadratic(choleskyTwoVec);
-
-        // These should both equal 0
-        float quadrTest = choleskyVec.z * powf(quadr2.x, 2.0f) + choleskyVec.y * quadr2.x + choleskyVec.x;
-        float quadrTest2 = choleskyVec.z * powf(quadr2.y, 2.0f) + choleskyVec.y * quadr2.y + choleskyVec.x;
-        
-        float shadowVal = ShadowTest(quadr2.x, quadr2.y, zTest, b_);
-        float shadowVal2 = Hamburger(zTest, quadr2, b_);
-        float shadowVal3 = Hausdorff(zTest, quadr2, b_);
-
-        // END TEST
     }
 
     void Scene::ReloadShaders()
     {
         delete lightingPass;
-        delete basicShadows;
+        delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
-        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        lightingPass = new Shader(false, "Deferred/LightingPassShadows.vert", "Deferred/LightingPassShadows.frag");
+        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
 
@@ -241,29 +203,6 @@ namespace ARIS
         glBindVertexArray(0);
     }
 
-    void Scene::GenerateLocalLights()
-    {
-        for (unsigned i = 0; i < MAX_LIGHTS; ++i)
-        {
-            float xPos = RandomNum(minX, maxX);
-            float yPos = RandomNum(minY, maxY);
-            float zPos = RandomNum(minZ, maxZ);
-            float range = RandomNum(minRange, maxRange);
-            float mult = RandomNum(5.0f, 5.0f);
-
-            float intensity = RandomNum(1.0f, 10.0f);
-
-            float r = RandomNum(0.0f, 1.0f);
-            float g = RandomNum(0.0f, 1.0f);
-            float b = RandomNum(0.0f, 1.0f);
-
-            localLights[i].pos = glm::vec4(0.0f, 0.0f, 0.0f, 9.0f);
-            localLights[i].color = glm::vec4(r, g, b, 1.0f);
-            localLights[i].options.x = intensity;
-            localLights[i].options.y = 1.0f;
-        }
-    }
-
     Scene::~Scene()
     {
         CleanUp();
@@ -273,18 +212,26 @@ namespace ARIS
     {
         skyboxShader = new Shader(false, "Skybox.vert", "Skybox.frag");
 
-        lightingPass = new Shader(false, "Shadows/Moment/Diffuse.vert", "Shadows/Moment/Diffuse.frag");
-        basicShadows = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
+        lightingPass = new Shader(false, "Deferred/LightingPassShadows.vert", "Deferred/LightingPassShadows.frag");
+        localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
+
+        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
-        //for (unsigned i = 0; i < 5; ++i)
-        //{
-        //    gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
-        //        GL_NEAREST, GL_CLAMP_TO_EDGE));
-        //}
-        //gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
-        //    GL_NEAREST, GL_REPEAT, GL_FLOAT));
+        for (unsigned i = 0; i < 5; ++i)
+        {
+            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+                GL_NEAREST, GL_CLAMP_TO_EDGE));
+        }
+        // Single-channel red texture (for entity ID and mouse-clicking; this will be
+        // shared with the scene FBO)
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32I, GL_RED_INTEGER, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE));
+
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+            GL_NEAREST, GL_REPEAT, GL_FLOAT));
 
         sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
@@ -308,28 +255,28 @@ namespace ARIS
         }
 
         // gBuffer FBO
-        //gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //gBuffer->Bind();
-        //for (unsigned i = 0; i < gTextures.size() - 1; ++i)
-        //{
-        //    gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
-        //}
-        //gBuffer->DrawBuffers();
-        //
-        //gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
-        //gBuffer->Unbind();
+        gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gBuffer->Bind();
+        for (unsigned i = 0; i < gTextures.size() - 2; ++i)
+        {
+            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
+        }
+        gBuffer->AttachTexture(GL_COLOR_ATTACHMENT5, *gTextures[gTextures.size() - 2]);
+        gBuffer->DrawBuffers();
+        
+        gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
+
+        gBuffer->Unbind();
 
         // Generate quad + skybox cube
         GenerateBasicShapes();
-
-        // Generate local light data
-        GenerateLocalLights();
 
         // Scene FBO (for the editor)
         m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_SceneFBO->Bind();
         m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
-        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32I, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+        //m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32I, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+        //m_SceneFBO->AttachTexture(GL_COLOR_ATTACHMENT1, *gTextures[gTextures.size() - 2]);
         m_SceneFBO->DrawBuffers();
         m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
 
@@ -364,62 +311,62 @@ namespace ARIS
 
     int Scene::PreRender()
     {
-        //lightingPass->Activate();
-        //lightingPass->SetInt("gPos", 0);
-        //lightingPass->SetInt("gNorm", 1);
-        //lightingPass->SetInt("gUVs", 2);
-        //lightingPass->SetInt("gAlbedo", 3);
-        //lightingPass->SetInt("gSpecular", 4);
-        //lightingPass->SetInt("gDepth", 5);
+        lightingPass->Activate();
+        lightingPass->SetInt("gPos", 0);
+        lightingPass->SetInt("gNorm", 1);
+        lightingPass->SetInt("gUVs", 2);
+        lightingPass->SetInt("gAlbedo", 3);
+        lightingPass->SetInt("gSpecular", 4);
+        lightingPass->SetInt("gDepth", 5);
 
-        basicShadows->Activate();
-        basicShadows->SetInt("sDepth", 0);
+        shadowPass->Activate();
+        shadowPass->SetInt("sDepth", 0);
 
         return 0;
     }
 
     int Scene::RenderEditor(EditorCamera& editorCam)
     {
-        //std::cout << "1st " << m_Camera.cameraPos << std::endl;
-        //std::cout << "2nd " << m_Camera.cameraPos + m_Camera.front << std::endl;
-        //std::cout << "3rd " << m_Camera.up << std::endl;
-        //std::cout << "front " << m_Camera.front << std::endl;
-        //std::cout << "up " << m_Camera.up << std::endl;
-
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
         int sceneHeight = m_SceneFBO->GetSpecs().s_Height;
 
-        //glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+        // G-Buffer pass
+        glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
+        gBuffer->Activate();
 
-        // IMPORTANT TO DO THIS: Color will blend with BG if this is anything else but vec4(0)
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        gBuffer->ClearAttachment(5, -1);
 
         glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         glEnable(GL_DEPTH_TEST);
-        //glEnable(GL_DEPTH_TEST);
-        //glDisable(GL_BLEND);
+        glDisable(GL_BLEND);
+
+        // For all meshes...
+        auto obj = m_Registry.view<TransformComponent, MeshComponent>();
+        for (auto entity : obj)
+        {
+            auto [objTr, mesh] = obj.get<TransformComponent, MeshComponent>(entity);
+
+            // Update and render them normally
+            objTr.Update();
+            mesh.Draw(objTr.GetTransform(), editorCam.GetViewMatrix(), 
+                editorCam.GetProjection(), *geometryPass, false, (int)entity);
+        }
+
+        gBuffer->Unbind();
 
         // Shadow Pass
-        // Step 1: Light POV to FBO
-        //glm::mat4 lightProj = 
-        //glm::mat4 lightView = glm::lookAt(
-        //    glm::vec3(10.2296f, 6.20311f, -14.2213f),
-        //    glm::vec3(9.64084f, 5.91074f, -13.4677f), 
-        //    glm::vec3(-0.180002f, 0.956306f, 0.230392f));
-        //
-        //glm::mat4 lightSpaceMat = lightProj * lightView;
-        glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f)) 
-            * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-
-        glCullFace(GL_FRONT);
-        // Render models relative to the shadow shader
+        // IMPORTANT TO DO THIS: Color will blend with BG if this is anything else but vec4(0)
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         sBuffer->Activate();
+  
+        glCullFace(GL_FRONT);
 
         // For all lights...
-        auto v = m_Registry.view<TransformComponent, LightComponent>();
+        auto v = m_Registry.view<TransformComponent, DirectionLightComponent>();
         for (auto entity : v)
         {
-            auto [transform, light] = v.get<TransformComponent, LightComponent>(entity);
+            auto [transform, light] = v.get<TransformComponent, DirectionLightComponent>(entity);
 
             // Update light matrices + transform
             transform.Update();
@@ -433,24 +380,22 @@ namespace ARIS
 
                 // Update and render them relative to the light
                 objTr.Update();
-                basicShadows->Activate();
-                basicShadows->SetFloat("nearP", nearPlane);
-                basicShadows->SetFloat("farP", farPlane);
+                shadowPass->Activate();
+                shadowPass->SetFloat("nearP", 0.1f);
+                shadowPass->SetFloat("farP", 25.0f);
 
                 glUseProgram(0);
-                mesh.Draw(objTr.GetTransform(), light.GetViewMatrix(), light.GetProjectionMatrix(), *basicShadows, false);
+                mesh.Draw(objTr.GetTransform(), light.GetViewMatrix(), light.GetProjectionMatrix(), *shadowPass, false);
             }
         }
-
-
         sBuffer->Unbind();
 
+
+        // Lighting pass
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         m_SceneFBO->Activate();
-
-        m_SceneFBO->ClearAttachment(1, -1);
-
-        // Step 2: Blur the shader using a convolution filter
+        
+        // Blur the shader using a convolution filter
         memset(kernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
 
         // Build the kernel weights
@@ -494,56 +439,95 @@ namespace ARIS
 
         glUseProgram(0);
 
-        // Step 3: Render the scene normally
+        // Render the scene normally
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
-        
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
         lightingPass->Activate();
 
-        glActiveTexture(GL_TEXTURE0);
+        // G-Buffer textures
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);
+        }
+
+        glActiveTexture(GL_TEXTURE6);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
+        glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
+            * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+
         // For all lights...(TODO: correct?)
-        auto lView = m_Registry.view<TransformComponent, LightComponent>();
+        auto lView = m_Registry.view<TransformComponent, DirectionLightComponent>();
         for (auto entity : lView)
         {
-            auto [transform, light] = lView.get<TransformComponent, LightComponent>(entity);
+            auto [transform, light] = lView.get<TransformComponent, DirectionLightComponent>(entity);
 
             // Update light matrices + transform
             transform.Update();
             light.Update(transform.GetTranslation(), transform.GetRotation());
 
-            lightingPass->SetInt("uShadowMap", 0);
-            lightingPass->SetMat4("shadowMatrix", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
+            lightingPass->SetInt("uShadowMap", 6);
+            lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
+
+            lightingPass->SetVec3("lightDir", transform.GetRotation());
+            lightingPass->SetVec3("viewPos", editorCam.GetPosition());
+
             lightingPass->SetInt("vWidth", sceneWidth);
             lightingPass->SetInt("vHeight", sceneHeight);
 
-            // For all meshes...
-            auto obj = m_Registry.view<TransformComponent, MeshComponent>();
-            for (auto entity : obj)
-            {
-                auto [objTr, mesh] = obj.get<TransformComponent, MeshComponent>(entity);
+            RenderQuad();
+        }
 
-                // Update and render them relative to the light
-                objTr.Update();
-                mesh.Draw(objTr.GetTransform(), editorCam.GetViewMatrix(),
-                    editorCam.GetProjection(), *lightingPass, false, (int)entity);
+        // copy depth information from the gBuffer to the default framebuffer (for the skybox, so that it doesn't overlap the FSQ)
+        // (also do it for the local lights so that they're not overlapped by the skybox)
+        // glBlitFramebuffer depends on whether or not editor mode is enabled because glViewport changes
+        // the dimensions of the FSQ
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
+        glBlitFramebuffer(0, 0, gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height,
+            0, 0, m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height,
+            GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO->GetID());
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+
+        glDisable(GL_DEPTH_TEST);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+
+        // Render local lights
+        {
+            auto view = m_Registry.view<TransformComponent, PointLightComponent>();
+            for (auto entity : view)
+            {
+                auto [transform, light] = view.get<TransformComponent, PointLightComponent>(entity);
+
+                transform.Scale(glm::vec3(light.GetRange()));
+                transform.Update();
+
+                light.UpdateShader("pos", Vector3(transform.GetTranslation()),
+                    "color", Vector4(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)),
+                    "eyePos", Vector3(editorCam.GetPosition()),
+                    "range", light.GetRange(),
+                    "intensity", light.GetIntensity(),
+                    "vWidth", sceneWidth,
+                    "vHeight", sceneHeight);
+
+                light.Draw(transform.GetTransform(), editorCam.GetViewMatrix(), editorCam.GetProjection());
             }
         }
 
-        //{
-        //    auto view = m_Registry.view<TransformComponent, MeshComponent>();
-        //    for (auto entity : view)
-        //    {
-        //        auto [transform, mesh] = view.get<TransformComponent, MeshComponent>(entity);
-        //
-        //        transform.Update();
-        //        mesh.Draw(transform.GetTransform(), m_Camera.View(), 
-        //            m_Camera.Perspective(sceneWidth, sceneHeight), *lightingPass, false, (int)entity);
-        //    }
-        //}
-
         RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
 
+        // Intentional - this is for mouse picking
         //m_SceneFBO->Unbind();
 
         return 0;
@@ -587,13 +571,6 @@ namespace ARIS
     void Scene::OnImGuiRender()
     {
         ImGui::Begin("Shadow Debugging");
-
-        ImGui::SliderFloat("Light Width", &lightW, 1.0f, 1000.0f);
-        ImGui::SliderFloat("Light Height", &lightH, 1.0f, 1000.0f);
-        ImGui::Separator();
-        ImGui::SliderFloat("Light Max Depth", &farPlane, 1.0f, 100.0f);
-        ImGui::SliderFloat("Light Min Depth", &nearPlane, 0.0f, farPlane);
-        ImGui::Separator();
         ImGui::SliderInt("Gaussian Blur Amount", &gaussianWeight, 1, 50);
 
         ImGui::Text("Shadow Map");

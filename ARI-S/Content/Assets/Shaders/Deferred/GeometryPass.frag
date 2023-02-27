@@ -5,10 +5,12 @@ layout (location = 2) out vec2 gUVs;
 layout (location = 3) out vec3 gAlbedo;
 layout (location = 4) out vec3 gSpecular;
 layout (location = 5) out float gDepth;
+layout (location = 6) out int entID;
 
 in vec3 outPos;
 in vec3 outNorm;
 in vec2 outTexCoord;
+in flat int vEntityID;
 
 uniform sampler2D diffTex;
 uniform sampler2D specTex;
@@ -21,4 +23,5 @@ void main()
 	gAlbedo = texture(diffTex, outTexCoord).rgb;
 	gSpecular = texture(specTex, outTexCoord).rrr;
 	gDepth = gl_FragCoord.z;
+	entID = 50;
 }

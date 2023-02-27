@@ -285,7 +285,8 @@ namespace ARIS
 		if (ImGui::BeginPopup("AddComp"))
 		{
 			DisplayAddComponentEntry<MeshComponent>("Model");
-			DisplayAddComponentEntry<LightComponent>("Light");
+			DisplayAddComponentEntry<PointLightComponent>("Point Light");
+			DisplayAddComponentEntry<DirectionLightComponent>("Directional Light");
 			ImGui::EndPopup();
 		}
 
@@ -358,47 +359,20 @@ namespace ARIS
 			}
 		});
 
-		DrawComponent<LightComponent>("Light", e, [](auto& comp)
-			{
-				std::string vBuf = comp.m_VertexSrc, fBuf = comp.m_FragmentSrc;
-				if (ImGui::InputText("Vertex Shader Path", &vBuf, ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					comp.m_VertexSrc = std::string(vBuf);
-				}
+		DrawComponent<PointLightComponent>("Point Light", e, [](auto& comp)
+		{
+			ImGui::SliderFloat("Range", &comp.m_Range, 0.0f, 100.0f);
+			ImGui::SliderFloat("Intensity", &comp.m_Intensity, 0.0f, 10.0f);
+		});
 
-				if (ImGui::InputText("Fragment Shader Path", &fBuf, ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					comp.m_FragmentSrc = std::string(fBuf);
-				}
+		DrawComponent<DirectionLightComponent>("Directional Light", e, [](auto& comp)
+		{
+			ImGui::SliderFloat("Width", &comp.m_Width, 0.0f, 100.0f);
+			ImGui::SliderFloat("Height", &comp.m_Width, 0.0f, 100.0f);
+			ImGui::SliderFloat("Near Clip", &comp.m_Near, 0.1f, comp.m_Far);
+			ImGui::SliderFloat("Far Clip", &comp.m_Far, 0.1f, 100.0f);
+		});
 
-				if (ImGui::Button("Reload Light Shader"))
-				{
-					comp.ReloadShader();
-				}
 
-				const char* lights[] = { "Point", "Directional" };
-				static const char* curr = nullptr;
-				if (ImGui::BeginCombo("##light type combo", curr))
-				{
-					for (unsigned n = 0; n < IM_ARRAYSIZE(lights); ++n)
-					{
-						bool isSelected = (curr == lights[n]);
-						if (ImGui::Selectable(lights[n], isSelected))
-						{
-							curr = lights[n];
-							comp.m_Type = std::string(curr).compare("Point") == 0 ? 
-								LightComponent::LightType::POINT : LightComponent::LightType::DIRECTIONAL;
-						}
-						if (isSelected)
-						{
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
-
-				ImGui::SliderFloat("Range", &comp.m_Range, 0.0f, 100.0f);
-				ImGui::SliderFloat("Intensity", &comp.m_Intensity, 0.0f, 10.0f);
-			});
 	}
 }

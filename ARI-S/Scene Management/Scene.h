@@ -58,6 +58,7 @@ namespace ARIS
         virtual void OnViewportResize(uint32_t w, uint32_t h);
 
         Framebuffer*& GetSceneFBO() { return m_SceneFBO; }
+        Framebuffer*& GetGBuffer() { return gBuffer; }
 
     public:
         void OnImGuiRender() override;
@@ -85,9 +86,6 @@ namespace ARIS
         void ReloadShaders();
 
         void GenerateBasicShapes();
-        void GenerateLocalLights();
-
-        //void RenderLocalLights();
 
         GLuint skyboxVAO, skyboxVBO;
         void RenderSkybox(glm::mat4 view, glm::mat4 proj);
@@ -99,11 +97,10 @@ namespace ARIS
 
         UniformBuffer<World>* matrixData;
         UniformBuffer<BlurKernel>* kernelData;
-        //UniformBuffer<Lights>* lightData;
-        //UniformBuffer<LocalLight>* localLightData;
+        UniformBuffer<Lights>* lightData;
+        UniformBuffer<LocalLight>* localLightData;
 
-        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * basicShadows, *debugShadows,
-            *computeBlur;
+        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * shadowPass, *computeBlur;
         Shader* skyboxShader;
 
         std::vector<Texture*> gTextures;
@@ -111,19 +108,5 @@ namespace ARIS
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;
-
-        // ImGUI options
-        glm::vec3 m_BGColor = glm::vec3(51.0f / 255.0f, 102.0f / 255.0f, 140.0f / 255.0f);
-        glm::vec3 m_LightColor = glm::vec3(0.7f);
-
-        float minX = -4.0f, maxX = 10.0f, minY = -1.f, maxY = 15.f, minZ = -4.0f, maxZ = 14.0f, minRange = 1.0f, maxRange = 10.0f;
-
-        bool m_DisplayDebugRanges = false, m_DisplayLightPassLocations = true,
-            m_DisplayLocalLights = true, m_DisplaySkybox = true;
-
-        int m_RenderOption = 0, m_SelectedModelIdx = 0;
-
-        // temporary; pls remove this when separate directional lights work
-        glm::vec3 lastKnownDir = glm::vec3(-0.2f, -1.0f, -0.3f);
     };
 }

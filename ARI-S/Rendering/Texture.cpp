@@ -65,7 +65,7 @@ namespace ARIS
 
 		if (data != nullptr)
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, intForm, w, h, 0, dataForm, GL_UNSIGNED_BYTE, data);
+			glTexImage2D(GL_TEXTURE_2D, 0, intForm, w, h, 0, dataForm, type, data);
 		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
