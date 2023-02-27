@@ -1,16 +1,17 @@
 #version 450 core
 
-out vec4 fragColor;
+layout (location = 0) out vec4 fragColor;
+layout (location = 1) out float entityID;
 
 layout (binding = 0) uniform sampler2D gPos;
 layout (binding = 1) uniform sampler2D gNorm;
 layout (binding = 2) uniform sampler2D gUVs;
 layout (binding = 3) uniform sampler2D gAlbedo;
 layout (binding = 4) uniform sampler2D gSpecular;
-layout (binding = 5) uniform sampler2D gDepth;
+layout (binding = 5) uniform sampler2D gEntityID;
+layout (binding = 6) uniform sampler2D gDepth;
 
 uniform sampler2D uShadowMap;
-
 uniform mat4 worldToLightMat;
 
 uniform vec3 lightDir;
@@ -147,4 +148,5 @@ void main()
 	vec3 localLight = LightCalc();
 	
 	fragColor = vec4(localLight, 1.0f);
+	entityID = texture(gEntityID, uv).r;
 }

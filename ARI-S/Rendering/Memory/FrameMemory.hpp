@@ -281,20 +281,22 @@ namespace ARIS
 			glDrawBuffers(static_cast<GLsizei>(m_ColorAttachments.size()), drawBuffers.data());
 		}
 
-		void ClearAttachment(uint32_t attachmentIdx, int val)
+		void ClearAttachment(uint32_t attachmentIdx, float val, GLenum type)
 		{
 			GLuint id = m_ColorAttachments[attachmentIdx].m_ID;
 			GLenum format = m_ColorAttachments[attachmentIdx].m_DataFormat;
 
-			glClearTexImage(id, 0, format, GL_INT, &val);
+			glClearTexImage(id, 0, format, type, &val);
 		}
 
 		int ReadPixel(uint32_t attachmentIdx, int x, int y)
 		{
+			Bind();
 			glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIdx);
-			int pixel;
-			glReadPixels(x, y, 1, 1, m_ColorAttachments[attachmentIdx].m_DataFormat, GL_INT, &pixel);
-			return pixel;
+			float pixel;
+			glReadPixels(x, y, 1, 1, m_ColorAttachments[attachmentIdx].m_DataFormat, GL_FLOAT, &pixel);
+			Unbind();
+			return static_cast<int>(pixel);
 		}
 
 		void Cleanup()

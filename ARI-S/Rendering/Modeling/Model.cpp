@@ -100,8 +100,8 @@ namespace ARIS
         m_VertexArray["EntityID"] = VertexBuffer(GL_ARRAY_BUFFER);
         m_VertexArray["EntityID"].Generate();
         m_VertexArray["EntityID"].Bind();
-        m_VertexArray["EntityID"].SetData<GLint>(m_Vertices.size(), nullptr, GL_DYNAMIC_DRAW);
-        m_VertexArray["EntityID"].SetAttPointer<GLint>(3, 1, GL_INT, 1, 0);
+        m_VertexArray["EntityID"].SetData<GLfloat>(m_Vertices.size(), nullptr, GL_DYNAMIC_DRAW);
+        m_VertexArray["EntityID"].SetAttPointer<GLfloat>(3, 1, GL_FLOAT, 1, 0);
         m_VertexArray["EntityID"].Unbind();
 
         m_VertexArray.Clear();

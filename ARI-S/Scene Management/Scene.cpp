@@ -227,7 +227,7 @@ namespace ARIS
         }
         // Single-channel red texture (for entity ID and mouse-clicking; this will be
         // shared with the scene FBO)
-        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32I, GL_RED_INTEGER, nullptr,
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32F, GL_RED, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE));
 
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
@@ -275,7 +275,7 @@ namespace ARIS
         m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_SceneFBO->Bind();
         m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
-        //m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32I, GL_RED_INTEGER, GL_UNSIGNED_BYTE);
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32F, GL_RED, GL_UNSIGNED_BYTE);
         //m_SceneFBO->AttachTexture(GL_COLOR_ATTACHMENT1, *gTextures[gTextures.size() - 2]);
         m_SceneFBO->DrawBuffers();
         m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
@@ -317,7 +317,8 @@ namespace ARIS
         lightingPass->SetInt("gUVs", 2);
         lightingPass->SetInt("gAlbedo", 3);
         lightingPass->SetInt("gSpecular", 4);
-        lightingPass->SetInt("gDepth", 5);
+        lightingPass->SetInt("gEntityID", 5);
+        lightingPass->SetInt("gDepth", 6);
 
         shadowPass->Activate();
         shadowPass->SetInt("sDepth", 0);
@@ -334,7 +335,7 @@ namespace ARIS
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         gBuffer->Activate();
 
-        gBuffer->ClearAttachment(5, -1);
+        gBuffer->ClearAttachment(5, -1.0f, GL_FLOAT);
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -394,6 +395,8 @@ namespace ARIS
         // Lighting pass
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         m_SceneFBO->Activate();
+
+        m_SceneFBO->ClearAttachment(1, -1.0f, GL_FLOAT);
         
         // Blur the shader using a convolution filter
         memset(kernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
@@ -449,13 +452,13 @@ namespace ARIS
         lightingPass->Activate();
 
         // G-Buffer textures
-        for (unsigned i = 0; i < 6; ++i)
+        for (unsigned i = 0; i < 7; ++i)
         {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);
         }
 
-        glActiveTexture(GL_TEXTURE6);
+        glActiveTexture(GL_TEXTURE7);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
@@ -471,7 +474,7 @@ namespace ARIS
             transform.Update();
             light.Update(transform.GetTranslation(), transform.GetRotation());
 
-            lightingPass->SetInt("uShadowMap", 6);
+            lightingPass->SetInt("uShadowMap", 7);
             lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
 
             lightingPass->SetVec3("lightDir", transform.GetRotation());
@@ -528,7 +531,9 @@ namespace ARIS
         RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
 
         // Intentional - this is for mouse picking
-        //m_SceneFBO->Unbind();
+        // UPDATE: This was changed to the G-Buffer texture, but it's
+        // being bound in the ReadPixel function
+        m_SceneFBO->Unbind();
 
         return 0;
     }

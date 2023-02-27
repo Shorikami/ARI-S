@@ -80,9 +80,9 @@ namespace ARIS
 			VertexArray vao = m_Model.GetVAO();
 			vao.Bind();
 
-			std::vector<int> id(m_Model.GetVertexCount(), entityID);
+			std::vector<float> id(m_Model.GetVertexCount(), entityID);
 			vao["EntityID"].Bind();
-			vao["EntityID"].UpdateData<GLint>(0, static_cast<GLuint>(m_Model.GetVertexCount()), id.data());
+			vao["EntityID"].UpdateData<GLfloat>(0, static_cast<GLuint>(m_Model.GetVertexCount()), id.data());
 			vao["EntityID"].Unbind();
 
 			vao.Draw(GL_TRIANGLES, static_cast<GLuint>(m_Model.GetIndexCount()), GL_UNSIGNED_INT);
