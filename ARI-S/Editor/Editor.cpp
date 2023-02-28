@@ -90,7 +90,7 @@ namespace ARIS
 		if (FramebufferSpecs spec = m_ActiveScene->GetSceneFBO()->GetSpecs(); m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f
 			&& (spec.s_Width != m_ViewportSize.x || spec.s_Height != m_ViewportSize.y))
 		{
-			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+			m_EditorCamera.SetViewportSize(static_cast<int>(m_ViewportSize.x), static_cast<int>(m_ViewportSize.y));
 		}
 
 		//m_Framebuffer->Bind();

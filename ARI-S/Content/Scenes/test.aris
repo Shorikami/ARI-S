@@ -4,7 +4,7 @@ Entities:
     TagComponent:
       Tag: Point Light
     TransformComponent:
-      Translation: [-0.97318089, 4.33895493, -3.10180759]
+      Translation: [7.98895645, 3.58996177, -1.4719249]
       Rotation: [0.0436332263, 0, 0]
       Scale: [100, 100, 100]
     PointLightComponent:
@@ -15,22 +15,22 @@ Entities:
     TagComponent:
       Tag: Directional Light
     TransformComponent:
-      Translation: [12.7383842, 3.8499999, -13.2639923]
-      Rotation: [-0.785398185, 3.30216289, 0]
-      Scale: [9, 9, 9]
+      Translation: [6.75794697, 9.7753067, -14.9988489]
+      Rotation: [2.56906033, 0.677425623, -2.11524296]
+      Scale: [8.99987411, 8.99988842, 8.99966049]
     DirectionLightComponent:
       Color: [1, 1, 1, 1]
       Width: 10
       Height: 10
       Near: 0.100000001
-      Far: 25
+      Far: 100
   - Entity: 12180330849759156372
     TagComponent:
       Tag: Cube
     TransformComponent:
       Translation: [3.29999995, 4.0999999, 1]
-      Rotation: [4.71238899, 0, 0]
-      Scale: [10, 0.100000001, 5]
+      Rotation: [-1.57079601, 0, 0]
+      Scale: [10, 0.0999999419, 4.99999619]
     MeshComponent:
       Name: cube2.obj
       Vertex Path: Deferred/GeometryPass.vert
@@ -111,6 +111,21 @@ Entities:
       Vertex Path: Deferred/GeometryPass.vert
       Fragment Path: Deferred/GeometryPass.frag
       Diffuse Path: Content\Assets\Models\BA\Hoshino\Texture2D\Hoshino_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 8756830420377061927
+    TagComponent:
+      Tag: Impalement
+    TransformComponent:
+      Translation: [10.2034836, 6.49469376, -7.64707279]
+      Rotation: [0, 0, 0]
+      Scale: [6, 6, 6]
+    MeshComponent:
+      Name: Hasumi_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Hasumi\Texture2D\Hasumi_Weapon.png
       Normal Path: N/A
       Metallic Path: N/A
       Roughness Path: N/A

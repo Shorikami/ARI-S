@@ -18,6 +18,11 @@ namespace ARIS
 		glm::vec3 GetTranslation() const { return m_Translation; }
 		glm::vec3 GetRotation() const { return m_Rotation; }
 		glm::vec3 GetScale() const { return m_Scale; }
+		glm::quat GetOrientation() const { return glm::quat(glm::vec3(m_Rotation.x, m_Rotation.y, 0.0f)); }
+
+		glm::vec3 Forward() const { return glm::rotate(GetOrientation(), glm::vec3(0.0f, 0.0f, 1.0f)); }
+		glm::vec3 Up() const { return glm::rotate(GetOrientation(), glm::vec3(0.0f, 1.0f, 0.0f)); }
+		glm::vec3 Right() const { return glm::rotate(GetOrientation(), glm::vec3(1.0f, 0.0f, 0.0f)); }
 
 		void Translate(glm::vec3 v) { m_Translation = v; }
 		void Rotate(glm::vec3 v) { m_Rotation = v; }

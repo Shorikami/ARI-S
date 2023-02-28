@@ -367,8 +367,11 @@ namespace ARIS
 
 		DrawComponent<DirectionLightComponent>("Directional Light", e, [](auto& comp)
 		{
+			ImGui::Checkbox("Use Perspective", &comp.m_UsePerspective);
+			ImGui::Separator();
+
 			ImGui::SliderFloat("Width", &comp.m_Width, 0.0f, 100.0f);
-			ImGui::SliderFloat("Height", &comp.m_Width, 0.0f, 100.0f);
+			ImGui::SliderFloat("Height", &comp.m_Height, 0.0f, 100.0f);
 			ImGui::SliderFloat("Near Clip", &comp.m_Near, 0.1f, comp.m_Far);
 			ImGui::SliderFloat("Far Clip", &comp.m_Far, 0.1f, 100.0f);
 		});

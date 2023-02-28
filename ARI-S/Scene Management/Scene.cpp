@@ -373,6 +373,12 @@ namespace ARIS
             transform.Update();
             light.Update(transform.GetTranslation(), transform.GetRotation());
 
+            shadowPass->Activate();
+            shadowPass->SetFloat("nearP", light.GetNear());
+            shadowPass->SetFloat("farP", light.GetFar());
+            shadowPass->SetFloat("usePersp", light.GetPerspectiveInUse());
+            glUseProgram(0);
+
             // For all meshes...
             auto obj = m_Registry.view<TransformComponent, MeshComponent>();
             for (auto entity : obj)
@@ -381,11 +387,6 @@ namespace ARIS
 
                 // Update and render them relative to the light
                 objTr.Update();
-                shadowPass->Activate();
-                shadowPass->SetFloat("nearP", 0.1f);
-                shadowPass->SetFloat("farP", 25.0f);
-
-                glUseProgram(0);
                 mesh.Draw(objTr.GetTransform(), light.GetViewMatrix(), light.GetProjectionMatrix(), *shadowPass, false);
             }
         }
@@ -408,7 +409,7 @@ namespace ARIS
 
             int idx = i - halfWidth;
             kernelData->GetData().weights[i].x =
-                Gaussian(idx, gaussianWeight);
+                Gaussian(idx, static_cast<float>(gaussianWeight));
         }
 
         // Normalize the kernel weights so all values sum up to 1
@@ -477,7 +478,7 @@ namespace ARIS
             lightingPass->SetInt("uShadowMap", 7);
             lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
 
-            lightingPass->SetVec3("lightDir", transform.GetRotation());
+            lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
 
             lightingPass->SetInt("vWidth", sceneWidth);
@@ -529,6 +530,18 @@ namespace ARIS
         }
 
         RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
+
+        // Render directional lights
+        {
+            auto view = m_Registry.view<TransformComponent, DirectionLightComponent>();
+            for (auto entity : view)
+            {
+                auto [transform, light] = view.get<TransformComponent, DirectionLightComponent>(entity);
+
+                light.Draw(transform.GetTranslation(), transform.Forward(),
+                    editorCam.GetViewMatrix(), editorCam.GetProjection());
+            }
+        }
 
         // Intentional - this is for mouse picking
         // UPDATE: This was changed to the G-Buffer texture, but it's
