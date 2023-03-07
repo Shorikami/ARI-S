@@ -363,6 +363,7 @@ namespace ARIS
 		{
 			ImGui::SliderFloat("Range", &comp.m_Range, 0.0f, 100.0f);
 			ImGui::SliderFloat("Intensity", &comp.m_Intensity, 0.0f, 10.0f);
+			ImGui::ColorPicker4("Color", &comp.m_Color[0]);
 		});
 
 		DrawComponent<DirectionLightComponent>("Directional Light", e, [](auto& comp)

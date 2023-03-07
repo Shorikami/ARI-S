@@ -186,13 +186,13 @@ namespace ARIS
             -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
             -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
         };
-        glGenVertexArrays(1, &skyboxVAO);
-        glGenBuffers(1, &skyboxVBO);
+        glGenVertexArrays(1, &cubeVAO);
+        glGenBuffers(1, &cubeVBO);
         // fill buffer
-        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
         // link vertex attributes
-        glBindVertexArray(skyboxVAO);
+        glBindVertexArray(cubeVAO);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(1);
@@ -210,7 +210,12 @@ namespace ARIS
 
     int Scene::Init()
     {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+
         skyboxShader = new Shader(false, "Skybox.vert", "Skybox.frag");
+        hdrMapping = new Shader(false, "IBL/CubemapHDR.vert", "IBL/CubemapHDR.frag");
+        hdrEnvironment = new Shader(false, "IBL/Environment.vert", "IBL/Environment.frag");
 
         geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
         lightingPass = new Shader(false, "Deferred/LightingPassShadows.vert", "Deferred/LightingPassShadows.frag");
@@ -218,6 +223,10 @@ namespace ARIS
 
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
+
+        hdrTexture = new Texture("Content/Assets/Textures/HDR/Winter_Forest.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
+        hdrCubemap = new Texture();
+        hdrCubemap->AllocateCubemap(512, 512, GL_RGB16F, GL_RGB, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
@@ -239,20 +248,11 @@ namespace ARIS
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
-        skybox = new Texture();
-        {
-            std::string common = "Content/Assets/Textures/Skyboxes/Night/skybox_";
-            std::vector<std::string> faces;
-
-            faces.push_back(common + "right.png");
-            faces.push_back(common + "left.png");
-            faces.push_back(common + "top.png");
-            faces.push_back(common + "bottom.png");
-            faces.push_back(common + "front.png");
-            faces.push_back(common + "back.png");
-
-            skybox->LoadCubemap(faces);
-        }
+        captureBuffer = new Framebuffer(true);
+        captureBuffer->Bind(true);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureBuffer->GetRBO());
+        captureBuffer->Unbind(true);
 
         // gBuffer FBO
         gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -305,6 +305,39 @@ namespace ARIS
         }
 
         sBuffer->Unbind();
+
+        glm::mat4 hdrProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        glm::mat4 hdrView[] =
+        {
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+        };
+
+        hdrMapping->Activate();
+        hdrMapping->SetInt("hdrMap", 0);
+        hdrMapping->SetMat4("projection", hdrProj);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, hdrTexture->m_ID);
+
+        glViewport(0, 0, 512, 512);
+        captureBuffer->Bind();
+
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            hdrMapping->SetMat4("view", hdrView[i]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, hdrCubemap->m_ID, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(cubeVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
+        }
+        captureBuffer->Unbind();
 
         return 0;
     }
@@ -518,7 +551,7 @@ namespace ARIS
                 transform.Update();
 
                 light.UpdateShader("pos", Vector3(transform.GetTranslation()),
-                    "color", Vector4(glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)),
+                    "color", Vector4(light.GetColor()),
                     "eyePos", Vector3(editorCam.GetPosition()),
                     "range", light.GetRange(),
                     "intensity", light.GetIntensity(),
@@ -529,7 +562,8 @@ namespace ARIS
             }
         }
 
-        RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
+        //RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
+        RenderHDRMap(editorCam.GetViewMatrix(), editorCam.GetProjection());
 
         // Render directional lights
         {
@@ -576,7 +610,6 @@ namespace ARIS
         return;
     }
 
-
     void Scene::UpdateEditor(DeltaTime dt, EditorCamera& edCam)
     {
         m_DT = dt.GetSeconds();
@@ -614,58 +647,6 @@ namespace ARIS
         //m_Camera.OnEvent(e);
     }
 
-    //void Scene::RenderLocalLights()
-    //{
-    //    glEnable(GL_CULL_FACE);
-    //    glCullFace(GL_FRONT);
-    //
-    //    glDisable(GL_DEPTH_TEST);
-    //
-    //    glEnable(GL_BLEND);
-    //    glBlendFunc(GL_ONE, GL_ONE);
-    //
-    //    localLight->Activate();
-    //    localLight->SetVec3("eyePos", m_Camera.cameraPos);
-    //
-    //    localLight->SetInt("vWidth", _windowWidth);
-    //    localLight->SetInt("vHeight", _windowHeight);
-    //
-    //    glUseProgram(0);
-    //
-    //    //for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
-    //    //{
-    //    //    localLightData->GetData().pos = localLights[i].pos;
-    //    //    localLightData->GetData().color = localLights[i].color;
-    //    //    localLightData->GetData().options = localLights[i].options;
-    //    //    localLightData->SetData();
-    //    //
-    //    //    sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
-    //    //
-    //    //    sphere->Draw(localLight->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
-    //    //}
-    //    //
-    //    //glEnable(GL_CULL_FACE);
-    //    //glCullFace(GL_BACK);
-    //    //glEnable(GL_DEPTH_TEST);
-    //    //glDisable(GL_BLEND);
-    //    //
-    //    //for (unsigned i = 0; i < static_cast<unsigned>(currLocalLights); ++i)
-    //    //{
-    //    //    localLightData->GetData().pos = localLights[i].pos;
-    //    //    localLightData->GetData().color = localLights[i].color;
-    //    //    localLightData->SetData();
-    //    //
-    //    //    sphere->Update(0.0f, glm::vec3(1.0f), glm::vec3(localLights[i].pos));
-    //    //    sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height));
-    //    //
-    //    //    if (m_DisplayDebugRanges)
-    //    //    {
-    //    //        sphere->Update(0.0f, glm::vec3(localLights[i].pos.w * localLights[i].options.y), glm::vec3(localLights[i].pos));
-    //    //        sphere->Draw(flatShader->m_ID, m_Camera.View(), m_Camera.Perspective(m_SceneFBO->GetSpecs().s_Width, m_SceneFBO->GetSpecs().s_Height), {}, GL_LINES);
-    //    //    }
-    //    //}
-    //}
-
     void Scene::RenderSkybox(glm::mat4 view, glm::mat4 proj)
     {
         int sceneWidth = m_SceneFBO->GetSpecs().s_Width;
@@ -684,7 +665,7 @@ namespace ARIS
         skyboxShader->SetMat4("view", glm::mat4(glm::mat3(view)));
         skyboxShader->SetMat4("projection", proj);
 
-        glBindVertexArray(skyboxVAO);
+        glBindVertexArray(cubeVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->m_ID);
 
@@ -701,6 +682,31 @@ namespace ARIS
     {
         glBindVertexArray(quadVAO);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindVertexArray(0);
+    }
+
+    void Scene::RenderHDRMap(glm::mat4 view, glm::mat4 proj)
+    {
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
+        // change depth function so depth test passes when values are equal to depth buffer's content
+        glDepthFunc(GL_LEQUAL);
+
+        hdrEnvironment->Activate();
+
+        hdrEnvironment->SetMat4("projection", proj);
+        hdrEnvironment->SetMat4("view", view);
+
+        hdrEnvironment->SetInt("environmentMap", 0);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
+
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
     }
 }

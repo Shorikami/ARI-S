@@ -87,8 +87,9 @@ namespace ARIS
 
         void GenerateBasicShapes();
 
-        GLuint skyboxVAO, skyboxVBO;
+        GLuint cubeVAO, cubeVBO;
         void RenderSkybox(glm::mat4 view, glm::mat4 proj);
+        void RenderHDRMap(glm::mat4 view, glm::mat4 proj);
 
         GLuint quadVAO, quadVBO;
         void RenderQuad();
@@ -101,12 +102,14 @@ namespace ARIS
         UniformBuffer<LocalLight>* localLightData;
 
         Shader* geometryPass, * lightingPass, * localLight, * flatShader, * shadowPass, *computeBlur;
-        Shader* skyboxShader;
+        Shader* skyboxShader, *hdrMapping, *hdrEnvironment;
 
         std::vector<Texture*> gTextures;
-        Texture* sDepthMap, *blurOutput, *skybox;
+        Texture* sDepthMap, * blurOutput, * skybox;
+        Texture* hdrTexture, * hdrCubemap;
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;
+        Framebuffer* captureBuffer;
     };
 }

@@ -48,6 +48,9 @@ namespace ARIS
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;   // Enable multi-viewport
 		io.IniFilename = "Content/editor.ini";
 
+		float fontSize = 14.0f;
+		io.FontDefault = io.Fonts->AddFontFromFileTTF("Resources/Fonts/Inconsolata/Inconsolata-Regular.ttf", fontSize);
+
 		ImGui::StyleColorsDark();
 
 		Application& app = Application::Get();
@@ -479,8 +482,8 @@ namespace ARIS
 
 		auto& colors = ImGui::GetStyle().Colors;
 
-		colors[ImGuiCol_Text] = ImVec4{ 0.227f, 0.667f, 0.98f, 1.0f };
-		colors[ImGuiCol_WindowBg] = ImVec4{ 0.078f, 0.074f, 0.087f, 1.0f };
+		colors[ImGuiCol_Text] = ImVec4{ 0.627f, 0.667f, 0.698f, 1.0f };
+		colors[ImGuiCol_WindowBg] = ImVec4{ 0.128f, 0.124f, 0.137f, 1.0f };
 
 		// Headers
 		colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };

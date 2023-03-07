@@ -1,0 +1,131 @@
+Scene: Test
+Entities:
+  - Entity: 8756830420377061927
+    TagComponent:
+      Tag: Bunny
+    TransformComponent:
+      Translation: [2.70926166, 0.428719074, -3.5390625]
+      Rotation: [-3.05083561, 0.74001956, -3.12763]
+      Scale: [17.2498817, 17.2500057, 17.2493]
+    MeshComponent:
+      Name: bunny.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Hasumi\Texture2D\Hasumi_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 1066889142520085911
+    TagComponent:
+      Tag: Rhino
+    TransformComponent:
+      Translation: [-0.400000006, 1.79999995, -6.5999999]
+      Rotation: [0, 0.438077658, 0]
+      Scale: [0.300000012, 0.300000012, 0.300000012]
+    MeshComponent:
+      Name: rhino.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_spec_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 7430654964310599025
+    TagComponent:
+      Tag: 4Sphere
+    TransformComponent:
+      Translation: [10.1028471, 1.79020536, -5.12873173]
+      Rotation: [4.71978694e-07, -0.527089357, -0.109956019]
+      Scale: [0.00999996718, 0.00999999885, 0.00999997277]
+    MeshComponent:
+      Name: 4Sphere.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 6497034949192003676
+    TagComponent:
+      Tag: Cup
+    TransformComponent:
+      Translation: [-4.9000001, 3.29999995, -6.69999981]
+      Rotation: [-0.588175952, -1.57079637, 0]
+      Scale: [10, 10, 10]
+    MeshComponent:
+      Name: cup.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Shiroko\Texture2D\Shiroko_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 8663240138564891356
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [-6.9000001, 4.5999999, -4]
+      Rotation: [0, 0, 4.71238899]
+      Scale: [4.5999999, 0.100000001, 5]
+    MeshComponent:
+      Name: cube2.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 17109187548238653833
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [3, 0, -4]
+      Rotation: [0, 0, 0]
+      Scale: [10, 0.100000001, 5]
+    MeshComponent:
+      Name: cube2.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 12180330849759156372
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [3.29999995, 4.0999999, 1]
+      Rotation: [-1.57079601, 0, 0]
+      Scale: [10, 0.0999999419, 4.99999619]
+    MeshComponent:
+      Name: cube2.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 11384973501980615642
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [6.75794697, 9.7753067, -14.9988489]
+      Rotation: [2.56906033, 0.677425623, -2.11524296]
+      Scale: [8.99987411, 8.99988842, 8.99966049]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 10
+      Height: 10
+      Near: 0.100000001
+      Far: 100
+  - Entity: 8975308583578878574
+    TagComponent:
+      Tag: Point Light
+    TransformComponent:
+      Translation: [7.98895645, 3.80077076, -6.30025959]
+      Rotation: [0.0436332263, 0, 0]
+      Scale: [100, 100, 100]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 100
+      Intensity: 10

@@ -114,7 +114,7 @@ vec3 LightCalc()
 	vec3 norm = texture(gNorm, fragUV).rgb;
 	vec2 uv = texture(gUVs, fragUV).rg;
 	vec3 diff = texture(gAlbedo, fragUV).rgb;
-	vec3 specTex = texture(gSpecular, fragUV).rgb;
+	vec3 specTex = texture(gAlbedo, fragUV).rgb;
 	float spec = texture(gDepth, fragUV).r;
 
 	// diffuse

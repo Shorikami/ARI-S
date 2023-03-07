@@ -80,11 +80,11 @@ namespace ARIS
 	class Framebuffer
 	{
 	public:
-		Framebuffer()
+		Framebuffer(bool rb = false)
 			: m_ID(0)
 			, m_Specs()
 		{
-			Generate();
+			Generate(rb);
 		}
 
 		Framebuffer(GLuint width, GLuint height, GLbitfield bitCombo)
@@ -102,9 +102,14 @@ namespace ARIS
 			Cleanup();
 		}
 
-		void Generate()
+		void Generate(bool renderbuffer = false)
 		{
 			glGenFramebuffers(1, &m_ID);
+
+			if (renderbuffer)
+			{
+				glGenRenderbuffers(1, &m_RBO);
+			}
 		}
 
 		void DisableColorBuffer()
@@ -113,14 +118,24 @@ namespace ARIS
 			glReadBuffer(GL_NONE);
 		}
 
-		void Bind()
+		void Bind(bool rb = false)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, m_ID);
+
+			if (rb)
+			{
+				glBindRenderbuffer(GL_RENDERBUFFER, m_RBO);
+			}
 		}
 
-		void Unbind()
+		void Unbind(bool rb = false)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			if (rb)
+			{
+				glBindRenderbuffer(GL_RENDERBUFFER, 0);
+			}
 		}
 
 		void SetViewport()
@@ -312,6 +327,7 @@ namespace ARIS
 		}
 
 		GLuint GetID() const { return m_ID; }
+		GLuint GetRBO() const { return m_RBO; }
 		FramebufferSpecs GetSpecs() const { return m_Specs; }
 		void SetWidth(uint32_t w) { m_Specs.s_Width = w; }
 		void SetHeight(uint32_t h) { m_Specs.s_Height = h; }
@@ -325,7 +341,7 @@ namespace ARIS
 		Texture GetDepthAttachment() { return m_DepthAttachment; }
 
 	private:
-		GLuint m_ID;
+		GLuint m_ID, m_RBO;
 		FramebufferSpecs m_Specs;
 
 		std::vector<Texture> m_ColorAttachments;
