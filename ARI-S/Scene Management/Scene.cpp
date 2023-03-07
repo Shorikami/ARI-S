@@ -105,9 +105,8 @@ namespace ARIS
     void Scene::InitMembers()
     {
         matrixData = new UniformBuffer<World>(0);
-        lightData = new UniformBuffer<Lights>(1);
-        localLightData = new UniformBuffer<LocalLight>(2);
         kernelData = new UniformBuffer<BlurKernel>(3);
+        hammersleyData = new UniformBuffer<Discrepancy>(4);
     }
 
     void Scene::ReloadShaders()
@@ -338,6 +337,29 @@ namespace ARIS
             glBindVertexArray(0);
         }
         captureBuffer->Unbind();
+
+        hammersleyData->GetData().N = 20;
+
+        int kk;
+        int pos = 0;
+        float p, u;
+
+        for (int k = 0; k < hammersleyData->GetData().N; ++k)
+        {
+            for (p = 0.5f, kk = k, u = 0.0f; kk; p *= 0.5f, kk >>= 1)
+            {
+                if (kk & 1)
+                {
+                    u += p;
+                }
+            }
+
+            float v = (k + 0.5) / hammersleyData->GetData().N;
+            hammersleyData->GetData().hammersley[pos++].x = u;
+            hammersleyData->GetData().hammersley[pos++].x = v;
+        }
+        
+        hammersleyData->SetData();
 
         return 0;
     }

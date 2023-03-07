@@ -56,6 +56,13 @@ namespace ARIS
 		glm::vec4 weights[101] = { }; // x = value
 	};
 
+	class Discrepancy
+	{
+	public:
+		glm::vec4 hammersley[100] = {}; // x = value
+		int N;
+	};
+
 	class World
 	{
 	public:

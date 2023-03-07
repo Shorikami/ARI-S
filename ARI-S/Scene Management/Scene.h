@@ -98,8 +98,7 @@ namespace ARIS
 
         UniformBuffer<World>* matrixData;
         UniformBuffer<BlurKernel>* kernelData;
-        UniformBuffer<Lights>* lightData;
-        UniformBuffer<LocalLight>* localLightData;
+        UniformBuffer<Discrepancy>* hammersleyData;
 
         Shader* geometryPass, * lightingPass, * localLight, * flatShader, * shadowPass, *computeBlur;
         Shader* skyboxShader, *hdrMapping, *hdrEnvironment;
