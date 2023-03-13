@@ -99,13 +99,17 @@ namespace ARIS
         UniformBuffer<World>* matrixData;
         UniformBuffer<BlurKernel>* kernelData;
         UniformBuffer<Discrepancy>* hammersleyData;
+        UniformBuffer<HarmonicColors>* harmonicData;
 
         Shader* geometryPass, * lightingPass, * localLight, * flatShader, * shadowPass, *computeBlur;
-        Shader* skyboxShader, *hdrMapping, *hdrEnvironment;
+        Shader* skyboxShader;
+
+        // PBS + IBL
+        Shader* hdrMapping, * hdrEnvironment, * irrComp;
 
         std::vector<Texture*> gTextures;
         Texture* sDepthMap, * blurOutput, * skybox;
-        Texture* hdrTexture, * hdrCubemap;
+        Texture* hdrTexture, * hdrCubemap, *irrBlurOutput;
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;

@@ -13,6 +13,7 @@
 
 #include "Math/Vector.h"
 #include "Math/Cholesky.hpp"
+#include "SphereHarmonics.hpp"
 
 //#include "stb_image.h"
 
@@ -107,6 +108,7 @@ namespace ARIS
         matrixData = new UniformBuffer<World>(0);
         kernelData = new UniformBuffer<BlurKernel>(3);
         hammersleyData = new UniformBuffer<Discrepancy>(4);
+        harmonicData = new UniformBuffer<HarmonicColors>(5);
     }
 
     void Scene::ReloadShaders()
@@ -215,6 +217,7 @@ namespace ARIS
         skyboxShader = new Shader(false, "Skybox.vert", "Skybox.frag");
         hdrMapping = new Shader(false, "IBL/CubemapHDR.vert", "IBL/CubemapHDR.frag");
         hdrEnvironment = new Shader(false, "IBL/Environment.vert", "IBL/Environment.frag");
+        //irrComp = new Shader(false, "IBL/IrradianceConvolution.cmpt");
 
         geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
         lightingPass = new Shader(false, "Deferred/LightingPassShadows.vert", "Deferred/LightingPassShadows.frag");
@@ -225,7 +228,10 @@ namespace ARIS
 
         hdrTexture = new Texture("Content/Assets/Textures/HDR/Winter_Forest.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
         hdrCubemap = new Texture();
-        hdrCubemap->AllocateCubemap(512, 512, GL_RGB16F, GL_RGB, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
+        hdrCubemap->AllocateCubemap(512, 512, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
+
+        irrBlurOutput = new Texture();
+        irrBlurOutput->AllocateCubemap(512, 512, GL_RGBA32F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
@@ -360,6 +366,30 @@ namespace ARIS
         }
         
         hammersleyData->SetData();
+
+        //irrComp->Activate();
+        //
+        //GLint srcLoc = glGetUniformLocation(irrComp->m_ID, "src");
+        //glBindImageTexture(0, hdrCubemap->m_ID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+        //glUniform1i(srcLoc, 0);
+        //
+        //GLint dstLoc = glGetUniformLocation(irrComp->m_ID, "dst");
+        //glBindImageTexture(1, irrBlurOutput->m_ID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        //glUniform1i(dstLoc, 1);
+        //
+        //glDispatchCompute(512 / 16, 512 / 16, 6);
+        //
+        //glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        //
+        //glUseProgram(0);
+
+        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 512);
+
+        for (unsigned i = 0; i < 9; ++i)
+        {
+            harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
+        }
+        harmonicData->SetData();
 
         return 0;
     }

@@ -63,6 +63,12 @@ namespace ARIS
 		int N;
 	};
 
+	class HarmonicColors
+	{
+	public:
+		glm::vec4 shColor[9];
+	};
+
 	class World
 	{
 	public:

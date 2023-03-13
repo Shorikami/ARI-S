@@ -85,7 +85,6 @@ namespace ARIS
 		glBindTexture(GL_TEXTURE_2D, m_ID);
 	
 		
-		
 		if (hdr)
 		{
 			float* data = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
