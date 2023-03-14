@@ -223,7 +223,7 @@ namespace ARIS
 	}
 
 	void Texture::AllocateCubemap(GLuint width, GLuint height, GLenum intForm, GLenum dataForm,
-		GLenum filter, GLenum repeat, GLenum type)
+		GLenum filter, GLenum repeat, GLenum type, bool generateMipMaps)
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP, m_ID);
 
@@ -235,8 +235,13 @@ namespace ARIS
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, repeat);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, repeat);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, repeat);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filter);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, generateMipMaps && filter == GL_LINEAR ? GL_LINEAR_MIPMAP_LINEAR: filter);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, filter);
+
+		if (generateMipMaps)
+		{
+			glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+		}
 	}
 
 	void Texture::LoadCubemap(std::vector<std::string> faces)

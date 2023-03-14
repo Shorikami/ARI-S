@@ -117,7 +117,7 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(false, "Deferred/LightingPassShadows.vert", "Deferred/LightingPassShadows.frag");
+        lightingPass = new Shader(false, "Deferred/LightingPassShadowsPBR.vert", "Deferred/LightingPassShadowsPBR.frag");
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
@@ -220,15 +220,19 @@ namespace ARIS
         //irrComp = new Shader(false, "IBL/IrradianceConvolution.cmpt");
 
         geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
-        lightingPass = new Shader(false, "Deferred/LightingPassShadows.vert", "Deferred/LightingPassShadows.frag");
+        lightingPass = new Shader(false, "Deferred/LightingPassShadowsPBR.vert", "Deferred/LightingPassShadowsPBR.frag");
         localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
 
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         hdrTexture = new Texture("Content/Assets/Textures/HDR/Winter_Forest.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
+        
         hdrCubemap = new Texture();
-        hdrCubemap->AllocateCubemap(512, 512, GL_RGBA16F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
+        hdrCubemap->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
+
+        filteredHDR = new Texture();
+        filteredHDR->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
         irrBlurOutput = new Texture();
         irrBlurOutput->AllocateCubemap(512, 512, GL_RGBA32F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
@@ -328,8 +332,8 @@ namespace ARIS
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, hdrTexture->m_ID);
-
         glViewport(0, 0, 512, 512);
+
         captureBuffer->Bind();
 
         for (unsigned i = 0; i < 6; ++i)
@@ -341,6 +345,31 @@ namespace ARIS
             glBindVertexArray(cubeVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
             glBindVertexArray(0);
+        }
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
+
+        unsigned maxMipLevels = 7;
+        for (unsigned mip = 0; mip < maxMipLevels; ++mip)
+        {
+            unsigned w = static_cast<unsigned>(512 * std::pow(0.5, mip));
+            unsigned h = static_cast<unsigned>(512 * std::pow(0.5, mip));
+
+            glBindRenderbuffer(GL_RENDERBUFFER, captureBuffer->GetRBO());
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
+            glViewport(0, 0, w, h);
+
+            for (unsigned i = 0; i < 6; ++i)
+            {
+                hdrMapping->SetMat4("view", hdrView[i]);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, filteredHDR->m_ID, mip);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                glBindVertexArray(cubeVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glBindVertexArray(0);
+            }
         }
         captureBuffer->Unbind();
 
@@ -547,6 +576,9 @@ namespace ARIS
         glActiveTexture(GL_TEXTURE7);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
+        glActiveTexture(GL_TEXTURE8);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
+
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
             * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
@@ -562,6 +594,8 @@ namespace ARIS
 
             lightingPass->SetInt("uShadowMap", 7);
             lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
+
+            lightingPass->SetInt("envMap", 8);
 
             lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
@@ -752,10 +786,10 @@ namespace ARIS
         hdrEnvironment->SetMat4("projection", proj);
         hdrEnvironment->SetMat4("view", view);
 
-        hdrEnvironment->SetInt("environmentMap", 0);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
+
+        hdrEnvironment->SetInt("environmentMap", 0);
 
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);

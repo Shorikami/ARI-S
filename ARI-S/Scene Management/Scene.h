@@ -109,7 +109,7 @@ namespace ARIS
 
         std::vector<Texture*> gTextures;
         Texture* sDepthMap, * blurOutput, * skybox;
-        Texture* hdrTexture, * hdrCubemap, *irrBlurOutput;
+        Texture* hdrTexture, * hdrCubemap, *filteredHDR, *irrBlurOutput;
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;

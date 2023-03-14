@@ -14,12 +14,16 @@ layout (binding = 6) uniform sampler2D gDepth;
 uniform sampler2D uShadowMap;
 uniform mat4 worldToLightMat;
 
+uniform samplerCube envMap;
+
 uniform vec3 lightDir;
 uniform vec3 viewPos;
 
 uniform int vWidth;
 uniform int vHeight;
 
+// ----------------------------------------------
+// SHADOWS---------------------------------------
 vec2 Quadratic(float a, float b, float c)
 {
 	float discriminant = b * b - 4 * a * c;
@@ -105,13 +109,39 @@ float Shadow(vec4 v, float bias)
 		return 1 - (num / denom);
 	}
 }
+// ----------------------------------------------
+// ----------------------------------------------
 
+// ----------------------------------------------
+// PBS/IBL --------------------------------------
 const float PI = 3.14159265359f;
+const vec2 envMapSize = vec2(16.0f, 16.0f);
+const float roughness = 0.6f;
+
+layout(std140, binding = 4) uniform Discrepancy
+{
+  vec4 hammersley[100];
+  int N;
+} hammersleyVals;
 
 layout(std140, binding = 5) uniform SphereHarmonics
 {
   vec4 shColor[9];
 };
+
+float Distribution(vec3 N, vec3 H)
+{
+    float a = pow(roughness, 2);
+    float NdotH = max(dot(N, H), 0.0);
+    float denom = PI * pow((pow(NdotH, 2.0f) * (a * a - 1.0f) + 1.0f), 2.0f);
+
+    return (a * a) / denom;
+}
+
+vec3 Fresnel(float cosTheta, vec3 F0)
+{
+    return F0 + (max(vec3(1.0f - roughness), F0) - F0) * pow(clamp(1.0f - cosTheta, 0.0f, 1.0), 5.0);
+}
 
 vec3 CalculateIrradiance(vec3 N)
 {
@@ -130,6 +160,63 @@ vec3 CalculateIrradiance(vec3 N)
          + shColor[8].xyz * 0.546274f * (N.x * N.x - N.y * N.y) * A2;
 }
 
+float GeometryAttenuation(vec3 L, vec3 V, vec3 N, vec3 H)
+{
+	return min(min((2.0f * dot(H, N) * dot(V, N)) / dot(V, H), (2.0f * dot(H, N) * dot(L, N)) / dot(V, H)), 1.0f);
+}
+
+vec3 TexCoordToDirection(vec2 uv, vec3 N)
+{
+	float a = pow(roughness, 2);
+	
+	vec3 dir = vec3(cos(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), sin(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), cos(PI * uv.y));
+	
+	vec3 up = abs(N.z) < 0.999f ? vec3(vec2(0.0f), 1.0f) : vec3(1.0f, vec2(0.0f));
+	vec3 tangent = normalize(cross(up, N));
+	vec3 bitangent = cross(N, tangent);
+	
+	return normalize(tangent * dir.x + bitangent * dir.y + N * dir.z);
+}
+
+vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B)
+{	
+	vec3 directions[20]; // HARD-CODED N-VALUE
+	
+	for (int i = 0; i < hammersleyVals.N; ++i)
+	{
+		float u = hammersleyVals.hammersley[2 * i].x;
+		float v = hammersleyVals.hammersley[2 * (i + 1)].x;
+		
+		vec2 tex = vec2(u, atan((roughness * sqrt(v)) / sqrt(1.0f - v)) / PI);
+		vec3 dir = TexCoordToDirection(tex, N);
+		
+		directions[i] = normalize(dir.x * A + dir.y * B + dir.z + R);
+	}
+	
+	vec3 sum = vec3(0.0f);
+	for (int i = 0; i < hammersleyVals.N; ++i)
+	{
+		vec3 wk = directions[i];
+		vec3 H = normalize(wk + V);
+		float nDotL = max(dot(wk, N), 0.0f);
+		
+		float D = Distribution(N, H);
+		vec3 F = Fresnel(max(dot(H, V), 0.0f), vec3(1.f)); // Hard-coded F0; should it be <= 1?
+		float G = GeometryAttenuation(wk, V, N, H);
+		
+		float lod = 0.5f * log2((envMapSize.x * envMapSize.y) / hammersleyVals.N) - 0.5f * log2(D);
+		vec3 light = textureLod(envMap, wk, lod).rgb * nDotL;
+		
+		sum += (F * G) / (4.0f * dot(wk, N) * dot(V, N)) * light;
+	}
+	
+	sum /= hammersleyVals.N;
+	
+	return sum;
+}
+// ----------------------------------------------
+// ----------------------------------------------
+
 vec3 LightCalc()
 {
 	vec2 fragUV = vec2(gl_FragCoord.x / vWidth, gl_FragCoord.y / vHeight);
@@ -138,20 +225,19 @@ vec3 LightCalc()
 	vec3 norm = texture(gNorm, fragUV).rgb;
 	vec2 uv = texture(gUVs, fragUV).rg;
 	vec3 diff = pow(texture(gAlbedo, fragUV).rgb, vec3(2.2f));
-	vec3 specTex = texture(gAlbedo, fragUV).rgb;
+	vec3 specTex = texture(gSpecular, fragUV).rgb;
 	float spec = texture(gDepth, fragUV).r;
 	
-	vec3 dir = normalize(-lightDir);
-
 	// diffuse
-	vec3 finalDiff = CalculateIrradiance(norm) * (diff / PI);
+	vec3 finalDiff = CalculateIrradiance(norm) * (1.0f / PI) * diff;
 	
 	// specular
-	vec3 viewDir = normalize(viewPos - fragPos);
+	vec3 V = normalize(viewPos - fragPos);
+	vec3 R = 2.0f * dot(norm, V) * norm - V;
+	vec3 A = normalize(vec3(-R.y, R.x, 0.0f));
+	vec3 B = normalize(cross(R, A));
 	
-	vec3 reflectDir = reflect(dir, norm);
-	float sp = pow(max(dot(viewDir, reflectDir), 0.0), 16.0f);
-	vec3 finalSpec = sp * spec * specTex;
+	vec3 finalSpec = MonteCarloApprox(norm, V, R, A, B);
 	
 	vec4 shadowCoord = worldToLightMat * vec4(fragPos, 1.0f);
 	vec4 blur = texture(uShadowMap, shadowCoord.xy);
@@ -161,7 +247,7 @@ vec3 LightCalc()
 	float currDepth = shadowCoord.z;
 	float maximum = float(currDepth - 1.0f * pow(10, -3) <= blur.x);
 	
-	return (max(1.0f  - shadow, maximum) * finalDiff);
+	return (max(1.0f  - shadow, maximum) * finalDiff) + finalSpec;
 }
 
 void main()
@@ -169,8 +255,10 @@ void main()
 	vec2 uv = vec2(gl_FragCoord.x / vWidth, 
 					gl_FragCoord.y / vHeight);
 					
-	vec3 localLight = LightCalc();
+	vec3 color = LightCalc();
+	color = color / (color + vec3(1.0f));
+	color = pow(color, vec3(1.0f / 2.2f));
 	
-	fragColor = vec4(localLight, 1.0f);
+	fragColor = vec4(color, 1.0f);
 	entityID = texture(gEntityID, uv).r;
 }

@@ -25,7 +25,7 @@ namespace ARIS
 		
 		void LoadCubemap(std::vector<std::string> faces);
 		void AllocateCubemap(GLuint width, GLuint height, GLenum intForm, GLenum dataForm, 
-			GLenum filter, GLenum repeat, GLenum type);
+			GLenum filter, GLenum repeat, GLenum type, bool genMipMaps = false);
 
 		void Allocate(GLenum interForm, GLenum dataForm, GLuint width, GLuint height, GLenum type);
 
