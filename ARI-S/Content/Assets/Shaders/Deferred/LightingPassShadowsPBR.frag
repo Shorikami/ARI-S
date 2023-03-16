@@ -115,7 +115,6 @@ float Shadow(vec4 v, float bias)
 // ----------------------------------------------
 // PBS/IBL --------------------------------------
 const float PI = 3.14159265359f;
-const vec2 envMapSize = vec2(16.0f, 16.0f);
 const float roughness = 0.6f;
 
 layout(std140, binding = 4) uniform Discrepancy
@@ -128,6 +127,15 @@ layout(std140, binding = 5) uniform SphereHarmonics
 {
   vec4 shColor[9];
 };
+
+uniform float envMapSize;
+uniform float diffComponent;
+uniform float exposure;
+
+uniform bool sphereToCube;
+uniform bool useSpecular;
+uniform bool useDiffuse;
+uniform bool useToneMapping;
 
 float Distribution(vec3 N, vec3 H)
 {
@@ -149,15 +157,15 @@ vec3 CalculateIrradiance(vec3 N)
 	float A1 = 0.667f * PI;
 	float A2 = 0.25f * PI;
 	
-	return shColor[0].xyz * 0.282095f * A0
-         + shColor[1].xyz * 0.488603f * N.y * A1
-         + shColor[2].xyz * 0.488603f * N.z * A1
-         + shColor[3].xyz * 0.488603f * N.x * A1
-         + shColor[4].xyz * 1.092548f * N.x * N.y * A2
-         + shColor[5].xyz * 1.092548f * N.y * N.z * A2
-         + shColor[6].xyz * 0.315392f * (3.0f * N.z * N.z - 1.0f) * A2
-         + shColor[7].xyz * 1.092548f * N.x * N.z * A2
-         + shColor[8].xyz * 0.546274f * (N.x * N.x - N.y * N.y) * A2;
+	return shColor[0].xyz * 0.5f * sqrt(1.0f / PI) * A0
+         + shColor[1].xyz * 0.5f * sqrt(3.0f / PI) * N.y * A1
+         + shColor[2].xyz * 0.5f * sqrt(3.0f / PI) * N.z * A1
+         + shColor[3].xyz * 0.5f * sqrt(3.0f / PI) * N.x * A1
+         + shColor[4].xyz * 0.5f * sqrt(15.0f / PI) * N.x * N.y * A2
+         + shColor[5].xyz * 0.5f * sqrt(15.0f / PI) * N.y * N.z * A2
+         + shColor[6].xyz * 0.25f * sqrt(5.0f / PI) * (3.0f * N.z * N.z - 1.0f) * A2
+         + shColor[7].xyz * 0.5f * sqrt(15.0f / PI) * N.x * N.z * A2
+         + shColor[8].xyz * 0.25f * sqrt(15.0f / PI) * (N.x * N.x - N.y * N.y) * A2;
 }
 
 float GeometryAttenuation(vec3 L, vec3 V, vec3 N, vec3 H)
@@ -171,11 +179,15 @@ vec3 TexCoordToDirection(vec2 uv, vec3 N)
 	
 	vec3 dir = vec3(cos(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), sin(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), cos(PI * uv.y));
 	
-	vec3 up = abs(N.z) < 0.999f ? vec3(vec2(0.0f), 1.0f) : vec3(1.0f, vec2(0.0f));
-	vec3 tangent = normalize(cross(up, N));
-	vec3 bitangent = cross(N, tangent);
-	
-	return normalize(tangent * dir.x + bitangent * dir.y + N * dir.z);
+	if(sphereToCube)
+	{
+		vec3 up = abs(N.z) < 0.999f ? vec3(vec2(0.0f), 1.0f) : vec3(1.0f, vec2(0.0f));
+		vec3 t = normalize(cross(up, N));
+		vec3 bt = cross(N, t);
+		
+		return normalize(t * dir.x + bt * dir.y + N * dir.z);
+	}
+	return normalize(dir);
 }
 
 vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B)
@@ -204,7 +216,7 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B)
 		vec3 F = Fresnel(max(dot(H, V), 0.0f), vec3(1.f)); // Hard-coded F0; should it be <= 1?
 		float G = GeometryAttenuation(wk, V, N, H);
 		
-		float lod = 0.5f * log2((envMapSize.x * envMapSize.y) / hammersleyVals.N) - 0.5f * log2(D);
+		float lod = 0.5f * log2((envMapSize * envMapSize) / hammersleyVals.N) - 0.5f * log2(D);
 		vec3 light = textureLod(envMap, wk, lod).rgb * nDotL;
 		
 		sum += (F * G) / (4.0f * dot(wk, N) * dot(V, N)) * light;
@@ -228,11 +240,12 @@ vec3 LightCalc()
 	vec3 specTex = texture(gSpecular, fragUV).rgb;
 	float spec = texture(gDepth, fragUV).r;
 	
+	vec3 V = normalize(viewPos - fragPos);
+	
 	// diffuse
-	vec3 finalDiff = CalculateIrradiance(norm) * (1.0f / PI) * diff;
+	vec3 finalDiff = CalculateIrradiance(norm) * (diffComponent / PI) * diff;
 	
 	// specular
-	vec3 V = normalize(viewPos - fragPos);
 	vec3 R = 2.0f * dot(norm, V) * norm - V;
 	vec3 A = normalize(vec3(-R.y, R.x, 0.0f));
 	vec3 B = normalize(cross(R, A));
@@ -247,6 +260,15 @@ vec3 LightCalc()
 	float currDepth = shadowCoord.z;
 	float maximum = float(currDepth - 1.0f * pow(10, -3) <= blur.x);
 	
+	if (!useDiffuse)
+		return finalSpec;
+
+	else if (!useSpecular)
+		return (max(1.0f  - shadow, maximum) * finalDiff);
+		
+	else if (!useSpecular && !useDiffuse)
+		return vec3(0.0f);
+
 	return (max(1.0f  - shadow, maximum) * finalDiff) + finalSpec;
 }
 
@@ -256,8 +278,12 @@ void main()
 					gl_FragCoord.y / vHeight);
 					
 	vec3 color = LightCalc();
-	color = color / (color + vec3(1.0f));
-	color = pow(color, vec3(1.0f / 2.2f));
+	
+	if (useToneMapping)
+	{
+		color = (exposure * color) / ((exposure * color) + vec3(1.0f));
+		color = pow(color, vec3(1.0f / 2.2f));
+	}
 	
 	fragColor = vec4(color, 1.0f);
 	entityID = texture(gEntityID, uv).r;

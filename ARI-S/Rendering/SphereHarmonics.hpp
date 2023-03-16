@@ -82,7 +82,7 @@ namespace ARIS
             res.result[5] = 0.5f * sqrtf(15.0f / glm::pi<float>()) * N.y * N.z;
             res.result[6] = 0.25f * sqrtf(5.0f / glm::pi<float>()) * (3.0f * powf(N.z, 2.0f) - 1.0f);
             res.result[7] = 0.5f * sqrtf(15.0f / glm::pi<float>()) * N.x * N.z;
-            res.result[8] = 0.5f * sqrtf(15.0f / glm::pi<float>()) * (powf(N.x, 2.0f) - powf(N.y, 2.0f));
+            res.result[8] = 0.25f * sqrtf(15.0f / glm::pi<float>()) * (powf(N.x, 2.0f) - powf(N.y, 2.0f));
 
             return res;
         }
@@ -109,36 +109,36 @@ namespace ARIS
                 res.results.push_back(glm::vec3(0.0f));
             }
 
-            float u, v, temp, weight, weightSum = 0.0f;
-            size_t row, col;
-            glm::vec3 L;
+            float weight, weightSum = 0.0f;
 
             float* img = new float[3 * resolution * resolution];
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
-            for (size_t s = 0; s < 6; ++s)
+            for (int s = 0; s < 6; ++s)
             {
                 glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + s, 0, GL_RGB, GL_FLOAT, img);
 #pragma omp parallel for schedule(dynamic, 1) // Magic: Multi-thread y loop
-                for (size_t y = 0; y < resolution; ++y)
+                for (int x = 0; x < resolution; ++x)
                 {
-                    for (size_t x = 0; x < resolution; ++x)
+                    for (int y = 0; y < resolution; ++y)
                     {
-                        row = 3 * resolution * y;
-                        col = 3 * x;
-                        L = glm::vec3(img[row + col], img[row + col + 1], img[row + col + 2]);
+                        int r = 3 * x;
+                        int c = 3 * y * resolution;
+                        glm::vec3 px = glm::vec3(img[r + c], img[r + c + 1], img[r + c + 2]);
 
-                        u = (x + 0.5f) / resolution;
-                        v = (y + 0.5f) / resolution;
+                        float u = (x + 0.5f) / resolution;
+                        float v = (y + 0.5f) / resolution;
                         u = u * 2.0f - 1.0f;
                         v = v * 2.0f - 1.0f;
 
-                        temp = 1.0f + u * u + v * v;
+                        float temp = 1.0f + pow(u, 2) + pow(v, 2);
                         weight = 4.0f / (sqrt(temp) * temp);
 
                         glm::vec3 N = CalculateDirection(u, v, s, resolution);
 
                         for (unsigned i = 0; i < res.results.size(); ++i)
-                            res.results[i] += GenerateLightingCoefficientsNormal(N, L).results[i] * weight;
+                        {
+                            res.results[i] += GenerateLightingCoefficientsNormal(N, px).results[i] * weight;
+                        }
 
                         weightSum += weight;
                     }

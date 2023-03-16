@@ -23,6 +23,15 @@ int currLocalLights = NUM_LIGHTS;
 int kernelSize = 10;
 int gaussianWeight = 10;
 
+bool sphToCube = true;
+bool useDiffuse = true;
+bool useSpecular = true;
+bool useToneMapping = true;
+
+float envMapSize = 16.0f;
+float diffComponent = 1.0f;
+float exposure = 1.0f;
+
 namespace ARIS
 {
     float RandomNum(float min, float max)
@@ -226,16 +235,13 @@ namespace ARIS
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
-        hdrTexture = new Texture("Content/Assets/Textures/HDR/Winter_Forest.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
+        hdrTexture = new Texture("Content/Assets/Textures/HDR/Newport_Loft.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
         
         hdrCubemap = new Texture();
         hdrCubemap->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
         filteredHDR = new Texture();
         filteredHDR->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
-
-        irrBlurOutput = new Texture();
-        irrBlurOutput->AllocateCubemap(512, 512, GL_RGBA32F, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
         for (unsigned i = 0; i < 5; ++i)
@@ -600,6 +606,15 @@ namespace ARIS
             lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
 
+            lightingPass->SetFloat("envMapSize", envMapSize);
+            lightingPass->SetFloat("diffComponent", diffComponent);
+            lightingPass->SetFloat("exposure", exposure);
+
+            lightingPass->SetBool("sphereToCube", sphToCube);
+            lightingPass->SetBool("useSpecular", useSpecular);
+            lightingPass->SetBool("useDiffuse", useDiffuse);
+            lightingPass->SetBool("useToneMapping", useToneMapping);
+
             lightingPass->SetInt("vWidth", sceneWidth);
             lightingPass->SetInt("vHeight", sceneHeight);
 
@@ -708,22 +723,22 @@ namespace ARIS
     void Scene::OnImGuiRender()
     {
         ImGui::Begin("Shadow Debugging");
-        ImGui::SliderInt("Gaussian Blur Amount", &gaussianWeight, 1, 50);
-
-        ImGui::Text("Shadow Map");
-        ImGui::Image((void*)(intptr_t)sDepthMap->m_ID, ImVec2 { 255, 255 },
-            ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
-        ImGui::Text("Blurred Map");
-        ImGui::Image((void*)(intptr_t)blurOutput->m_ID, ImVec2 { 255, 255 },
-            ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-
-        ImGui::Separator();
-
-        if (ImGui::Button("Reload Shadow Shaders"))
+        if (ImGui::Button("Reload Shaders"))
         {
             ReloadShaders();
         }
+        ImGui::SliderInt("Gaussian Blur Amount", &gaussianWeight, 1, 50);
+        ImGui::End();
+
+        ImGui::Begin("IBL Debugging");
+        ImGui::SliderFloat("Environment Size", &envMapSize, 0.0f, 512.0f);
+        ImGui::SliderFloat("Diffuse Component", &diffComponent, 0.0f, 1.0f);
+        ImGui::SliderFloat("Exposure", &exposure, 0.1f, 1000.0f);
+
+        ImGui::Checkbox("Convert from Sphere to Cube", &sphToCube);
+        ImGui::Checkbox("Enable Specular", &useSpecular);
+        ImGui::Checkbox("Enable Diffuse", &useDiffuse);
+        ImGui::Checkbox("Enable Tone Mapping", &useToneMapping);
 
         ImGui::End();
     }

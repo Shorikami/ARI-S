@@ -33,12 +33,14 @@ project "ARI-S"
 	kind "ConsoleApp"
 	language "C++"
 	staticruntime "off"
+	openmp "On"
 	
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 	
 	pchheader "arpch.h"
 	pchsource "ARI-S/Core/arpch.cpp"
+	
 	
 	files
 	{
