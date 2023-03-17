@@ -113,9 +113,9 @@ namespace ARIS
 
             float* img = new float[3 * resolution * resolution];
             glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
-            for (int s = 0; s < 6; ++s)
+            for (int face = 0; face < 6; ++face)
             {
-                glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + s, 0, GL_RGB, GL_FLOAT, img);
+                glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGB, GL_FLOAT, img);
 #pragma omp parallel for schedule(dynamic, 1) // Magic: Multi-thread y loop
                 for (int x = 0; x < resolution; ++x)
                 {
@@ -133,7 +133,7 @@ namespace ARIS
                         float temp = 1.0f + pow(u, 2) + pow(v, 2);
                         weight = 4.0f / (sqrt(temp) * temp);
 
-                        glm::vec3 N = CalculateDirection(u, v, s, resolution);
+                        glm::vec3 N = CalculateDirection(u, v, face, resolution);
 
                         for (unsigned i = 0; i < res.results.size(); ++i)
                         {

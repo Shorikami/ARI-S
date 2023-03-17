@@ -235,7 +235,7 @@ namespace ARIS
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
-        hdrTexture = new Texture("Content/Assets/Textures/HDR/Newport_Loft.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
+        hdrTexture = new Texture("Content/Assets/Textures/HDR/Boxing_Ring.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
         
         hdrCubemap = new Texture();
         hdrCubemap->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);

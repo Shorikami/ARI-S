@@ -179,6 +179,11 @@ vec3 TexCoordToDirection(vec2 uv, vec3 N)
 	
 	vec3 dir = vec3(cos(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), sin(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), cos(PI * uv.y));
 	
+  //float phi = 2.0f * PI * uv.x;
+  //float thetaCos = sqrt((1.0f - uv.y) / (1.0f * (a * a - 1.0f) * uv.y));
+  //float thetaSin = 1.0f - pow(thetaCos, 2);
+  //vec3 dir = vec3(cos(phi) * thetaSin, sin(phi) * thetaSin, thetaCos);
+  
 	if(sphereToCube)
 	{
 		vec3 up = abs(N.z) < 0.999f ? vec3(vec2(0.0f), 1.0f) : vec3(1.0f, vec2(0.0f));
@@ -202,6 +207,7 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B)
 		vec2 tex = vec2(u, atan((roughness * sqrt(v)) / sqrt(1.0f - v)) / PI);
 		vec3 dir = TexCoordToDirection(tex, N);
 		
+		//directions[i] = normalize(2.0 * dot(V, dir) * dir - V);
 		directions[i] = normalize(dir.x * A + dir.y * B + dir.z + R);
 	}
 	
@@ -246,11 +252,13 @@ vec3 LightCalc()
 	vec3 finalDiff = CalculateIrradiance(norm) * (diffComponent / PI) * diff;
 	
 	// specular
-	vec3 R = 2.0f * dot(norm, V) * norm - V;
-	vec3 A = normalize(vec3(-R.y, R.x, 0.0f));
+	//vec3 R = 2.0f * dot(norm, V) * norm - V;
+	vec3 R = reflect(-V, normalize(norm));
+	vec3 A = normalize(vec3(-R.z, R.x, 0.0f));
 	vec3 B = normalize(cross(R, A));
 	
-	vec3 finalSpec = MonteCarloApprox(norm, V, R, A, B);
+  vec3 finalSpec = MonteCarloApprox(norm, V, R, A, B);
+	//vec3 finalSpec = textureLod(envMap, R, 1).rgb;
 	
 	vec4 shadowCoord = worldToLightMat * vec4(fragPos, 1.0f);
 	vec4 blur = texture(uShadowMap, shadowCoord.xy);
