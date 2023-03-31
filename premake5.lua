@@ -22,6 +22,7 @@ IncludeDir["tinygltf"] = "Libraries/tinygltf"
 IncludeDir["tinyobj"] = "Libraries/tinyobjloader"
 IncludeDir["YAML_CPP"] = "Libraries/yaml-cpp/include"
 IncludeDir["ImGuizmo"] = "Libraries/ImGuizmo"
+IncludeDir["Assimp"] = "Libraries/assimp/include"
 
 include "Libraries/GLFW"
 include "Libraries/Glad"
@@ -104,7 +105,8 @@ project "ARI-S"
 		"%{IncludeDir.tinygltf}",
 		"%{IncludeDir.tinyobj}",
 		"%{IncludeDir.YAML_CPP}",
-		"%{IncludeDir.ImGuizmo}"
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.Assimp}"
 	}
 	
 	links
@@ -113,6 +115,7 @@ project "ARI-S"
 		"Glad",
 		"ImGui",
 		"YAML-CPP",
+		"Libraries/assimp/lib/assimp-vc142-mt.lib",
 		"opengl32.lib"
 	}
 	

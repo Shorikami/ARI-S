@@ -115,7 +115,7 @@ float Shadow(vec4 v, float bias)
 // ----------------------------------------------
 // PBS/IBL --------------------------------------
 const float PI = 3.14159265359f;
-const float roughness = 0.6f;
+const float roughness = 0.01f;
 
 layout(std140, binding = 4) uniform Discrepancy
 {

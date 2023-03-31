@@ -249,6 +249,7 @@ namespace ARIS
             gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
                 GL_NEAREST, GL_CLAMP_TO_EDGE));
         }
+
         // Single-channel red texture (for entity ID and mouse-clicking; this will be
         // shared with the scene FBO)
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32F, GL_RED, nullptr,
@@ -379,7 +380,7 @@ namespace ARIS
         }
         captureBuffer->Unbind();
 
-        hammersleyData->GetData().N = 20;
+        hammersleyData->GetData().N = 3;
 
         int kk;
         int pos = 0;
