@@ -3,6 +3,8 @@
 #define TEXTURE_H
 
 #include <glad/glad.h>
+#include <assimp/scene.h>
+
 #include <string>
 
 namespace ARIS
@@ -12,13 +14,14 @@ namespace ARIS
 	public:
 		Texture();
 		Texture(std::string name);
-		Texture(std::string dir, std::string path);
+		Texture(std::string dir, std::string path, aiTextureType texType = aiTextureType_NONE);
+		Texture(const std::string& path, GLenum filter, GLenum repeat, bool hdr = false, aiTextureType texType = aiTextureType_NONE);
 
 		Texture(GLuint width, GLuint height, 
 			GLenum intForm, GLenum dataForm, void* data = nullptr, 
 			GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT, GLenum type = GL_UNSIGNED_BYTE);
 
-		Texture(const std::string& path, GLenum filter, GLenum repeat, bool hdr = false);
+		
 
 		void Generate();
 		void Load(bool flip = true);
@@ -42,10 +45,9 @@ namespace ARIS
 		void Cleanup();
 
 		unsigned m_ID;
-		//aiTextureType type;
+		aiTextureType type;
 		std::string dir, m_Path, name;
 
-		//GLuint m_ID, m_BindPort;
 		GLuint m_Width, m_Height;
 		GLenum m_InternalFormat, m_DataFormat;
 		GLboolean m_IsLoaded;

@@ -1,0 +1,42 @@
+Scene: Test
+Entities:
+  - Entity: 8975308583578878574
+    TagComponent:
+      Tag: Point Light
+    TransformComponent:
+      Translation: [7.98895645, 3.58996177, -1.4719249]
+      Rotation: [0.0436332263, 0, 0]
+      Scale: [100, 100, 100]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 100
+      Intensity: 10
+  - Entity: 11384973501980615642
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [19.9599991, 35.0800018, -6.69999981]
+      Rotation: [2.6755898, 0.241029978, -2.10120177]
+      Scale: [8.99987411, 8.99988842, 8.99966049]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 13.566
+      Height: 41.8600006
+      Near: 0.100000001
+      Far: 100
+  - Entity: 6497034949192003676
+    TagComponent:
+      Tag: Toramaru
+    TransformComponent:
+      Translation: [16.1000004, -12.29, -65.5]
+      Rotation: [0, -1.27758098, 0]
+      Scale: [20, 20, 20]
+    MeshComponent:
+      Name: Toramaru
+      Path: Content\Assets\Models\BA\Toramaru\scene.gltf
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: N/A
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A

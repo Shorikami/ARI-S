@@ -1,0 +1,11 @@
+Model Information:
+* title:	[Blue Archive Weapon] - Tsuchinaga Hiyori
+* source:	https://sketchfab.com/3d-models/blue-archive-weapon-tsuchinaga-hiyori-d950cff3b06144789c68bd2b9d4a92dc
+* author:	yochan.176 (https://sketchfab.com/yochan.176)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "[Blue Archive Weapon] - Tsuchinaga Hiyori" (https://sketchfab.com/3d-models/blue-archive-weapon-tsuchinaga-hiyori-d950cff3b06144789c68bd2b9d4a92dc) by yochan.176 (https://sketchfab.com/yochan.176) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

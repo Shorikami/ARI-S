@@ -162,6 +162,7 @@ namespace ARIS
 
 			auto& mc = e.GetComponent<MeshComponent>();
 			out << YAML::Key << "Name" << YAML::Value << mc.GetName();
+			out << YAML::Key << "Path" << YAML::Value << mc.GetPath();
 			out << YAML::Key << "Vertex Path" << YAML::Value << mc.GetVertexPath();
 			out << YAML::Key << "Fragment Path" << YAML::Value << mc.GetFragmentPath();
 
@@ -306,9 +307,9 @@ namespace ARIS
 				auto mc = e["MeshComponent"];
 				if (mc)
 				{
-
 					auto& t = deserializedEntity.AddComponent<MeshComponent>();
 					std::string name = mc["Name"].as<std::string>();
+					std::string path = mc["Path"].as<std::string>();
 					std::string vSrc = mc["Vertex Path"].as<std::string>();
 					std::string fSrc = mc["Fragment Path"].as<std::string>();
 
@@ -317,7 +318,9 @@ namespace ARIS
 					std::string metTex = mc["Metallic Path"].as<std::string>();
 					std::string roughTex = mc["Roughness Path"].as<std::string>();
 
-					t.m_Model = *ModelBuilder::Get().GetModelTable()[name];
+					t.SetName(name);
+					t.SetPath(path);
+					ModelBuilder::Get().LoadModel(path, t.m_Model);
 
 					if (diffTex != "N/A")
 					{
@@ -336,7 +339,6 @@ namespace ARIS
 						t.m_DiffuseTex = std::make_shared<Texture>(roughTex, GL_LINEAR, GL_REPEAT);
 					}
 					
-
 
 					t.m_VertexSrc = vSrc;
 					t.m_FragmentSrc = fSrc;

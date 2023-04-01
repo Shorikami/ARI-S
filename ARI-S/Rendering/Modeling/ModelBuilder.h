@@ -3,6 +3,10 @@
 
 #include "Model.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 namespace ARIS
 {
 	class ModelBuilder
@@ -26,24 +30,23 @@ namespace ARIS
 		ModelBuilder();
 		~ModelBuilder();
 
-		void BuildTable();
 		void DestroyTable();
 
-		void LoadOBJ(std::string path, Model& model);
-		void LoadGLTF(std::string path, Model& model);
+		void LoadModel(std::string path, Model& model);
 
 		inline static ModelBuilder& Get() { return *m_Instance; }
 		
-		std::unordered_map<std::string, Model*> GetModelTable() { return m_ModelTable; }
+		std::vector<Model*> GetModelTable() { return m_ModelTable; }
 
 		static void CreateSphere(float radius, unsigned divisions, Model& model);
-		static void CreateFrustum(Model& model);
 
 	private:
-		void BuildNormals(Model& m);
-		void BuildTexCoords(Model& m);
+		void GenerateModel(std::string path, Model& model);
+		void ProcessNode(aiNode* node, const aiScene* scene, Model& model);
+		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene, Model& model);
+		std::vector<Texture> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, Model& model);
 
-		std::unordered_map<std::string, Model*> m_ModelTable;
+		std::vector<Model*> m_ModelTable;
 		static ModelBuilder* m_Instance;
 	};
 }

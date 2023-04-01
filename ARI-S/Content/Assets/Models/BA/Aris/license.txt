@@ -1,0 +1,11 @@
+Model Information:
+* title:	[Blue Archive Weapon] - Tendou Aris
+* source:	https://sketchfab.com/3d-models/blue-archive-weapon-tendou-aris-f7b3e2f688104e25b2132e89070882cc
+* author:	yochan.176 (https://sketchfab.com/yochan.176)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "[Blue Archive Weapon] - Tendou Aris" (https://sketchfab.com/3d-models/blue-archive-weapon-tendou-aris-f7b3e2f688104e25b2132e89070882cc) by yochan.176 (https://sketchfab.com/yochan.176) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

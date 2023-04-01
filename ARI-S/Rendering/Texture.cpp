@@ -14,6 +14,7 @@ namespace ARIS
 		, m_DataFormat(0)
 		, m_IsLoaded(false)
 		, name(std::string())
+		, type(aiTextureType_NONE)
 	{
 		Generate();
 	}
@@ -26,18 +27,21 @@ namespace ARIS
 		, m_DataFormat(0)
 		, m_IsLoaded(false)
 		, name(name_)
+		, type(aiTextureType_NONE)
 	{
 		Generate();
 	}
 
-	Texture::Texture(std::string dir, std::string path)
+	Texture::Texture(std::string dir, std::string path, aiTextureType texType)
 		: dir(dir)
 		, m_Path(path)
+		, type(texType)
 	{
 		Generate();
 	}
 
-	Texture::Texture(GLuint w, GLuint h, GLenum intForm, GLenum dataForm, void* data, GLenum filter, GLenum repeat, GLenum type)
+	Texture::Texture(GLuint w, GLuint h, GLenum intForm, GLenum dataForm, 
+					void* data, GLenum filter, GLenum repeat, GLenum type)
 		: m_Width(w)
 		, m_Height(h)
 	{
@@ -70,8 +74,10 @@ namespace ARIS
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	Texture::Texture(const std::string& path, GLenum filter, GLenum repeat, bool hdr)
+	Texture::Texture(const std::string& path, GLenum filter, GLenum repeat, 
+					bool hdr, aiTextureType texType)
 		: m_IsLoaded(false)
+		, type(texType)
 	{
 		int width, height, channels;
 		stbi_set_flip_vertically_on_load(1);

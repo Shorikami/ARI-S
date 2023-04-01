@@ -1,7 +1,7 @@
-#include "Transform.hpp"
-#include "Mesh.hpp"
-#include "PointLight.hpp"
-#include "DirectionalLight.hpp"
+#include "TransformComponent.hpp"
+#include "MeshComponent.hpp"
+#include "PointLightComponent.hpp"
+#include "DirectionalLightComponent.hpp"
 
 #include "UUID.hpp"
 

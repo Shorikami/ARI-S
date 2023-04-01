@@ -303,27 +303,27 @@ namespace ARIS
 
 		DrawComponent<MeshComponent>("Model", e, [](auto& comp)
 		{
-			Model* currItem = &comp.m_Model;
-			if (ImGui::BeginCombo("##custom combo", currItem->GetName().c_str()))
-			{
-				std::unordered_map<std::string, Model*> modelTable = ModelBuilder::Get().GetModelTable();
-				for (std::unordered_map<std::string, Model*>::iterator it =
-					modelTable.begin(); it != modelTable.end(); ++it)
-				{
-					Model* item = it->second;
-					bool isSelected = (currItem == item);
-					if (ImGui::Selectable(item->GetName().c_str(), isSelected))
-					{
-						currItem = item;
-						comp.m_Model = *currItem;
-					}
-					if (isSelected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
-			}
+			//Model* currItem = &comp.m_Model;
+			//if (ImGui::BeginCombo("##custom combo", currItem->GetName().c_str()))
+			//{
+			//	std::unordered_map<std::string, Model*> modelTable = ModelBuilder::Get().GetModelTable();
+			//	for (std::unordered_map<std::string, Model*>::iterator it =
+			//		modelTable.begin(); it != modelTable.end(); ++it)
+			//	{
+			//		Model* item = it->second;
+			//		bool isSelected = (currItem == item);
+			//		if (ImGui::Selectable(item->GetName().c_str(), isSelected))
+			//		{
+			//			currItem = item;
+			//			comp.m_Model = *currItem;
+			//		}
+			//		if (isSelected)
+			//		{
+			//			ImGui::SetItemDefaultFocus();
+			//		}
+			//	}
+			//	ImGui::EndCombo();
+			//}
 
 			ImGui::Button("Diffuse Texture", ImVec2(100.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())

@@ -1,0 +1,117 @@
+Scene: Test
+Entities:
+  - Entity: 8888921632642843540
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-10.9946928, 0, 29.0399094]
+      Rotation: [0, 0, 0]
+      Scale: [8.80649948, 8.80649948, 8.80649948]
+    MeshComponent:
+      Name: sphere.obj
+      Vertex Path: ""
+      Fragment Path: ""
+      Diffuse Path: Content\Assets\Textures\red.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 8975308583578878574
+    TagComponent:
+      Tag: Point Light
+    TransformComponent:
+      Translation: [7.98895645, 3.58996177, -1.4719249]
+      Rotation: [0.0436332263, 0, 0]
+      Scale: [100, 100, 100]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 100
+      Intensity: 10
+  - Entity: 11384973501980615642
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [6.75794697, 9.7753067, -14.9988489]
+      Rotation: [2.56906033, 0.677425623, -2.11524296]
+      Scale: [8.99987411, 8.99988842, 8.99966049]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 10
+      Height: 10
+      Near: 0.100000001
+      Far: 100
+  - Entity: 6497034949192003676
+    TagComponent:
+      Tag: White Fang
+    TransformComponent:
+      Translation: [-2.86601138, 3.79557848, -6.19145489]
+      Rotation: [2.58613658, 1.02406478, -3.14159226]
+      Scale: [16.9799881, 16.9800014, 16.97999]
+    MeshComponent:
+      Name: Shiroko_Original_Weapon.obj
+      Path: Content\Assets\Models\BA\Shiroko\Mesh\Shiroko_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Shiroko\Texture2D\Shiroko_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 7430654964310599025
+    TagComponent:
+      Tag: Supernova
+    TransformComponent:
+      Translation: [8.91026402, -3.88566113, -5.06852579]
+      Rotation: [-3.09998298, 0.237560615, -3.0764432]
+      Scale: [18.3457413, 18.3455963, 18.3457355]
+    MeshComponent:
+      Name: Aris_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Aris\Texture2D\Aris_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 1066889142520085911
+    TagComponent:
+      Tag: Eye of Horus
+    TransformComponent:
+      Translation: [-4.66085148, -0.388564676, -3.95980096]
+      Rotation: [-3.14159226, 0.294707149, -3.14159226]
+      Scale: [13.9000082, 13.8999996, 13.9000082]
+    MeshComponent:
+      Name: Hosino_Origninal_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Hoshino\Texture2D\Hoshino_Original_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 8756830420377061927
+    TagComponent:
+      Tag: Impalement
+    TransformComponent:
+      Translation: [11.6883326, 2.58575463, -6.99222612]
+      Rotation: [-0.465783298, -0.283291847, 0.346974671]
+      Scale: [10.9799538, 10.9799938, 10.9799652]
+    MeshComponent:
+      Name: Hasumi_Original_Weapon.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Models\BA\Hasumi\Texture2D\Hasumi_Weapon.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+  - Entity: 11259883908253268286
+    TagComponent:
+      Tag: Cube
+    TransformComponent:
+      Translation: [10.4337254, -2.37783647, 12.8201351]
+      Rotation: [0, 0, 0]
+      Scale: [7.02519941, 7.02519941, 7.02519941]
+    MeshComponent:
+      Name: cube.obj
+      Vertex Path: ""
+      Fragment Path: ""
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A

@@ -82,15 +82,19 @@ namespace ARIS
 		// divisor - The specification of where to divide this pointer. This is
 		// typically used when uploading matrices instead of vectors
 		template<typename T>
-		void SetAttPointer(GLuint idx, GLint size, GLenum type, GLuint stride, GLuint offset, GLuint divisor = 0)
+		void SetAttPointer(GLuint idx, GLint size, GLenum type, GLuint stride, GLuint offset, GLuint divisor = 0,
+			bool manualOffset = false, bool manualStride = false)
 		{
 			if (type == GL_INT)
 			{
-				glVertexAttribIPointer(idx, size, type, stride * sizeof(T), (void*)(offset * sizeof(T)));
+				if (!manualOffset)
+					glVertexAttribIPointer(idx, size, type, manualStride ? stride : stride * sizeof(T), 
+						manualOffset ? (void*)offset : (void*)(offset * sizeof(T)));
 			}
 			else
 			{
-				glVertexAttribPointer(idx, size, type, GL_FALSE, stride * sizeof(T), (void*)(offset * sizeof(T)));
+				glVertexAttribPointer(idx, size, type, GL_FALSE, manualStride ? stride : stride * sizeof(T),
+					manualOffset ? (void*)offset : (void*)(offset * sizeof(T)));
 			}
 			
 			glEnableVertexAttribArray(idx);
