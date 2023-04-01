@@ -117,11 +117,14 @@ namespace ARIS
         std::vector<Texture> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, model);
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
 
-        std::vector<Texture> normalMaps = LoadMaterialTextures(material, aiTextureType_HEIGHT, model);
+        std::vector<Texture> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, model);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-        std::vector<Texture> heightMaps = LoadMaterialTextures(material, aiTextureType_AMBIENT, model);
+        std::vector<Texture> heightMaps = LoadMaterialTextures(material, aiTextureType_HEIGHT, model);
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+
+        std::vector<Texture> metalRoughMaps = LoadMaterialTextures(material, aiTextureType_UNKNOWN, model);
+        textures.insert(textures.end(), metalRoughMaps.begin(), metalRoughMaps.end());
 
         return Mesh(vertexData, indices, textures);
     }
@@ -138,7 +141,15 @@ namespace ARIS
             bool skip = false;
             for (unsigned j = 0; j < model.m_LoadedTextures.size(); ++j)
             {
-                if (std::strcmp(model.m_LoadedTextures[j].m_Path.data(), str.C_Str()) == 0)
+                size_t remove = model.m_LoadedTextures[j].m_Path.find_last_of("/\\");
+                std::string path = model.m_LoadedTextures[j].m_Path.substr(remove, model.GetPath().length());
+
+                std::string aiStringStr = std::string(str.C_Str());
+
+                remove = aiStringStr.find_last_of("/\\");
+                std::string aiStringCmp = aiStringStr.substr(remove, aiStringStr.length());
+
+                if (std::strcmp(path.c_str(), aiStringCmp.c_str()) == 0)
                 {
                     t.push_back(model.m_LoadedTextures[j]);
                     skip = true;

@@ -52,6 +52,13 @@ namespace ARIS
 		unsigned specNr = 1;
 		unsigned normNr = 1;
 		unsigned heightNr = 1;
+		unsigned metalNr = 1;
+		unsigned roughNr = 1;
+		unsigned metRoughNr = 1;
+
+		// bool to check if metal + rough are a part of the same texture
+		// (todo?: only would likely work with one texture; support for more?)
+		bool combined = false;
 
 		for (unsigned i = 0; i < m_Textures.size(); ++i)
 		{
@@ -66,17 +73,29 @@ namespace ARIS
 			case aiTextureType_SPECULAR:
 				unit = std::string("specTex") + std::to_string(specNr++);
 				break;
-			case aiTextureType_HEIGHT:
+			case aiTextureType_NORMALS:
 				unit = std::string("normTex") + std::to_string(normNr++);
 				break;
-			case aiTextureType_AMBIENT:
+			case aiTextureType_HEIGHT:
 				unit = std::string("heightTex") + std::to_string(heightNr++);
+				break;
+			case aiTextureType_METALNESS:
+				unit = std::string("metalTex") + std::to_string(metalNr++);
+				break;
+			case aiTextureType_DIFFUSE_ROUGHNESS:
+				unit = std::string("roughTex") + std::to_string(roughNr++);
+				break;
+			case aiTextureType_UNKNOWN:
+				unit = std::string("metalRoughTex") + std::to_string(metRoughNr++);
+				combined = true;
 				break;
 			}
 
-			s.SetInt(unit, i);
+			s.SetIntDirect(unit, i);
 			m_Textures[i].Bind();
 		}
+
+		s.SetIntDirect("metRoughCombine", static_cast<int>(combined));
 
 		m_VertexArray.Bind();
 

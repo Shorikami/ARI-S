@@ -35,6 +35,7 @@ namespace ARIS
 		void SetBool(const std::string& name, bool val);
 
 		void SetInt(const std::string& name, int val);
+		void SetIntDirect(const std::string& name, int val);
 		
 		template <typename U>
 		void SetInt(const std::string& name, U val)

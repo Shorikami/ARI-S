@@ -243,8 +243,8 @@ namespace ARIS
         filteredHDR = new Texture();
         filteredHDR->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
-        // gBuffer textures (position, normals, UVs, albedo (diffuse), specular, depth)
-        for (unsigned i = 0; i < 5; ++i)
+        // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
+        for (unsigned i = 0; i < 4; ++i)
         {
             gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
                 GL_NEAREST, GL_CLAMP_TO_EDGE));
@@ -255,15 +255,19 @@ namespace ARIS
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32F, GL_RED, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE));
 
+        // gBuffer depth texture
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
 
+        // shadow map
         sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
 
+        // filtered shadow map
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
+        // capture frame buffer (for irradiance mapping)
         captureBuffer = new Framebuffer(true);
         captureBuffer->Bind(true);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
@@ -435,11 +439,10 @@ namespace ARIS
         lightingPass->Activate();
         lightingPass->SetInt("gPos", 0);
         lightingPass->SetInt("gNorm", 1);
-        lightingPass->SetInt("gUVs", 2);
-        lightingPass->SetInt("gAlbedo", 3);
-        lightingPass->SetInt("gSpecular", 4);
-        lightingPass->SetInt("gEntityID", 5);
-        lightingPass->SetInt("gDepth", 6);
+        lightingPass->SetInt("gAlbedo", 2);
+        lightingPass->SetInt("gMetRough", 3);
+        lightingPass->SetInt("gEntityID", 4);
+        lightingPass->SetInt("gDepth", 5);
 
         shadowPass->Activate();
         shadowPass->SetInt("sDepth", 0);
@@ -574,7 +577,7 @@ namespace ARIS
         lightingPass->Activate();
 
         // G-Buffer textures
-        for (unsigned i = 0; i < 7; ++i)
+        for (unsigned i = 0; i < 6; ++i)
         {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, gTextures[i]->m_ID);

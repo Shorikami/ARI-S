@@ -169,6 +169,11 @@ namespace ARIS
 		glUniform1i(glGetUniformLocation(m_ID, name.c_str()), val);
 	}
 
+	void Shader::SetIntDirect(const std::string& name, int val)
+	{
+		glUniform1i(glGetUniformLocation(m_ID, name.c_str()), val);
+	}
+
 	void Shader::SetFloat(const std::string& name, float val)
 	{
 		glUniform1f(glGetUniformLocation(m_ID, name.c_str()), val);
