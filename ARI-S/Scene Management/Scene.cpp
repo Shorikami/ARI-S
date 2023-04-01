@@ -126,7 +126,7 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(false, "Deferred/LightingPassShadowsPBR.vert", "Deferred/LightingPassShadowsPBR.frag");
+        lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
@@ -222,26 +222,36 @@ namespace ARIS
     {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+        // IBL
         skyboxShader = new Shader(false, "Skybox.vert", "Skybox.frag");
         hdrMapping = new Shader(false, "IBL/CubemapHDR.vert", "IBL/CubemapHDR.frag");
         hdrEnvironment = new Shader(false, "IBL/Environment.vert", "IBL/Environment.frag");
+        irradiance = new Shader(false, "IBL/CubemapHDR.vert", "IBL/IrradianceConvolution.frag");
+        mapFilter = new Shader(false, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag");
+        brdf = new Shader(false, "IBL/BRDF.vert", "IBL/BRDF.frag");
         //irrComp = new Shader(false, "IBL/IrradianceConvolution.cmpt");
 
         geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
-        lightingPass = new Shader(false, "Deferred/LightingPassShadowsPBR.vert", "Deferred/LightingPassShadowsPBR.frag");
+        lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
         localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
 
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
-        hdrTexture = new Texture("Content/Assets/Textures/HDR/Boxing_Ring.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
+        hdrTexture = new Texture("Content/Assets/Textures/HDR/Newport_Loft.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
         
         hdrCubemap = new Texture();
         hdrCubemap->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
+        irradianceTex = new Texture();
+        irradianceTex->AllocateCubemap(32, 32, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
+
         filteredHDR = new Texture();
         filteredHDR->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
+
+        brdfTex = new Texture(512, 512, GL_RG16F, GL_RG, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
         for (unsigned i = 0; i < 4; ++i)
@@ -267,7 +277,7 @@ namespace ARIS
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
-        // capture frame buffer (for irradiance mapping)
+        // capture frame buffer (for irradiance mapping, pre-filtered color mapping)
         captureBuffer = new Framebuffer(true);
         captureBuffer->Bind(true);
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
@@ -337,6 +347,7 @@ namespace ARIS
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
         };
 
+        // Draw the HDR cubemap first...
         hdrMapping->Activate();
         hdrMapping->SetInt("hdrMap", 0);
         hdrMapping->SetMat4("projection", hdrProj);
@@ -357,9 +368,41 @@ namespace ARIS
             glDrawArrays(GL_TRIANGLES, 0, 36);
             glBindVertexArray(0);
         }
+        captureBuffer->Unbind();
 
+        // .. then bind the created cubemap for the irradiance and pre-filtered map generation...
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
+        glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+        // ... then create the irradiance map...
+        captureBuffer->Bind(true);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+        irradiance->Activate();
+        irradiance->SetIntDirect("envMap", 0);
+        irradiance->SetMat4("projection", hdrProj);
+
+        glViewport(0, 0, 32, 32);
+        
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            irradiance->SetMat4("view", hdrView[i]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceTex->m_ID, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(cubeVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
+        }
+        captureBuffer->Unbind(true);
+
+        // ... then create the pre-filtered cubemap + mipmap levels...
+        mapFilter->Activate();
+        mapFilter->SetIntDirect("envMap", 0);
+        mapFilter->SetMat4("projection", hdrProj);
+
+        captureBuffer->Bind();
 
         unsigned maxMipLevels = 7;
         for (unsigned mip = 0; mip < maxMipLevels; ++mip)
@@ -371,9 +414,12 @@ namespace ARIS
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
             glViewport(0, 0, w, h);
 
+            float roughness = static_cast<float>(mip) / static_cast<float>(maxMipLevels - 1);
+            mapFilter->SetFloat("roughness", roughness);
+
             for (unsigned i = 0; i < 6; ++i)
             {
-                hdrMapping->SetMat4("view", hdrView[i]);
+                mapFilter->SetMat4("view", hdrView[i]);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, filteredHDR->m_ID, mip);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -384,28 +430,44 @@ namespace ARIS
         }
         captureBuffer->Unbind();
 
-        hammersleyData->GetData().N = 3;
+        // ... then create the BRDF lookup table
+        captureBuffer->Bind(true);
+        brdfTex->Bind();
 
-        int kk;
-        int pos = 0;
-        float p, u;
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfTex->m_ID, 0);
 
-        for (int k = 0; k < hammersleyData->GetData().N; ++k)
-        {
-            for (p = 0.5f, kk = k, u = 0.0f; kk; p *= 0.5f, kk >>= 1)
-            {
-                if (kk & 1)
-                {
-                    u += p;
-                }
-            }
+        glViewport(0, 0, 512, 512);
+        brdf->Activate();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        RenderQuad();
 
-            float v = (k + 0.5) / hammersleyData->GetData().N;
-            hammersleyData->GetData().hammersley[pos++].x = u;
-            hammersleyData->GetData().hammersley[pos++].x = v;
-        }
-        
-        hammersleyData->SetData();
+        brdfTex->Unbind();
+        captureBuffer->Unbind(true);
+
+
+        //hammersleyData->GetData().N = 3;
+        //
+        //int kk;
+        //int pos = 0;
+        //float p, u;
+        //
+        //for (int k = 0; k < hammersleyData->GetData().N; ++k)
+        //{
+        //    for (p = 0.5f, kk = k, u = 0.0f; kk; p *= 0.5f, kk >>= 1)
+        //    {
+        //        if (kk & 1)
+        //        {
+        //            u += p;
+        //        }
+        //    }
+        //
+        //    float v = (k + 0.5) / hammersleyData->GetData().N;
+        //    hammersleyData->GetData().hammersley[pos++].x = u;
+        //    hammersleyData->GetData().hammersley[pos++].x = v;
+        //}
+        //
+        //hammersleyData->SetData();
 
         //irrComp->Activate();
         //
@@ -423,13 +485,13 @@ namespace ARIS
         //
         //glUseProgram(0);
 
-        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 512);
-
-        for (unsigned i = 0; i < 9; ++i)
-        {
-            harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
-        }
-        harmonicData->SetData();
+        //SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 512);
+        //
+        //for (unsigned i = 0; i < 9; ++i)
+        //{
+        //    harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
+        //}
+        //harmonicData->SetData();
 
         return 0;
     }
@@ -586,8 +648,17 @@ namespace ARIS
         glActiveTexture(GL_TEXTURE7);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
+        //lActiveTexture(GL_TEXTURE8);
+        //lBindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
+
         glActiveTexture(GL_TEXTURE8);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
+
+        glActiveTexture(GL_TEXTURE9);
         glBindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
+
+        glActiveTexture(GL_TEXTURE10);
+        glBindTexture(GL_TEXTURE_2D, brdfTex->m_ID);
 
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
             * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
@@ -605,7 +676,10 @@ namespace ARIS
             lightingPass->SetInt("uShadowMap", 7);
             lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
 
-            lightingPass->SetInt("envMap", 8);
+            //lightingPass->SetInt("envMap", 8);
+            lightingPass->SetInt("irradianceMap", 8);
+            lightingPass->SetInt("filteredMap", 9);
+            lightingPass->SetInt("brdfTable", 10);
 
             lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());

@@ -105,11 +105,16 @@ namespace ARIS
         Shader* skyboxShader;
 
         // PBS + IBL
-        Shader* hdrMapping, * hdrEnvironment, * irrComp;
+        Shader * hdrMapping, * hdrEnvironment, * irradiance,  * mapFilter, * brdf;
 
+        // Deferred
         std::vector<Texture*> gTextures;
+
+        // Shadows
         Texture* sDepthMap, * blurOutput, * skybox;
-        Texture* hdrTexture, * hdrCubemap, *filteredHDR, *irrBlurOutput;
+
+        // PBS + IBL
+        Texture* hdrTexture, * hdrCubemap, *filteredHDR, *irradianceTex, *brdfTex;
 
         Framebuffer* gBuffer;
         Framebuffer* sBuffer;
