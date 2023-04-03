@@ -167,9 +167,10 @@ namespace ARIS
 			out << YAML::Key << "Fragment Path" << YAML::Value << mc.GetFragmentPath();
 
 			std::string texPath = std::string("N/A"), 
-				normPath = std::string("N/A"),
-				metPath = std::string("N/A"),
-				roughPath = std::string("N/A");
+						normPath = std::string("N/A"),
+						metPath = std::string("N/A"),
+						roughPath = std::string("N/A"),
+						metRoughPath = std::string("N/A");
 
 			if (mc.GetDiffuseTex())
 			{
@@ -187,11 +188,16 @@ namespace ARIS
 			{
 				roughPath = mc.GetRoughnessTex()->m_Path;
 			}
+			if (mc.GetMetalRough())
+			{
+				metRoughPath = mc.GetMetalRough()->m_Path;
+			}
 
 			out << YAML::Key << "Diffuse Path" << YAML::Value << texPath;
 			out << YAML::Key << "Normal Path" << YAML::Value << normPath;
 			out << YAML::Key << "Metallic Path" << YAML::Value << metPath;
 			out << YAML::Key << "Roughness Path" << YAML::Value << roughPath;
+			out << YAML::Key << "Metal/Roughness Path" << YAML::Value << metRoughPath;
 
 			out << YAML::EndMap;
 		}
@@ -317,6 +323,7 @@ namespace ARIS
 					std::string normTex = mc["Normal Path"].as<std::string>();
 					std::string metTex = mc["Metallic Path"].as<std::string>();
 					std::string roughTex = mc["Roughness Path"].as<std::string>();
+					std::string metalRoughTex = mc["Metal/Roughness Path"].as<std::string>();
 
 					t.SetName(name);
 					t.SetPath(path);
@@ -324,21 +331,113 @@ namespace ARIS
 
 					if (diffTex != "N/A")
 					{
-						t.m_DiffuseTex = std::make_shared<Texture>(diffTex, GL_LINEAR, GL_REPEAT);
+						t.m_DiffuseTex = new Texture(diffTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE);
+						
+						for (Mesh& m : t.m_Model.m_Meshes)
+						{
+							m.m_Textures.push_back(*t.m_DiffuseTex);
+						}
 					}
+					//else
+					//{
+					//	std::vector<Texture> textures = t.m_Model.GetLoadedTextures();
+					//
+					//	auto tt = std::find_if(std::begin(textures), std::end(textures),
+					//		[&](Texture const& tx) { return tx.type == aiTextureType_DIFFUSE; });
+					//
+					//	if (tt != std::end(textures))
+					//	{
+					//		t.m_DiffuseTex = new Texture((*tt).m_Path, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE);
+					//	}
+					//}
+
 					if (normTex != "N/A")
 					{
-						t.m_DiffuseTex = std::make_shared<Texture>(normTex, GL_LINEAR, GL_REPEAT);
+						t.m_NormalTex = new Texture(normTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_NORMALS);
+
+						for (Mesh& m : t.m_Model.m_Meshes)
+						{
+							m.m_Textures.push_back(*t.m_NormalTex);
+						}
 					}
+					//else
+					//{
+					//	std::vector<Texture> textures = t.m_Model.GetLoadedTextures();
+					//
+					//	auto tt = std::find_if(std::begin(textures), std::end(textures),
+					//		[&](Texture const& tx) { return tx.type == aiTextureType_NORMALS; });
+					//
+					//	if (tt != std::end(textures))
+					//	{
+					//		t.m_NormalTex = new Texture((*tt).m_Path, GL_LINEAR, GL_REPEAT, false, aiTextureType_NORMALS);
+					//	}
+					//}
+
 					if (metTex != "N/A")
 					{
-						t.m_DiffuseTex = std::make_shared<Texture>(metTex, GL_LINEAR, GL_REPEAT);
+						t.m_Metallic = new Texture(metTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
+
+						for (Mesh& m : t.m_Model.m_Meshes)
+						{
+							m.m_Textures.push_back(*t.m_Metallic);
+						}
 					}
+					//else
+					//{
+					//	std::vector<Texture> textures = t.m_Model.GetLoadedTextures();
+					//
+					//	auto tt = std::find_if(std::begin(textures), std::end(textures),
+					//		[&](Texture const& tx) { return tx.type == aiTextureType_METALNESS; });
+					//
+					//	if (tt != std::end(textures))
+					//	{
+					//		t.m_Metallic = new Texture((*tt).m_Path, GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
+					//	}
+					//}
+
 					if (roughTex != "N/A")
 					{
-						t.m_DiffuseTex = std::make_shared<Texture>(roughTex, GL_LINEAR, GL_REPEAT);
+						t.m_Roughness = new Texture(roughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
+
+						for (Mesh& m : t.m_Model.m_Meshes)
+						{
+							m.m_Textures.push_back(*t.m_Roughness);
+						}
 					}
-					
+					//else
+					//{
+					//	std::vector<Texture> textures = t.m_Model.GetLoadedTextures();
+					//
+					//	auto tt = std::find_if(std::begin(textures), std::end(textures),
+					//		[&](Texture const& tx) { return tx.type == aiTextureType_DIFFUSE_ROUGHNESS; });
+					//
+					//	if (tt != std::end(textures))
+					//	{
+					//		t.m_Roughness = new Texture((*tt).m_Path, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
+					//	}
+					//}
+
+					if (metalRoughTex != "N/A")
+					{
+						t.m_MetalRough = new Texture(metalRoughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
+
+						for (Mesh& m : t.m_Model.m_Meshes)
+						{
+							m.m_Textures.push_back(Texture(metalRoughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN));
+						}
+					}
+					//else
+					//{
+					//	std::vector<Texture> textures = t.m_Model.GetLoadedTextures();
+					//
+					//	auto tt = std::find_if(std::begin(textures), std::end(textures),
+					//		[&](Texture const& tx) { return tx.type == aiTextureType_UNKNOWN; });
+					//
+					//	if (tt != std::end(textures))
+					//	{
+					//		t.m_MetalRough = new Texture((*tt).m_Path, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
+					//	}
+					//}
 
 					t.m_VertexSrc = vSrc;
 					t.m_FragmentSrc = fSrc;

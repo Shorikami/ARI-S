@@ -35,25 +35,11 @@ namespace ARIS
 			m_Model.InitializeID(id);
 		}
 
-		//void SetTextures(std::vector<std::pair<Texture, std::string>> t)
-		//{
-		//	m_Textures = t;
-		//}
-
 		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, 
 			Shader other = Shader(), bool useDefault = true, int entityID = -1)
 		{
 			Shader shaderInUse = useDefault ? m_Shader : other;
 			shaderInUse.Activate();
-
-			//if (m_DiffuseTex)
-			//{
-			//	if (m_DiffuseTex->m_IsLoaded)
-			//	{
-			//		m_DiffuseTex->Bind(7);
-			//		glUniform1i(glGetUniformLocation(shaderInUse.m_ID, "diffTex"), 7);
-			//	}
-			//}
 
 			if (useDefault)
 			{
@@ -69,14 +55,6 @@ namespace ARIS
 			}
 
 			m_Model.Draw(shaderInUse, entityID);
-
-			//if (m_DiffuseTex)
-			//{
-			//	if (m_DiffuseTex->m_IsLoaded)
-			//	{
-			//		m_DiffuseTex->Unbind();
-			//	}
-			//}
 		}
 
 		void ReloadShader()
@@ -88,10 +66,11 @@ namespace ARIS
 		std::string GetVertexPath() const { return m_VertexSrc; }
 		std::string GetFragmentPath() const { return m_FragmentSrc; }
 
-		std::shared_ptr<Texture> GetDiffuseTex() { return m_DiffuseTex; }
-		std::shared_ptr<Texture> GetNormalTex() { return m_NormalTex; }
-		std::shared_ptr<Texture> GetMetallicTex() { return m_Metallic; }
-		std::shared_ptr<Texture> GetRoughnessTex() { return m_Roughness; }
+		Texture* GetDiffuseTex() { return m_DiffuseTex; }
+		Texture* GetNormalTex() { return m_NormalTex; }
+		Texture* GetMetallicTex() { return m_Metallic; }
+		Texture* GetRoughnessTex() { return m_Roughness; }
+		Texture* GetMetalRough() { return m_MetalRough; }
 
 		std::string GetName() const { return m_Model.GetName(); }
 		std::string GetPath() const { return m_Model.GetPath(); }
@@ -105,10 +84,11 @@ namespace ARIS
 
 		std::string m_VertexSrc = std::string(), m_FragmentSrc = std::string();
 
-		std::shared_ptr<Texture> m_DiffuseTex;
-		std::shared_ptr<Texture> m_NormalTex;
-		std::shared_ptr<Texture> m_Metallic;
-		std::shared_ptr<Texture> m_Roughness;
+		Texture* m_DiffuseTex;
+		Texture* m_NormalTex;
+		Texture* m_Metallic;
+		Texture* m_Roughness;
+		Texture* m_MetalRough;
 
 		glm::vec4 m_Ambient, m_Albedo, m_Specular;
 

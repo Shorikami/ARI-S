@@ -31,32 +31,32 @@ namespace ARIS
 
             switch (face)
             {
-            case 0:
+            case 0: // pos x
                 res.x = 1.0f;
                 res.y = -v;
                 res.z = -u;
                 break;
-            case 1:
+            case 1: /// neg x
                 res.x = -1.0f;
                 res.y = -v;
                 res.z = u;
                 break;
-            case 2:
+            case 2: // pos y
                 res.x = u;
                 res.y = 1.0f;
                 res.z = v;
                 break;
-            case 3:
+            case 3: // neg y
                 res.x = u;
                 res.y = 1.0f;
                 res.z = -v;
                 break;
-            case 4:
+            case 4: // pos z
                 res.x = u;
                 res.y = -v;
                 res.z = 1.0f;
                 break;
-            case 5:
+            case 5: // neg z
                 res.x = -u;
                 res.y = -v;
                 res.z = -1.0f;
@@ -121,8 +121,8 @@ namespace ARIS
                 {
                     for (int y = 0; y < resolution; ++y)
                     {
-                        int r = 3 * x;
-                        int c = 3 * y * resolution;
+                        int c = 3 * x;
+                        int r = 3 * y * resolution;
                         glm::vec3 px = glm::vec3(img[r + c], img[r + c + 1], img[r + c + 2]);
 
                         float u = (x + 0.5f) / resolution;

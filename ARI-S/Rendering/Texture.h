@@ -21,8 +21,6 @@ namespace ARIS
 			GLenum intForm, GLenum dataForm, void* data = nullptr, 
 			GLenum filter = GL_LINEAR, GLenum repeat = GL_REPEAT, GLenum type = GL_UNSIGNED_BYTE);
 
-		
-
 		void Generate();
 		void Load(bool flip = true);
 		

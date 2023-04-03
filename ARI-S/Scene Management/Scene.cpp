@@ -28,6 +28,10 @@ bool useDiffuse = true;
 bool useSpecular = true;
 bool useToneMapping = true;
 
+bool useSH = false;
+bool useOldPBRMethod = false;
+std::string currEnvMap = "Satara_Night";
+
 float envMapSize = 16.0f;
 float diffComponent = 1.0f;
 float exposure = 1.0f;
@@ -213,17 +217,8 @@ namespace ARIS
         glBindVertexArray(0);
     }
 
-    Scene::~Scene()
+    void Scene::GenerateIBL()
     {
-        CleanUp();
-    }
-
-    int Scene::Init()
-    {
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
         // IBL
         skyboxShader = new Shader(false, "Skybox.vert", "Skybox.frag");
         hdrMapping = new Shader(false, "IBL/CubemapHDR.vert", "IBL/CubemapHDR.frag");
@@ -231,51 +226,24 @@ namespace ARIS
         irradiance = new Shader(false, "IBL/CubemapHDR.vert", "IBL/IrradianceConvolution.frag");
         mapFilter = new Shader(false, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag");
         brdf = new Shader(false, "IBL/BRDF.vert", "IBL/BRDF.frag");
-        //irrComp = new Shader(false, "IBL/IrradianceConvolution.cmpt");
 
-        geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
-        lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
-        localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
+        if (!useOldPBRMethod)
+            lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
+        else
+            lightingPass = new Shader(false, "IBL/LightingPassPBR.vert", "IBL/LightingPassPBR.frag");
 
-        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
-        computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
+        hdrTexture = new Texture("Content/Assets/Textures/HDR/" + currEnvMap + ".hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
 
-        hdrTexture = new Texture("Content/Assets/Textures/HDR/Newport_Loft.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
-        
         hdrCubemap = new Texture();
         hdrCubemap->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
         irradianceTex = new Texture();
-        irradianceTex->AllocateCubemap(32, 32, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
+        irradianceTex->AllocateCubemap(32, 32, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         filteredHDR = new Texture();
         filteredHDR->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
         brdfTex = new Texture(512, 512, GL_RG16F, GL_RG, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
-
-        // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
-        for (unsigned i = 0; i < 4; ++i)
-        {
-            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
-                GL_NEAREST, GL_CLAMP_TO_EDGE));
-        }
-
-        // Single-channel red texture (for entity ID and mouse-clicking; this will be
-        // shared with the scene FBO)
-        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32F, GL_RED, nullptr,
-            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE));
-
-        // gBuffer depth texture
-        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
-            GL_NEAREST, GL_REPEAT, GL_FLOAT));
-
-        // shadow map
-        sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
-            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
-
-        // filtered shadow map
-        blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
-            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
 
         // capture frame buffer (for irradiance mapping, pre-filtered color mapping)
         captureBuffer = new Framebuffer(true);
@@ -283,58 +251,6 @@ namespace ARIS
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureBuffer->GetRBO());
         captureBuffer->Unbind(true);
-
-        // gBuffer FBO
-        gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        gBuffer->Bind();
-        for (unsigned i = 0; i < gTextures.size() - 2; ++i)
-        {
-            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
-        }
-        gBuffer->AttachTexture(GL_COLOR_ATTACHMENT5, *gTextures[gTextures.size() - 2]);
-        gBuffer->DrawBuffers();
-        
-        gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
-
-        gBuffer->Unbind();
-
-        // Generate quad + skybox cube
-        GenerateBasicShapes();
-
-        // Scene FBO (for the editor)
-        m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        m_SceneFBO->Bind();
-        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
-        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32F, GL_RED, GL_UNSIGNED_BYTE);
-        //m_SceneFBO->AttachTexture(GL_COLOR_ATTACHMENT1, *gTextures[gTextures.size() - 2]);
-        m_SceneFBO->DrawBuffers();
-        m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
-
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            std::cout << "Uh oh! Scene FBO is incomplete!" << std::endl;
-            m_SceneFBO->Unbind();
-            return -1;
-        }
-
-        m_SceneFBO->Unbind();
-
-        // Shadow FBO 
-        sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        sBuffer->Bind();
-
-        sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
-        sBuffer->DrawBuffers();
-        sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
-
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            std::cout << "Uh oh! Shadow FBO is incomplete!" << std::endl;
-            sBuffer->Unbind();
-            return -1;
-        }
-
-        sBuffer->Unbind();
 
         glm::mat4 hdrProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
         glm::mat4 hdrView[] =
@@ -384,7 +300,7 @@ namespace ARIS
         irradiance->SetMat4("projection", hdrProj);
 
         glViewport(0, 0, 32, 32);
-        
+
         for (unsigned i = 0; i < 6; ++i)
         {
             irradiance->SetMat4("view", hdrView[i]);
@@ -445,29 +361,28 @@ namespace ARIS
         brdfTex->Unbind();
         captureBuffer->Unbind(true);
 
-
-        //hammersleyData->GetData().N = 3;
-        //
-        //int kk;
-        //int pos = 0;
-        //float p, u;
-        //
-        //for (int k = 0; k < hammersleyData->GetData().N; ++k)
-        //{
-        //    for (p = 0.5f, kk = k, u = 0.0f; kk; p *= 0.5f, kk >>= 1)
-        //    {
-        //        if (kk & 1)
-        //        {
-        //            u += p;
-        //        }
-        //    }
-        //
-        //    float v = (k + 0.5) / hammersleyData->GetData().N;
-        //    hammersleyData->GetData().hammersley[pos++].x = u;
-        //    hammersleyData->GetData().hammersley[pos++].x = v;
-        //}
-        //
-        //hammersleyData->SetData();
+        hammersleyData->GetData().N = 3;
+        
+        int kk;
+        int pos = 0;
+        float p, u;
+        
+        for (int k = 0; k < hammersleyData->GetData().N; ++k)
+        {
+            for (p = 0.5f, kk = k, u = 0.0f; kk; p *= 0.5f, kk >>= 1)
+            {
+                if (kk & 1)
+                {
+                    u += p;
+                }
+            }
+        
+            float v = (k + 0.5) / hammersleyData->GetData().N;
+            hammersleyData->GetData().hammersley[pos++].x = u;
+            hammersleyData->GetData().hammersley[pos++].x = v;
+        }
+        
+        hammersleyData->SetData();
 
         //irrComp->Activate();
         //
@@ -484,14 +399,116 @@ namespace ARIS
         //glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         //
         //glUseProgram(0);
+    }
 
-        //SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 512);
-        //
-        //for (unsigned i = 0; i < 9; ++i)
-        //{
-        //    harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
-        //}
-        //harmonicData->SetData();
+    void Scene::GenerateSphereHarmonics()
+    {
+        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 512);
+
+        for (unsigned i = 0; i < 9; ++i)
+        {
+            harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
+        }
+        harmonicData->SetData();
+    }
+
+    Scene::~Scene()
+    {
+        CleanUp();
+    }
+
+    int Scene::Init()
+    {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        //irrComp = new Shader(false, "IBL/IrradianceConvolution.cmpt");
+
+        geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
+
+        localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
+
+        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
+
+        // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
+        for (unsigned i = 0; i < 4; ++i)
+        {
+            gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
+                GL_NEAREST, GL_CLAMP_TO_EDGE));
+        }
+
+        // Single-channel red texture (for entity ID and mouse-clicking; this will be
+        // shared with the scene FBO)
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32F, GL_RED, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE));
+
+        // gBuffer depth texture
+        gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
+            GL_NEAREST, GL_REPEAT, GL_FLOAT));
+
+        // shadow map
+        sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
+
+        // filtered shadow map
+        blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
+            GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
+
+        // gBuffer FBO
+        gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        gBuffer->Bind();
+        for (unsigned i = 0; i < gTextures.size() - 2; ++i)
+        {
+            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
+        }
+        gBuffer->AttachTexture(GL_COLOR_ATTACHMENT5, *gTextures[gTextures.size() - 2]);
+        gBuffer->DrawBuffers();
+        
+        gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
+
+        gBuffer->Unbind();
+
+        // Generate quad + skybox cube
+        GenerateBasicShapes();
+
+        // Scene FBO (for the editor)
+        m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_SceneFBO->Bind();
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
+        m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32F, GL_RED, GL_UNSIGNED_BYTE);
+        //m_SceneFBO->AttachTexture(GL_COLOR_ATTACHMENT1, *gTextures[gTextures.size() - 2]);
+        m_SceneFBO->DrawBuffers();
+        m_SceneFBO->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cout << "Uh oh! Scene FBO is incomplete!" << std::endl;
+            m_SceneFBO->Unbind();
+            return -1;
+        }
+
+        m_SceneFBO->Unbind();
+
+        // Shadow FBO 
+        sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        sBuffer->Bind();
+
+        sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
+        sBuffer->DrawBuffers();
+        sBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cout << "Uh oh! Shadow FBO is incomplete!" << std::endl;
+            sBuffer->Unbind();
+            return -1;
+        }
+
+        sBuffer->Unbind();
+
+        GenerateIBL();
 
         return 0;
     }
@@ -660,6 +677,9 @@ namespace ARIS
         glActiveTexture(GL_TEXTURE10);
         glBindTexture(GL_TEXTURE_2D, brdfTex->m_ID);
 
+        glActiveTexture(GL_TEXTURE11);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
+
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
             * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
@@ -676,10 +696,10 @@ namespace ARIS
             lightingPass->SetInt("uShadowMap", 7);
             lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
 
-            //lightingPass->SetInt("envMap", 8);
             lightingPass->SetInt("irradianceMap", 8);
             lightingPass->SetInt("filteredMap", 9);
             lightingPass->SetInt("brdfTable", 10);
+            lightingPass->SetInt("envMap", 11);
 
             lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
@@ -693,6 +713,9 @@ namespace ARIS
             lightingPass->SetBool("useDiffuse", useDiffuse);
             lightingPass->SetBool("useToneMapping", useToneMapping);
 
+            lightingPass->SetBool("useSH", useSH);
+            lightingPass->SetBool("useOldPBRMethod", useOldPBRMethod);
+
             lightingPass->SetInt("vWidth", sceneWidth);
             lightingPass->SetInt("vHeight", sceneHeight);
 
@@ -701,8 +724,6 @@ namespace ARIS
 
         // copy depth information from the gBuffer to the default framebuffer (for the skybox, so that it doesn't overlap the FSQ)
         // (also do it for the local lights so that they're not overlapped by the skybox)
-        // glBlitFramebuffer depends on whether or not editor mode is enabled because glViewport changes
-        // the dimensions of the FSQ
         glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer->GetID());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_SceneFBO->GetID()); // write to scene FBO
         glBlitFramebuffer(0, 0, gBuffer->GetSpecs().s_Width, gBuffer->GetSpecs().s_Height,
@@ -809,9 +830,47 @@ namespace ARIS
         ImGui::End();
 
         ImGui::Begin("IBL Debugging");
+        ImGui::Checkbox("Use Prefilter + BRDF LUT", &useOldPBRMethod);
+        ImGui::SameLine();
+        ImGui::Checkbox("Use SH Method", &useSH);
+        
+        if (ImGui::Button("Regenerate IBL Environment"))
+        {
+            GenerateIBL();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Generate Sphere Harmonics"))
+        {
+            GenerateSphereHarmonics();
+        }
+
+        ImGui::Separator();
+        
+        const char* maps[] = { "Boxing_Ring", "Hansaplatz", "Newport_Loft", "Satara_Night", "Winter_Forest" };
+        static const char* currItem = currEnvMap.c_str();
+        if (ImGui::BeginCombo("##envMap combo", currItem))
+        {
+            for (int n = 0; n < IM_ARRAYSIZE(maps); ++n)
+            {
+                bool selected = (std::strcmp(maps[n], currItem) == 0);
+                if (ImGui::Selectable(maps[n], selected))
+                {
+                    currEnvMap = maps[n];
+                    currItem = maps[n];
+                }
+                if (selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+        	ImGui::EndCombo();
+        }
+
+        ImGui::Separator();
         ImGui::SliderFloat("Environment Size", &envMapSize, 0.0f, 512.0f);
         ImGui::SliderFloat("Diffuse Component", &diffComponent, 0.0f, 1.0f);
-        ImGui::SliderFloat("Exposure", &exposure, 0.1f, 1000.0f);
+        ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f);
 
         ImGui::Checkbox("Convert from Sphere to Cube", &sphToCube);
         ImGui::Checkbox("Enable Specular", &useSpecular);

@@ -51,6 +51,8 @@ namespace ARIS
 		size_t GetVertexCount() { return m_VertexData.size(); }
 		std::vector<Vertex> GetVertexData() const { return m_VertexData; }
 
+		std::vector<Texture> GetTextures() { return m_Textures; }
+
 	private:
 		std::string m_MeshName;
 
@@ -59,6 +61,8 @@ namespace ARIS
 		std::vector<Texture> m_Textures;
 
 		VertexArray m_VertexArray;
+
+		friend class SceneSerializer;
 	};
 }
 

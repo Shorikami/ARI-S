@@ -60,39 +60,43 @@ namespace ARIS
 		// (todo?: only would likely work with one texture; support for more?)
 		bool combined = false;
 
-		for (unsigned i = 0; i < m_Textures.size(); ++i)
+		// textures loaded via ASSIMP
+		if (m_Textures.size() > 0)
 		{
-			std::string unit;
-			glActiveTexture(GL_TEXTURE0 + i);
-
-			switch (m_Textures[i].type)
+			for (unsigned i = 0; i < m_Textures.size(); ++i)
 			{
-			case aiTextureType_DIFFUSE:
-				unit = std::string("diffTex") + std::to_string(diffNr++);
-				break;
-			case aiTextureType_SPECULAR:
-				unit = std::string("specTex") + std::to_string(specNr++);
-				break;
-			case aiTextureType_NORMALS:
-				unit = std::string("normTex") + std::to_string(normNr++);
-				break;
-			case aiTextureType_HEIGHT:
-				unit = std::string("heightTex") + std::to_string(heightNr++);
-				break;
-			case aiTextureType_METALNESS:
-				unit = std::string("metalTex") + std::to_string(metalNr++);
-				break;
-			case aiTextureType_DIFFUSE_ROUGHNESS:
-				unit = std::string("roughTex") + std::to_string(roughNr++);
-				break;
-			case aiTextureType_UNKNOWN:
-				unit = std::string("metalRoughTex") + std::to_string(metRoughNr++);
-				combined = true;
-				break;
-			}
+				std::string unit;
+				glActiveTexture(GL_TEXTURE0 + i);
 
-			s.SetIntDirect(unit, i);
-			m_Textures[i].Bind();
+				switch (m_Textures[i].type)
+				{
+				case aiTextureType_DIFFUSE:
+					unit = std::string("diffTex") + std::to_string(diffNr++);
+					break;
+				case aiTextureType_SPECULAR:
+					unit = std::string("specTex") + std::to_string(specNr++);
+					break;
+				case aiTextureType_NORMALS:
+					unit = std::string("normTex") + std::to_string(normNr++);
+					break;
+				case aiTextureType_HEIGHT:
+					unit = std::string("heightTex") + std::to_string(heightNr++);
+					break;
+				case aiTextureType_METALNESS:
+					unit = std::string("metalTex") + std::to_string(metalNr++);
+					break;
+				case aiTextureType_DIFFUSE_ROUGHNESS:
+					unit = std::string("roughTex") + std::to_string(roughNr++);
+					break;
+				case aiTextureType_UNKNOWN:
+					unit = std::string("metalRoughTex") + std::to_string(metRoughNr++);
+					combined = true;
+					break;
+				}
+
+				s.SetIntDirect(unit, i);
+				m_Textures[i].Bind();
+			}
 		}
 
 		s.SetIntDirect("metRoughCombine", static_cast<int>(combined));

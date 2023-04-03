@@ -43,5 +43,5 @@ void main()
 	
 	//gSpecular = texture(specTex, outTexCoord).rrr;
 	entID = vEntityID;
-	gDepth = gl_FragCoord.z;
+	gDepth = outPos.z;
 }

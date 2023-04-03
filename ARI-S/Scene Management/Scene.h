@@ -87,6 +87,9 @@ namespace ARIS
 
         void GenerateBasicShapes();
 
+        void GenerateIBL();
+        void GenerateSphereHarmonics();
+
         GLuint cubeVAO, cubeVBO;
         void RenderSkybox(glm::mat4 view, glm::mat4 proj);
         void RenderHDRMap(glm::mat4 view, glm::mat4 proj);

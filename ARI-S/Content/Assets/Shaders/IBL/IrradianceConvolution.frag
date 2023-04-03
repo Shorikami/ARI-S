@@ -6,7 +6,7 @@ in vec3 worldPos;
 
 uniform samplerCube envMap;
 
-const float PI = 3.14159265359;
+const float PI = 3.14159265359f;
 
 void main()
 {

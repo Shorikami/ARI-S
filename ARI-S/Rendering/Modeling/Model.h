@@ -33,6 +33,8 @@ namespace ARIS
 		void SetPath(std::string s) { m_Path = s; }
 
 		std::vector<Mesh> GetMeshes() const { return m_Meshes; }
+		std::vector<Mesh> GetMeshesNoConst()  { return m_Meshes; }
+		std::vector<Texture> GetLoadedTextures() const { return m_LoadedTextures; }
 
 	private:
 		std::vector<Texture> m_LoadedTextures;
@@ -42,6 +44,7 @@ namespace ARIS
 		std::string m_Path;
 
 		friend class ModelBuilder;
+		friend class SceneSerializer;
 	};
 }
 

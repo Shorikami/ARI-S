@@ -107,10 +107,10 @@ void main()
 			float pdf = D * nDotH / (4.0f * hDotV) + 0.0001f;
 			
 			float resolution = 512.0f;
-			float texel = 4.0f * PI / (6.0f * pow(resolution, 2));
-			float txSample = 1.0f / (float(sampleCount) * pdf + 0.0001f);
+			//float texel = 4.0f * PI / (6.0f * pow(resolution, 2));
+			//float txSample = 1.0f / (float(sampleCount) * pdf + 0.0001f);
 			
-			float mip = roughness == 0.0f ? 0.0f : 0.5f * log2(txSample / texel);
+			float mip = roughness == 0.0f ? 0.0f : 0.5f * log2(pow(resolution, 2) / sampleCount) - 0.5f * D / 4;
 			
 			color += textureLod(envMap, L, mip).rgb * nDotL;
 			weight += nDotL;

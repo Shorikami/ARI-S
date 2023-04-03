@@ -325,22 +325,141 @@ namespace ARIS
 			//	ImGui::EndCombo();
 			//}
 
-			ImGui::Button("Diffuse Texture", ImVec2(100.0f, 0.0f));
+			ImGui::Button("Diffuse Texture", ImVec2(128.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 				{
 					const wchar_t* path = (const wchar_t*)payload->Data;
 					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
-					std::shared_ptr<Texture> tex = std::make_shared<Texture>(texPath.string(), GL_LINEAR, GL_REPEAT);
+					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE);
 
 					if (tex->m_IsLoaded)
 					{
+						for (Mesh m : comp.m_Model.GetMeshes())
+						{
+							m.GetTextures().push_back(*tex);
+						}
 						comp.m_DiffuseTex = tex;
 					}
 				}
 				ImGui::EndDragDropTarget();
 			}
+
+			//if (comp.m_DiffuseTex)
+			//{
+			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_DiffuseTex->m_ID, ImVec2{ 128, 128 },
+			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			//}
+
+			ImGui::Button("Normal Texture", ImVec2(128.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_NORMALS);
+
+					if (tex->m_IsLoaded)
+					{
+						for (Mesh m : comp.m_Model.GetMeshes())
+						{
+							m.GetTextures().push_back(*tex);
+						}
+						comp.m_NormalTex = tex;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			//if (comp.m_NormalTex)
+			//{
+			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_NormalTex->m_ID, ImVec2{ 128, 128 },
+			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			//}
+
+			ImGui::Button("Metallic Texture", ImVec2(128.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
+
+					if (tex->m_IsLoaded)
+					{
+						for (Mesh m : comp.m_Model.GetMeshes())
+						{
+							m.GetTextures().push_back(*tex);
+						}
+						comp.m_Metallic = tex;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			//if (comp.m_Metallic)
+			//{
+			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_Metallic->m_ID, ImVec2{ 128, 128 },
+			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			//}
+
+
+			ImGui::Button("Roughness Texture", ImVec2(128.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
+
+					if (tex->m_IsLoaded)
+					{
+						for (Mesh m : comp.m_Model.GetMeshes())
+						{
+							m.GetTextures().push_back(*tex);
+						}
+						comp.m_Roughness = tex;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			//if (comp.m_Roughness)
+			//{
+			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_Roughness->m_ID, ImVec2{ 128, 128 },
+			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			//}
+
+			ImGui::Button("Metallic/Roughness Texture", ImVec2(128.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
+
+					if (tex->m_IsLoaded)
+					{
+						for (Mesh m : comp.m_Model.GetMeshes())
+						{
+							m.GetTextures().push_back(*tex);
+						}
+						comp.m_MetalRough = tex;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			//if (comp.m_MetalRough)
+			//{
+			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_MetalRough->m_ID, ImVec2{ 128, 128 },
+			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+			//}
 
 			std::string vBuf = comp.m_VertexSrc, fBuf = comp.m_FragmentSrc;
 			if (ImGui::InputText("Vertex Shader Path", &vBuf, ImGuiInputTextFlags_EnterReturnsTrue))
