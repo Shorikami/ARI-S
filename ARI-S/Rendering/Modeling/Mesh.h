@@ -63,6 +63,8 @@ namespace ARIS
 		VertexArray m_VertexArray;
 
 		friend class SceneSerializer;
+		friend class Model;
+		friend class ModelBuilder;
 	};
 }
 

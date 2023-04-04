@@ -13,12 +13,12 @@ namespace ARIS
 	{
 	}
 
-	Shader::Shader(bool include, const char* vPath, const char* fPath, const char* gPath)
+	Shader::Shader(bool include, const char* vPath, const char* fPath, const char* gPath, const char* header)
 		: m_VertSrc(std::string())
 		, m_GeoSrc(std::string())
 		, m_FragSrc(std::string())
 	{
-		Generate(include, vPath, fPath, gPath);
+		Generate(include, vPath, fPath, gPath, header);
 	}
 
 	Shader::Shader(bool include, const char* cmptPath)
@@ -29,18 +29,22 @@ namespace ARIS
 		GenerateCompute(include, cmptPath);
 	}
 
-	void Shader::Generate(bool include, const char* vPath, const char* fPath, const char* gPath)
+	void Shader::Generate(bool include, const char* vPath, const char* fPath, const char* gPath, const char* header)
 	{
 		int success;
 		char infoLog[512];
 
 		GLuint vShader = Compile(include, vPath, GL_VERTEX_SHADER, m_VertSrc);
-		GLuint fShader = Compile(include, fPath, GL_FRAGMENT_SHADER, m_FragSrc);
+		m_VertPath = std::string(vPath);
+
+		GLuint fShader = Compile(include, fPath, GL_FRAGMENT_SHADER, m_FragSrc, header);
+		m_FragPath = std::string(fPath);
 
 		GLuint gShader = 0;
 		if (gPath)
 		{
 			gShader = Compile(include, gPath, GL_GEOMETRY_SHADER, m_GeoSrc);
+			m_GeoPath = std::string(gPath);
 		}
 
 		m_ID = glCreateProgram();
@@ -106,15 +110,30 @@ namespace ARIS
 		Shader::defaultHeaders.clear();
 	}
 
-	std::string Shader::LoadShaderSrc(bool include, const char* name)
+	std::string Shader::LoadShaderSrc(bool include, const char* name, const char* header)
 	{
 		std::ifstream file;
 		std::stringstream buf;
 		std::string res = "";
 
-		if (include)
+
+		if (include && header)
 		{
-			buf << Shader::defaultHeaders.str();
+			std::string p = Shader::defaultDirectory + '/' + header;
+
+			file.open(p);
+
+			if (file.is_open())
+			{
+				buf << file.rdbuf();
+			}
+
+			else
+			{
+				std::cout << "Could not open " << header << std::endl;
+			}
+
+			file.close();
 		}
 
 		std::string fullPath = Shader::defaultDirectory + '/' + name;
@@ -136,13 +155,13 @@ namespace ARIS
 		return res;
 	}
 
-	GLuint Shader::Compile(bool include, const char* path, GLenum type, std::string& source)
+	GLuint Shader::Compile(bool include, const char* path, GLenum type, std::string& source, const char* header)
 	{
 		int success;
 		char infoLog[512];
 
 		GLuint res = glCreateShader(type);
-		std::string src = LoadShaderSrc(include, path);
+		std::string src = LoadShaderSrc(include, path, header);
 		source = src;
 		const GLchar* shader = src.c_str();
 

@@ -20,17 +20,20 @@ namespace ARIS
 	public:
 		unsigned int m_ID;
 		std::string m_VertSrc, m_GeoSrc, m_FragSrc;
+		std::string m_VertPath, m_GeoPath, m_FragPath;
 
 		Shader();
-		Shader(bool includeDefaultHeader, const char* vertPath, const char* fragPath, const char* geoPath = nullptr);
+		Shader(bool includeDefaultHeader, const char* vertPath, const char* fragPath, 
+			const char* geoPath = nullptr, const char* header = nullptr);
 		Shader(bool includeDefaultHeader, const char* cmptPath);
 
-		void Generate(bool includeDefaultHeader, const char* vPath, const char* fPath, const char* gPath = nullptr);
+		void Generate(bool includeDefaultHeader, const char* vPath, const char* fPath, 
+			const char* gPath = nullptr, const char* header = nullptr);
 		void GenerateCompute(bool includeHeader, const char* cmptPath);
 		void Activate();
 
 
-		GLuint Compile(bool includeDefaultHeader, const char* path, GLenum type, std::string& src);
+		GLuint Compile(bool includeDefaultHeader, const char* path, GLenum type, std::string& src, const char* header = nullptr);
 
 		void SetBool(const std::string& name, bool val);
 
@@ -88,7 +91,7 @@ namespace ARIS
 		static void LoadIntoDefault(const char* path);
 		static void ClearDefault();
 
-		static std::string LoadShaderSrc(bool includeDefaultHeader, const char* path);
+		static std::string LoadShaderSrc(bool includeDefaultHeader, const char* path, const char* header = nullptr);
 	};
 }
 

@@ -325,15 +325,14 @@ namespace ARIS
 					std::string roughTex = mc["Roughness Path"].as<std::string>();
 					std::string metalRoughTex = mc["Metal/Roughness Path"].as<std::string>();
 
+					t.m_Model = ModelBuilder::Get().LoadModel(path);
 					t.SetName(name);
-					t.SetPath(path);
-					ModelBuilder::Get().LoadModel(path, t.m_Model);
 
 					if (diffTex != "N/A")
 					{
 						t.m_DiffuseTex = new Texture(diffTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE);
 						
-						for (Mesh& m : t.m_Model.m_Meshes)
+						for (Mesh& m : t.m_Model->m_Meshes)
 						{
 							m.m_Textures.push_back(*t.m_DiffuseTex);
 						}
@@ -355,7 +354,7 @@ namespace ARIS
 					{
 						t.m_NormalTex = new Texture(normTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_NORMALS);
 
-						for (Mesh& m : t.m_Model.m_Meshes)
+						for (Mesh& m : t.m_Model->m_Meshes)
 						{
 							m.m_Textures.push_back(*t.m_NormalTex);
 						}
@@ -377,7 +376,7 @@ namespace ARIS
 					{
 						t.m_Metallic = new Texture(metTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
 
-						for (Mesh& m : t.m_Model.m_Meshes)
+						for (Mesh& m : t.m_Model->m_Meshes)
 						{
 							m.m_Textures.push_back(*t.m_Metallic);
 						}
@@ -399,7 +398,7 @@ namespace ARIS
 					{
 						t.m_Roughness = new Texture(roughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
 
-						for (Mesh& m : t.m_Model.m_Meshes)
+						for (Mesh& m : t.m_Model->m_Meshes)
 						{
 							m.m_Textures.push_back(*t.m_Roughness);
 						}
@@ -421,7 +420,7 @@ namespace ARIS
 					{
 						t.m_MetalRough = new Texture(metalRoughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
 
-						for (Mesh& m : t.m_Model.m_Meshes)
+						for (Mesh& m : t.m_Model->m_Meshes)
 						{
 							m.m_Textures.push_back(Texture(metalRoughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN));
 						}

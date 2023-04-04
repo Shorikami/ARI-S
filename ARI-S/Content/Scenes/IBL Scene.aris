@@ -1,17 +1,28 @@
 Scene: Test
 Entities:
+  - Entity: 881931621424465086
+    TagComponent:
+      Tag: Another Point Light
+    TransformComponent:
+      Translation: [85.1384125, -6.04779434, -189.715347]
+      Rotation: [0, 0, 0]
+      Scale: [10, 10, 10]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 10
+      Intensity: 1
   - Entity: 15421640000098091848
     TagComponent:
-      Tag: Metal Sphere
+      Tag: Rough Sphere
     TransformComponent:
-      Translation: [-41.778656, 0, -197.721115]
+      Translation: [84.8815994, -10.4156265, -159.375031]
       Rotation: [0, 0, 0]
-      Scale: [20, 20, 20]
+      Scale: [0.100000001, 0.100000001, 0.100000001]
     MeshComponent:
       Name: ""
-      Path: Content\Assets\Models\sphere.obj
-      Vertex Path: ""
-      Fragment Path: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
       Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
       Normal Path: N/A
       Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
@@ -19,16 +30,16 @@ Entities:
       Metal/Roughness Path: N/A
   - Entity: 6653254439694271953
     TagComponent:
-      Tag: Sphere
+      Tag: Teapot
     TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [20, 20, 20]
+      Translation: [-124.516731, -3.72001505, -116.575745]
+      Rotation: [0.104719758, 0.207694173, 0.308923274]
+      Scale: [0.5, 0.5, 0.5]
     MeshComponent:
       Name: ""
-      Path: Content\Assets\Models\sphere.obj
-      Vertex Path: ""
-      Fragment Path: ""
+      Path: Content\Assets\Models\teapot.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
       Diffuse Path: Content\Assets\Textures\PBR\gray-granite-flecks-bl\gray-granite-flecks-albedo.png
       Normal Path: Content\Assets\Textures\PBR\gray-granite-flecks-bl\gray-granite-flecks-Normal-ogl.png
       Metallic Path: Content\Assets\Textures\PBR\gray-granite-flecks-bl\gray-granite-flecks-Metallic.png
@@ -68,7 +79,7 @@ Entities:
     TagComponent:
       Tag: Point Light
     TransformComponent:
-      Translation: [7.98895645, 3.58996177, -1.4719249]
+      Translation: [77.7011032, -1.97723055, -154.276962]
       Rotation: [0.0436332263, 0, 0]
       Scale: [100, 100, 100]
     PointLightComponent:
@@ -77,18 +88,103 @@ Entities:
       Intensity: 10
   - Entity: 7649228764200055836
     TagComponent:
-      Tag: Cerberus
+      Tag: Lantern
     TransformComponent:
-      Translation: [64.1982498, -1.22752285, -93.9312057]
+      Translation: [-48.5901031, -24.8116589, -151.142685]
       Rotation: [0, 0, 0]
-      Scale: [0.5, 0.5, 0.5]
+      Scale: [3, 3, 3]
     MeshComponent:
       Name: Cerberus
-      Path: Content\Assets\Models\Cerberus\Cerberus_LP.FBX
-      Vertex Path: ""
-      Fragment Path: ""
+      Path: Content\Assets\Models\Lantern\Lantern.gltf
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
       Diffuse Path: N/A
       Normal Path: N/A
       Metallic Path: N/A
       Roughness Path: N/A
+      Metal/Roughness Path: N/A
+  - Entity: 16947475295349807918
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [77.3183594, -10.8199997, -197.587616]
+      Rotation: [0, 0, 0]
+      Scale: [0.100000001, 0.100000001, 0.100000001]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 4355963799708569622
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [69.3121719, -10.8199997, -242.625198]
+      Rotation: [0, 0, 0]
+      Scale: [0.100000001, 0.100000001, 0.100000001]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 9909688567457966057
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-162.755661, 19.7405548, -179.407593]
+      Rotation: [0, 0, 0]
+      Scale: [0.100000001, 0.100000001, 0.100000001]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 10430512870348308696
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-101.681786, 17.0834389, -164.931519]
+      Rotation: [0, 0, 0]
+      Scale: [0.100000001, 0.100000001, 0.100000001]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 11896231732079373271
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-84.8751755, 19.1799507, -62.0711479]
+      Rotation: [0, 0, 0]
+      Scale: [0.100000001, 0.100000001, 0.100000001]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
       Metal/Roughness Path: N/A

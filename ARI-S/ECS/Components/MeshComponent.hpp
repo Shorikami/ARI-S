@@ -19,20 +19,21 @@ namespace ARIS
 	{
 	public:
 		MeshComponent() = default;
+
 		MeshComponent(const Model& model)
 		{
-			m_Model = model;
+			*m_Model = model;
 		}
 
 		void operator=(const Model& model)
 		{
-			m_Model = model;
+			*m_Model = model;
 		}
 
 		void SetEntityID(uint64_t entityID)
 		{
 			int id = static_cast<int>(entityID);
-			m_Model.InitializeID(id);
+			m_Model->InitializeID(id);
 		}
 
 		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, 
@@ -54,7 +55,7 @@ namespace ARIS
 				other.SetMat4("projection", proj);
 			}
 
-			m_Model.Draw(shaderInUse, entityID);
+			m_Model->Draw(shaderInUse, entityID);
 		}
 
 		void ReloadShader()
@@ -72,14 +73,14 @@ namespace ARIS
 		Texture* GetRoughnessTex() { return m_Roughness; }
 		Texture* GetMetalRough() { return m_MetalRough; }
 
-		std::string GetName() const { return m_Model.GetName(); }
-		std::string GetPath() const { return m_Model.GetPath(); }
+		std::string GetName() const { return m_Model->GetName(); }
+		std::string GetPath() const { return m_Model->GetPath(); }
 
-		void SetName(std::string s) { m_Model.SetName(s); }
-		void SetPath(std::string s) { m_Model.SetPath(s); }
+		void SetName(std::string s) { m_Model->SetName(s); }
+		void SetPath(std::string s) { m_Model->SetPath(s); }
 
 	private:
-		Model m_Model;
+		Model* m_Model;
 		Shader m_Shader;
 
 		std::string m_VertexSrc = std::string(), m_FragmentSrc = std::string();

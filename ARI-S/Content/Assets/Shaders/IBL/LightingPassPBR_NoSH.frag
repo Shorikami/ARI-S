@@ -297,8 +297,8 @@ vec3 LightCalc()
 	vec3 norm = texture(gNorm, fragUV).rgb;
 	
 	vec3 albedo = pow(texture(gAlbedo, fragUV).rgb, vec3(2.2f));
-	float metal = texture(gMetRough, fragUV).r;
-	float rough = texture(gMetRough, fragUV).g;
+	float metal = texture(gMetRough, fragUV).g;
+	float rough = texture(gMetRough, fragUV).r;
 	
 	vec3 V = normalize(viewPos - fragPos);
 	vec3 N = norm;

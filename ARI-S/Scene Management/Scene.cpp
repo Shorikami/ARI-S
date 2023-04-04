@@ -224,8 +224,8 @@ namespace ARIS
         hdrMapping = new Shader(false, "IBL/CubemapHDR.vert", "IBL/CubemapHDR.frag");
         hdrEnvironment = new Shader(false, "IBL/Environment.vert", "IBL/Environment.frag");
         irradiance = new Shader(false, "IBL/CubemapHDR.vert", "IBL/IrradianceConvolution.frag");
-        mapFilter = new Shader(false, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag");
-        brdf = new Shader(false, "IBL/BRDF.vert", "IBL/BRDF.frag");
+        mapFilter = new Shader(true, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag", nullptr, "IBL/FormulasIBL.gh");
+        brdf = new Shader(true, "IBL/BRDF.vert", "IBL/BRDF.frag", nullptr, "IBL/FormulasIBL.gh");
 
         if (!useOldPBRMethod)
             lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
@@ -235,20 +235,20 @@ namespace ARIS
         hdrTexture = new Texture("Content/Assets/Textures/HDR/" + currEnvMap + ".hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
 
         hdrCubemap = new Texture();
-        hdrCubemap->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
+        hdrCubemap->AllocateCubemap(2048, 2048, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
         irradianceTex = new Texture();
         irradianceTex->AllocateCubemap(32, 32, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         filteredHDR = new Texture();
-        filteredHDR->AllocateCubemap(512, 512, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
+        filteredHDR->AllocateCubemap(2048, 2048, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT, true);
 
-        brdfTex = new Texture(512, 512, GL_RG16F, GL_RG, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
+        brdfTex = new Texture(2048, 2048, GL_RG16F, GL_RG, nullptr, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
 
         // capture frame buffer (for irradiance mapping, pre-filtered color mapping)
         captureBuffer = new Framebuffer(true);
         captureBuffer->Bind(true);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 2048, 2048);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureBuffer->GetRBO());
         captureBuffer->Unbind(true);
 
@@ -270,7 +270,7 @@ namespace ARIS
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, hdrTexture->m_ID);
-        glViewport(0, 0, 512, 512);
+        glViewport(0, 0, 2048, 2048);
 
         captureBuffer->Bind();
 
@@ -323,8 +323,8 @@ namespace ARIS
         unsigned maxMipLevels = 7;
         for (unsigned mip = 0; mip < maxMipLevels; ++mip)
         {
-            unsigned w = static_cast<unsigned>(512 * std::pow(0.5, mip));
-            unsigned h = static_cast<unsigned>(512 * std::pow(0.5, mip));
+            unsigned w = static_cast<unsigned>(2048 * std::pow(0.5, mip));
+            unsigned h = static_cast<unsigned>(2048 * std::pow(0.5, mip));
 
             glBindRenderbuffer(GL_RENDERBUFFER, captureBuffer->GetRBO());
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, w, h);
@@ -350,10 +350,10 @@ namespace ARIS
         captureBuffer->Bind(true);
         brdfTex->Bind();
 
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 2048, 2048);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfTex->m_ID, 0);
 
-        glViewport(0, 0, 512, 512);
+        glViewport(0, 0, 2048, 2048);
         brdf->Activate();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         RenderQuad();
@@ -361,7 +361,7 @@ namespace ARIS
         brdfTex->Unbind();
         captureBuffer->Unbind(true);
 
-        hammersleyData->GetData().N = 3;
+        hammersleyData->GetData().N = 20;
         
         int kk;
         int pos = 0;
@@ -403,7 +403,7 @@ namespace ARIS
 
     void Scene::GenerateSphereHarmonics()
     {
-        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 512);
+        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 2048);
 
         for (unsigned i = 0; i < 9; ++i)
         {
@@ -830,7 +830,7 @@ namespace ARIS
         ImGui::End();
 
         ImGui::Begin("IBL Debugging");
-        ImGui::Checkbox("Use Prefilter + BRDF LUT", &useOldPBRMethod);
+        ImGui::Checkbox("Use Old PBR Method", &useOldPBRMethod);
         ImGui::SameLine();
         ImGui::Checkbox("Use SH Method", &useSH);
         

@@ -12,6 +12,10 @@ namespace ARIS
       , m_Meshes(other.m_Meshes)
       , m_LoadedTextures(other.m_LoadedTextures)
     {
+        for (Mesh& m : m_Meshes)
+        {
+            m.m_Textures.clear();
+        }
     }
 
     void Model::operator=(const Model& other)
@@ -26,7 +30,7 @@ namespace ARIS
         : m_Name(std::string())
         , m_Path(path)
 	{
-        ModelBuilder::Get().LoadModel(path, *this);
+        ModelBuilder::Get().LoadModel(path);
 	}
 
     void Model::InitializeID(int id)

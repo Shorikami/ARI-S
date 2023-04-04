@@ -21,14 +21,8 @@ namespace ARIS
 			, m_Intensity(1.0f)
 			, m_Range(10.0f)
 		{
-			ModelBuilder::CreateSphere(0.08f, 16, m_Light);
-			
-			for (Mesh m : m_Light.GetMeshes())
-			{
-				m.BuildArrays();
-			}
-
-			m_Shader = std::make_shared<Shader>(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
+			m_Light = ModelBuilder::Get().CreateSphere(1.0f, 16);
+			m_Shader = std::make_shared<Shader>(false, "IBL/LocalLightPBR.vert", "IBL/LocalLightPBR.frag");
 		}
 
 		PointLightComponent(const PointLightComponent& other) = default;
@@ -65,14 +59,14 @@ namespace ARIS
 			m_Shader->SetMat4("view", view);
 			m_Shader->SetMat4("projection", projection);
 		
-			m_Light.Draw(*m_Shader.get());
+			m_Light->Draw(*m_Shader.get());
 		}
 
-		//void ReloadShader()
-		//{
-		//	m_Shader->m_ID = 0;
-		//	m_Shader->Generate(false, m_VertexSrc.c_str(), m_FragmentSrc.c_str());
-		//}
+		void ReloadShader()
+		{
+			m_Shader->m_ID = 0;
+			m_Shader->Generate(false, m_Shader->m_VertPath.c_str(), m_Shader->m_FragPath.c_str());
+		}
 
 		void Update(glm::vec3 position, glm::vec3 rotation)
 		{
@@ -84,7 +78,7 @@ namespace ARIS
 		float GetRange() const { return m_Range; }
 		float GetIntensity() const { return m_Intensity; }
 	private:
-		Model m_Light;
+		Model* m_Light;
 		std::shared_ptr<Shader> m_Shader;
 		glm::vec4 m_Color = glm::vec4(1.0f);
 

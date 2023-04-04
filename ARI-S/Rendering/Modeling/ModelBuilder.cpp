@@ -25,18 +25,22 @@ namespace ARIS
         m_ModelTable.clear();
     }
 
-    void ModelBuilder::LoadModel(std::string path, Model& model)
+    Model* ModelBuilder::LoadModel(std::string path)
     {
         for (Model* m : m_ModelTable)
         {
             if (m->m_Path.compare(path) == 0)
             {
-                model = *m;
-                return;
+                return new Model(*m);
             }
         }
-        GenerateModel(path, model);
-        m_ModelTable.push_back(&model);
+        Model* m = new Model();
+        m->m_Path = path;
+
+        GenerateModel(path, *m);
+        m_ModelTable.push_back(m);
+
+        return m;
     }
 
     void ModelBuilder::GenerateModel(std::string path, Model& model)
@@ -120,6 +124,12 @@ namespace ARIS
         std::vector<Texture> normalMaps = LoadMaterialTextures(material, aiTextureType_NORMALS, model);
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
+        std::vector<Texture> metalMap = LoadMaterialTextures(material, aiTextureType_METALNESS, model);
+        textures.insert(textures.end(), metalMap.begin(), metalMap.end());
+
+        std::vector<Texture> roughnessMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE_ROUGHNESS, model);
+        textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+
         std::vector<Texture> heightMaps = LoadMaterialTextures(material, aiTextureType_HEIGHT, model);
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 
@@ -145,9 +155,17 @@ namespace ARIS
                 std::string path = model.m_LoadedTextures[j].m_Path.substr(remove, model.GetPath().length());
 
                 std::string aiStringStr = std::string(str.C_Str());
+                std::string aiStringCmp = std::string();
 
                 remove = aiStringStr.find_last_of("/\\");
-                std::string aiStringCmp = aiStringStr.substr(remove, aiStringStr.length());
+                if (remove > model.m_LoadedTextures[j].m_Path.length() || remove < 0)
+                {
+                    aiStringCmp = aiStringStr;
+                }
+                else
+                {
+                    aiStringCmp = aiStringStr.substr(remove, aiStringStr.length());
+                }
 
                 if (std::strcmp(path.c_str(), aiStringCmp.c_str()) == 0)
                 {
@@ -171,7 +189,7 @@ namespace ARIS
         return t;
     }
 
-    void ModelBuilder::CreateSphere(float radius, unsigned divisions, Model& model)
+    Model* ModelBuilder::CreateSphere(float radius, unsigned divisions)
     {
         Mesh m;
 
@@ -205,7 +223,7 @@ namespace ARIS
                 v.s_Position = glm::vec3(x, y, z);
                 v.s_Normal = glm::vec3(nx, ny, nz);
 
-                m.GetVertexData().push_back(v);
+                m.m_VertexData.push_back(v);
             }
         }
 
@@ -219,21 +237,24 @@ namespace ARIS
             {
                 if (i != 0)
                 {
-                    m.GetIndices().push_back(k1);
-                    m.GetIndices().push_back(k2);
-                    m.GetIndices().push_back(k1 + 1);
+                    m.m_Indices.push_back(k1);
+                    m.m_Indices.push_back(k2);
+                    m.m_Indices.push_back(k1 + 1);
                 }
 
                 if (i != (divisions - 1))
                 {
-                    m.GetIndices().push_back(k1 + 1);
-                    m.GetIndices().push_back(k2);
-                    m.GetIndices().push_back(k2 + 1);
+                    m.m_Indices.push_back(k1 + 1);
+                    m.m_Indices.push_back(k2);
+                    m.m_Indices.push_back(k2 + 1);
                 }
             }
         }
 
-        model.m_Meshes.push_back(m);
+        Model* mo = new Model();
+        mo->m_Meshes.push_back(m);
+
+        return mo;
     }
 
     //void ModelBuilder::LoadOBJ(std::string path, Model& model)

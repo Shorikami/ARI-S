@@ -32,13 +32,13 @@ namespace ARIS
 
 		void DestroyTable();
 
-		void LoadModel(std::string path, Model& model);
+		Model* LoadModel(std::string path);
 
 		inline static ModelBuilder& Get() { return *m_Instance; }
 		
 		std::vector<Model*> GetModelTable() { return m_ModelTable; }
 
-		static void CreateSphere(float radius, unsigned divisions, Model& model);
+		static Model* CreateSphere(float radius, unsigned divisions);
 
 	private:
 		void GenerateModel(std::string path, Model& model);
