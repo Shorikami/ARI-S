@@ -10,6 +10,7 @@ in vec3 outPos;
 in vec3 outNorm;
 in vec2 outTexCoord;
 in float vEntityID;
+in vec4 viewPos;
 
 uniform int metRoughCombine;
 
@@ -43,5 +44,6 @@ void main()
 	
 	//gSpecular = texture(specTex, outTexCoord).rrr;
 	entID = vEntityID;
-	gDepth = outPos.z;
+	
+	gDepth = gl_FragCoord.z;
 }

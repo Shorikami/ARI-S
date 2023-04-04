@@ -191,95 +191,83 @@ vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 
 // -----------------------------------------------------------------------------------------
 
-float Distribution(vec3 N, vec3 H, float roughness)
+float EvaluateBasisFunction(vec3 N, int idx)
 {
-    float a = pow(roughness, 2);
-    float NdotH = max(dot(N, H), 0.0);
-    float denom = PI * pow((pow(NdotH, 2.0f) * (a * a - 1.0f) + 1.0f), 2.0f);
-
-    return (a * a) / denom;
-}
-
-vec3 Fresnel(float cosTheta, vec3 F0, float roughness)
-{
-    return F0 + (max(vec3(1.0f - roughness), F0) - F0) * pow(clamp(1.0f - cosTheta, 0.0f, 1.0), 5.0);
+	switch (idx)
+	{
+	case 0:
+		return 0.5f * sqrt(1.0f / PI);
+	case 1:
+		return (0.5f * sqrt(3.0f / PI)) * N.y;
+	case 2:
+		return (0.5f * sqrt(3.0f / PI)) * N.z;
+	case 3:
+		return (0.5f * sqrt(3.0f / PI)) * N.x;
+	case 4:
+		return (0.5f * sqrt(15.0f / PI)) * N.x * N.y;
+	case 5:
+		return (0.5f * sqrt(15.0f / PI)) * N.y * N.z;
+	case 6:
+		return (0.25f * sqrt(5.0f / PI)) * (3.0f * N.z * N.z - 1.0f);
+	case 7:
+		return (0.5f * sqrt(15.0f / PI)) * N.x * N.z;
+	case 8:
+		return (0.25f * sqrt(15.0f / PI)) * (N.x * N.x - N.y * N.y);
+	}
+	
+    return 0.0f;
 }
 
 vec3 CalculateIrradiance(vec3 N)
 {
-	float A0 = PI;
-	float A1 = 0.667f * PI;
-	float A2 = 0.25f * PI;
+	vec3 res = vec3(0.0f);
 	
-	return shColor[0].xyz * 0.5f * sqrt(1.0f / PI) * A0
-         + shColor[1].xyz * 0.5f * sqrt(3.0f / PI) * N.y * A1
-         + shColor[2].xyz * 0.5f * sqrt(3.0f / PI) * N.z * A1
-         + shColor[3].xyz * 0.5f * sqrt(3.0f / PI) * N.x * A1
-         + shColor[4].xyz * 0.5f * sqrt(15.0f / PI) * N.x * N.y * A2
-         + shColor[5].xyz * 0.5f * sqrt(15.0f / PI) * N.y * N.z * A2
-         + shColor[6].xyz * 0.25f * sqrt(5.0f / PI) * (3.0f * N.z * N.z - 1.0f) * A2
-         + shColor[7].xyz * 0.5f * sqrt(15.0f / PI) * N.x * N.z * A2
-         + shColor[8].xyz * 0.25f * sqrt(15.0f / PI) * (N.x * N.x - N.y * N.y) * A2;
-}
-
-float GeometryAttenuation(vec3 L, vec3 V, vec3 N, vec3 H)
-{
-	return min(min((2.0f * dot(H, N) * dot(V, N)) / dot(V, H), (2.0f * dot(H, N) * dot(L, N)) / dot(V, H)), 1.0f);
-}
-
-vec3 TexCoordToDirection(vec2 uv, vec3 N, float roughness)
-{
-	float a = pow(roughness, 2);
-	
-	vec3 dir = vec3(cos(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), sin(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y), cos(PI * uv.y));
-	
-  //float phi = 2.0f * PI * uv.x;
-  //float thetaCos = sqrt((1.0f - uv.y) / (1.0f * (a * a - 1.0f) * uv.y));
-  //float thetaSin = 1.0f - pow(thetaCos, 2);
-  //vec3 dir = vec3(cos(phi) * thetaSin, sin(phi) * thetaSin, thetaCos);
-  
-	if(sphereToCube)
+	for (int i = 0; i < 9; ++i)
 	{
-		vec3 up = abs(N.z) < 0.999f ? vec3(vec2(0.0f), 1.0f) : vec3(1.0f, vec2(0.0f));
-		vec3 t = normalize(cross(up, N));
-		vec3 bt = cross(N, t);
-		
-		return normalize(t * dir.x + bt * dir.y + N * dir.z);
+		res += vec3(shColor[i]) * EvaluateBasisFunction(N, i);
 	}
-	return normalize(dir);
+	
+	return res;
 }
 
 vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, vec3 f0)
 {	
-	vec3 directions[20]; // HARD-CODED N-VALUE
-	
-	for (int i = 0; i < hammersleyVals.N; ++i)
-	{
-		float u = hammersleyVals.hammersley[2 * i].x;
-		float v = hammersleyVals.hammersley[2 * (i + 1)].x;
-		
-		vec2 tex = vec2(u, atan((roughness * sqrt(v)) / sqrt(1.0f - v)) / PI);
-		vec3 dir = TexCoordToDirection(tex, N, roughness);
-		
-		directions[i] = normalize(dir.x * A + dir.y * B + dir.z + R);
-	}
-	
 	vec3 sum = vec3(0.0f);
-	for (int i = 0; i < hammersleyVals.N; ++i)
+	
+	for (int i = 0; i < hammersleyVals.N * 2; i += 2)
 	{
-		vec3 wk = directions[i];
+		float x1 = hammersleyVals.hammersley[i + 0].x;
+		float x2 = hammersleyVals.hammersley[i + 1].x;
+		
+		float num = roughness * sqrt(x2);
+		float denom = sqrt(1.0f - x2);
+		
+		float theta = atan(num / denom);
+		vec2 uv = vec2(x1, theta / PI);
+		
+		float x = cos(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y);
+		float y = cos(PI * uv.y);
+		float z = sin(2 * PI * (0.5f - uv.x)) * sin(PI * uv.y);
+		
+		vec3 L = vec3(x, y, z);
+		vec3 wk = normalize(L.x * A + L.y * R + L.z * B);
+		
 		vec3 H = normalize(wk + V);
-		float nDotL = max(dot(wk, N), 0.0f);
 		
-		float D = Distribution(N, H, roughness);
-		vec3 F = Fresnel(max(dot(H, V), 0.0f), f0, roughness);
-		float G = GeometryAttenuation(wk, V, N, H);
+		float mip = roughness == 0.0f ? 0.0f : 0.5f * log2(pow(1024.0f, 2) / hammersleyVals.N) - 0.5f * DistributionGGX(wk, H, roughness);
+		//float lod = 0.5f * log2((4096.0f * 2048.0f) / hammersleyVals.N) - (0.5f * log2(DistributionGGX(wk, H, roughness)/ 4.0f));
 		
-		float lod = 0.5f * log2((envMapSize * envMapSize) / hammersleyVals.N) - 0.5f * log2(D);
-		vec3 light = textureLod(envMap, wk, lod).rgb * nDotL;
+		vec3 Li = textureLod(envMap, wk, mip).rgb;
 		
-		sum += (F * G) / (4.0f * dot(wk, N) * dot(V, N)) * light;
+		float G = GeometrySmith(N, V, H, roughness);
+		vec3 F = FresnelSchlickRoughness(dot(wk, H), f0, roughness);
+		float deno = 4.0f * dot(wk, N) * dot(N, V);
+		
+		vec3 res = ((G * F) / deno) * Li * dot(N, wk);
+		
+		sum += res;
 	}
+	
 	
 	sum /= hammersleyVals.N;
 	
@@ -288,6 +276,18 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, v
 
 // ----------------------------------------------
 // ----------------------------------------------
+
+// ----------------------------------------------
+// AMBIENT OCCLUSION-----------------------------
+
+
+
+
+
+// ----------------------------------------------
+// ----------------------------------------------
+
+
 
 vec3 LightCalc()
 {
@@ -306,27 +306,6 @@ vec3 LightCalc()
 	
 	vec3 F0 = vec3(0.04f);
 	F0 = mix(F0, albedo, metal);
-	
-	//// no radiance from light sources?
-	//vec3 L = normalize(-lightDir);
-	//vec3 H = normalize(V + L);
-	//
-	//// Cook-Torrance BRDF
-	//float NDF = DistributionGGX(N, H, rough);
-	//float G = GeometrySmith(N, V, L, rough);
-	//vec3 F = FresnelSchlick(max(dot(H, V), 0.0f), F0);
-	//
-	//vec3 num = NDF * G * F;
-	//float denom = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f) + 0.0001f;
-	//vec3 spec = num / denom;
-	//
-	//vec3 kS = F;
-	//vec3 kD = vec3(1.0f) - kS;
-	//kD *= 1.0f - metal;
-	//
-	//float nDotL = max(dot(N, L), 0.0f);
-	//
-	//vec3 Lo = (kD * albedo / PI + spec) * nDotL;
 	
 	vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
 	
@@ -355,9 +334,8 @@ vec3 LightCalc()
 	}
 	else
 	{
-		//vec3 R = 2.0f * dot(norm, V) * norm - V;
-		R = reflect(-V, normalize(norm));
-		vec3 A = normalize(vec3(-R.z, R.x, 0.0f));
+		R = 2.0f * dot(norm, V) * norm - V;
+		vec3 A = normalize(vec3(-R.y, R.x, 0.0f));
 		vec3 B = normalize(cross(R, A));
 	
 		finalSpec = MonteCarloApprox(norm, V, R, A, B, rough, F0);
@@ -379,8 +357,11 @@ vec3 LightCalc()
 		
 	else if (!useSpecular && !useDiffuse)
 		return vec3(0.0f);
-
-	return (max(1.0f  - shadow, maximum) * finalDiff * kD) + finalSpec;
+	
+	vec2 coords = vec2(gl_FragCoord.x, gl_FragCoord.y);
+	float ao = 1.0f;
+	
+	return ((max(1.0f  - shadow, maximum) * finalDiff * kD) + finalSpec) * ao;
 }
 
 void main()

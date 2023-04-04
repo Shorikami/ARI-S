@@ -104,7 +104,11 @@ namespace ARIS
         UniformBuffer<Discrepancy>* hammersleyData;
         UniformBuffer<HarmonicColors>* harmonicData;
 
-        Shader* geometryPass, * lightingPass, * localLight, * flatShader, * shadowPass, *computeBlur;
+        Shader* geometryPass, * lightingPass, * localLight, * flatShader;
+        
+        Shader* shadowPass, *computeBlur;
+        Shader* aoPass, * aoBlur;
+
         Shader* skyboxShader;
 
         // PBS + IBL
@@ -114,13 +118,27 @@ namespace ARIS
         std::vector<Texture*> gTextures;
 
         // Shadows
-        Texture* sDepthMap, * blurOutput, * skybox;
+        Texture* sDepthMap, * blurOutput;
+
+        // AO
+        Texture* aoMap, * aoBlurOutput;
+
+        // Skybox
+        Texture* skybox;
 
         // PBS + IBL
         Texture* hdrTexture, * hdrCubemap, *filteredHDR, *irradianceTex, *brdfTex;
 
+        // G-Buffer
         Framebuffer* gBuffer;
+
+        // Shadow blur buffer
         Framebuffer* sBuffer;
+
+        // AO buffer
+        Framebuffer* aoBuffer;
+
+        // Environment map buffer
         Framebuffer* captureBuffer;
     };
 }

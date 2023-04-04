@@ -78,6 +78,7 @@ namespace ARIS
 					bool hdr, aiTextureType texType)
 		: m_IsLoaded(false)
 		, type(texType)
+		, m_Path(path)
 	{
 		int width, height, channels;
 		stbi_set_flip_vertically_on_load(1);

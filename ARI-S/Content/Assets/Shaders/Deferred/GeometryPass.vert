@@ -10,6 +10,8 @@ out vec3 outNorm;
 out vec2 outTexCoord;
 out float vEntityID;
 
+out vec4 viewPos;
+
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
@@ -25,6 +27,7 @@ void main()
 	outTexCoord = aTexCoords;
 	
 	gl_Position = projection * view * worldPos;
+	viewPos = view * vec4(aPos, 1.0f);
 	
 	vEntityID = aEntityID;
 }

@@ -13,7 +13,7 @@
 
 #include "Math/Vector.h"
 #include "Math/Cholesky.hpp"
-#include "SphereHarmonics.hpp"
+#include "IBL/SphereHarmonics.hpp"
 
 //#include "stb_image.h"
 
@@ -35,6 +35,11 @@ std::string currEnvMap = "Satara_Night";
 float envMapSize = 16.0f;
 float diffComponent = 1.0f;
 float exposure = 1.0f;
+
+float aoScale = 1.0f;
+float aoContrast = 1.0f;
+int aoSamplePoints = 20;
+float aoInfluenceRange = 0.1f;
 
 namespace ARIS
 {
@@ -130,7 +135,7 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
+        lightingPass = new Shader(false, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag");
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
@@ -228,7 +233,7 @@ namespace ARIS
         brdf = new Shader(true, "IBL/BRDF.vert", "IBL/BRDF.frag", nullptr, "IBL/FormulasIBL.gh");
 
         if (!useOldPBRMethod)
-            lightingPass = new Shader(false, "IBL/LightingPassPBR_NoSH.vert", "IBL/LightingPassPBR_NoSH.frag");
+            lightingPass = new Shader(false, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag");
         else
             lightingPass = new Shader(false, "IBL/LightingPassPBR.vert", "IBL/LightingPassPBR.frag");
 
@@ -403,7 +408,7 @@ namespace ARIS
 
     void Scene::GenerateSphereHarmonics()
     {
-        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(hdrCubemap->m_ID, 2048);
+        SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(*hdrTexture);
 
         for (unsigned i = 0; i < 9; ++i)
         {
@@ -432,6 +437,9 @@ namespace ARIS
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
+        aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
+        aoBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
+
         // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
         for (unsigned i = 0; i < 4; ++i)
         {
@@ -452,6 +460,12 @@ namespace ARIS
         sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
 
+        // AO map
+        aoMap = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
+
+        // filtered AO map
+        aoBlurOutput = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
+
         // filtered shadow map
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
@@ -459,11 +473,13 @@ namespace ARIS
         // gBuffer FBO
         gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gBuffer->Bind();
-        for (unsigned i = 0; i < gTextures.size() - 2; ++i)
+
+        unsigned texes = 0;
+        for (texes = 0; texes < gTextures.size() - 2; ++texes)
         {
-            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + i, *gTextures[i]);
+            gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + texes, *gTextures[texes]);
         }
-        gBuffer->AttachTexture(GL_COLOR_ATTACHMENT5, *gTextures[gTextures.size() - 2]);
+        gBuffer->AttachTexture(GL_COLOR_ATTACHMENT0 + texes, *gTextures[gTextures.size() - 2]);
         gBuffer->DrawBuffers();
         
         gBuffer->AttachTexture(GL_DEPTH_ATTACHMENT, *gTextures[gTextures.size() - 1]);
@@ -508,6 +524,23 @@ namespace ARIS
 
         sBuffer->Unbind();
 
+        // AO FBO
+        aoBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        aoBuffer->Bind();
+
+        aoBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *aoMap);
+        aoBuffer->DrawBuffers();
+        aoBuffer->AllocateAttachTexture(GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            std::cout << "Uh oh! AO FBO is incomplete!" << std::endl;
+            aoBuffer->Unbind();
+            return -1;
+        }
+
+        aoBuffer->Unbind();
+
         GenerateIBL();
 
         return 0;
@@ -526,6 +559,11 @@ namespace ARIS
         shadowPass->Activate();
         shadowPass->SetInt("sDepth", 0);
 
+        aoPass->Activate();
+        aoPass->SetInt("gPos", 0);
+        aoPass->SetInt("gNorm", 1);
+        aoPass->SetInt("gDepth", 2);
+
         return 0;
     }
 
@@ -538,7 +576,7 @@ namespace ARIS
         glClearColor(0.1f, 1.0f, 0.5f, 1.0f);
         gBuffer->Activate();
 
-        gBuffer->ClearAttachment(5, -1.0f, GL_FLOAT);
+        gBuffer->ClearAttachment(4, -1.0f, GL_FLOAT);
 
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
@@ -594,6 +632,35 @@ namespace ARIS
             }
         }
         sBuffer->Unbind();
+
+        // AO Pass
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        aoBuffer->Activate();
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
+        aoPass->Activate();
+        aoPass->SetFloat("aoScale", aoScale);
+        aoPass->SetFloat("aoContrast", aoContrast);
+        aoPass->SetInt("aoSamplePoints", aoSamplePoints);
+        aoPass->SetFloat("aoInfluenceRange", aoInfluenceRange);
+
+        // width/height of the texture, scale this later during lighting pass
+        aoPass->SetInt("vWidth", 1600);
+        aoPass->SetInt("vHeight", 900);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gTextures[0]->m_ID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, gTextures[1]->m_ID);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, gTextures[5]->m_ID);
+
+        RenderQuad();
+        aoBuffer->Unbind();
 
 
         // Lighting pass
@@ -665,8 +732,8 @@ namespace ARIS
         glActiveTexture(GL_TEXTURE7);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
-        //lActiveTexture(GL_TEXTURE8);
-        //lBindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
+        //ActiveTexture(GL_TEXTURE8);
+        //BindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
 
         glActiveTexture(GL_TEXTURE8);
         glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
@@ -821,15 +888,17 @@ namespace ARIS
 
     void Scene::OnImGuiRender()
     {
-        ImGui::Begin("Shadow Debugging");
+        ImGui::Begin("Debugging Properties");
+
+        ImGui::Text("Moment Shadows");
         if (ImGui::Button("Reload Shaders"))
         {
             ReloadShaders();
         }
         ImGui::SliderInt("Gaussian Blur Amount", &gaussianWeight, 1, 50);
-        ImGui::End();
+        ImGui::Separator();
 
-        ImGui::Begin("IBL Debugging");
+        ImGui::Text("PBR / IBL");
         ImGui::Checkbox("Use Old PBR Method", &useOldPBRMethod);
         ImGui::SameLine();
         ImGui::Checkbox("Use SH Method", &useSH);
@@ -843,8 +912,6 @@ namespace ARIS
         {
             GenerateSphereHarmonics();
         }
-
-        ImGui::Separator();
         
         const char* maps[] = { "Boxing_Ring", "Hansaplatz", "Newport_Loft", "Satara_Night", "Winter_Forest" };
         static const char* currItem = currEnvMap.c_str();
@@ -867,7 +934,6 @@ namespace ARIS
         	ImGui::EndCombo();
         }
 
-        ImGui::Separator();
         ImGui::SliderFloat("Environment Size", &envMapSize, 0.0f, 512.0f);
         ImGui::SliderFloat("Diffuse Component", &diffComponent, 0.0f, 1.0f);
         ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f);
@@ -876,6 +942,12 @@ namespace ARIS
         ImGui::Checkbox("Enable Specular", &useSpecular);
         ImGui::Checkbox("Enable Diffuse", &useDiffuse);
         ImGui::Checkbox("Enable Tone Mapping", &useToneMapping);
+
+        ImGui::Separator();
+
+        ImGui::Text("Ambient Occlusion");
+
+        ImGui::Separator();
 
         ImGui::End();
     }

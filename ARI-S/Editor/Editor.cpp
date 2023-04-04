@@ -67,7 +67,7 @@ namespace ARIS
 		m_ActiveScene = std::make_shared<Scene>(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 		m_HierarchyPanel.SetContext(m_ActiveScene);
 
-		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
+		m_EditorCamera = EditorCamera(30.0f, 1.778f, 1.0f, 100.0f);
 
 		//m_Framebuffer = new Framebuffer(w, h, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//m_Framebuffer->Bind();
