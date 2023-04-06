@@ -1,0 +1,43 @@
+Scene: Test
+Entities:
+  - Entity: 6653254439694271953
+    TagComponent:
+      Tag: Teapot
+    TransformComponent:
+      Translation: [-0.479999989, -1.28999996, 1.84185553]
+      Rotation: [0, 0, 0]
+      Scale: [0.0399999991, 0.0399999991, 0.0399999991]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\teapot.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 11384973501980615642
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [17.4201241, 129.373703, 104.667931]
+      Rotation: [-1.37880993, -0.130724743, 2.57628012]
+      Scale: [8.99993706, 8.99992657, 8.99967194]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 45.7360001
+      Height: 41.8600006
+      Near: 0.100000001
+      Far: 100
+  - Entity: 8975308583578878574
+    TagComponent:
+      Tag: Point Light
+    TransformComponent:
+      Translation: [77.7011032, -1.97723055, -154.276962]
+      Rotation: [0.0436332263, 0, 0]
+      Scale: [100, 100, 100]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 100
+      Intensity: 10

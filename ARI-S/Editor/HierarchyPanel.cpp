@@ -324,6 +324,16 @@ namespace ARIS
 			//	}
 			//	ImGui::EndCombo();
 			//}
+			ImGui::Checkbox("Enable Controllable Metallic + Roughness", &comp.m_ControllableMetalRoughness);
+
+			if (comp.m_ControllableMetalRoughness)
+			{
+				ImGui::SliderFloat("Metallic Value", &comp.m_MetallicValue, 0.0f, 1.0f);
+				ImGui::SliderFloat("Roughness Value", &comp.m_RoughnessValue, 0.0f, 1.0f);
+				ImGui::Separator();
+			}
+
+
 
 			ImGui::Button("Diffuse Texture", ImVec2(128.0f, 0.0f));
 			if (ImGui::BeginDragDropTarget())

@@ -1,0 +1,190 @@
+Scene: Test
+Entities:
+  - Entity: 11896231732079373271
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-12.0374155, 1.58084583, 4.28010273]
+      Rotation: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 10430512870348308696
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-9.23014164, 3.1601634, 7.54221058]
+      Rotation: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 9909688567457966057
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-5.04212952, 3.9009006, 3.78596973]
+      Rotation: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 4355963799708569622
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-10.4649239, 1.65703273, -0.384543806]
+      Rotation: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\reinforced-metal-bl\reinforced-metal_albedo.png
+      Normal Path: Content\Assets\Textures\PBR\reinforced-metal-bl\reinforced-metal_normal-ogl.png
+      Metallic Path: Content\Assets\Textures\PBR\reinforced-metal-bl\reinforced-metal_metallic.png
+      Roughness Path: Content\Assets\Textures\PBR\reinforced-metal-bl\reinforced-metal_roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 16947475295349807918
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [-7.22845316, 1.71533465, -1.28504062]
+      Rotation: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 7649228764200055836
+    TagComponent:
+      Tag: Lantern
+    TransformComponent:
+      Translation: [-1.8189795, -1.86089039, -3.49650884]
+      Rotation: [0, 0, 0]
+      Scale: [0.300000012, 0.300000012, 0.300000012]
+    MeshComponent:
+      Name: Cerberus
+      Path: Content\Assets\Models\Lantern\Lantern.gltf
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: N/A
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+      Metal/Roughness Path: N/A
+  - Entity: 8975308583578878574
+    TagComponent:
+      Tag: Point Light
+    TransformComponent:
+      Translation: [77.7011032, -1.97723055, -154.276962]
+      Rotation: [0.0436332263, 0, 0]
+      Scale: [100, 100, 100]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 100
+      Intensity: 10
+  - Entity: 11384973501980615642
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [17.4201241, 129.373703, 104.667931]
+      Rotation: [-1.37880993, -0.130724743, 2.57628012]
+      Scale: [8.99993706, 8.99992657, 8.99967194]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 45.7360001
+      Height: 41.8600006
+      Near: 0.100000001
+      Far: 100
+  - Entity: 6497034949192003676
+    TagComponent:
+      Tag: Toramaru
+    TransformComponent:
+      Translation: [5.44821835, -2.00796795, -4.93006706]
+      Rotation: [0, -1.27758074, 0]
+      Scale: [3.00000286, 3, 3.00000286]
+    MeshComponent:
+      Name: Toramaru
+      Path: Content\Assets\Models\BA\Toramaru\scene.gltf
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: N/A
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+      Metal/Roughness Path: N/A
+  - Entity: 6653254439694271953
+    TagComponent:
+      Tag: Teapot
+    TransformComponent:
+      Translation: [-8.27725601, 1.66376531, 1.84104431]
+      Rotation: [0, 0, 0]
+      Scale: [0.0399999991, 0.0399999991, 0.0399999991]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\teapot.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\Titanium-Scuffed-bl\Titanium-Scuffed_basecolor.png
+      Normal Path: Content\Assets\Textures\PBR\Titanium-Scuffed-bl\Titanium-Scuffed_normal.png
+      Metallic Path: Content\Assets\Textures\PBR\Titanium-Scuffed-bl\Titanium-Scuffed_metallic.png
+      Roughness Path: Content\Assets\Textures\PBR\Titanium-Scuffed-bl\Titanium-Scuffed_roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 15421640000098091848
+    TagComponent:
+      Tag: Rough Sphere
+    TransformComponent:
+      Translation: [-4.33654022, 2.17902994, 0.67386651]
+      Rotation: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Vertex Path: Deferred/GeometryPass.vert
+      Fragment Path: Deferred/GeometryPass.frag
+      Diffuse Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-albedo.png
+      Normal Path: N/A
+      Metallic Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-metalness.png
+      Roughness Path: Content\Assets\Textures\PBR\streakedmetal-bl\streakedmetal-roughness.png
+      Metal/Roughness Path: N/A
+  - Entity: 881931621424465086
+    TagComponent:
+      Tag: Another Point Light
+    TransformComponent:
+      Translation: [85.1384125, -6.04779434, -189.715347]
+      Rotation: [0, 0, 0]
+      Scale: [10, 10, 10]
+    PointLightComponent:
+      Color: [1, 1, 1, 1]
+      Range: 10
+      Intensity: 1

@@ -79,6 +79,11 @@ namespace ARIS
 		void SetName(std::string s) { m_Model->SetName(s); }
 		void SetPath(std::string s) { m_Model->SetPath(s); }
 
+		bool& GetControllableMetRough() { return m_ControllableMetalRoughness; }
+
+		float& GetMetallic() { return m_MetallicValue; }
+		float& GetRoughness() { return m_RoughnessValue; }
+
 	private:
 		Model* m_Model;
 		Shader m_Shader;
@@ -92,6 +97,10 @@ namespace ARIS
 		Texture* m_MetalRough;
 
 		glm::vec4 m_Ambient, m_Albedo, m_Specular;
+
+		bool m_ControllableMetalRoughness;
+		float m_MetallicValue;
+		float m_RoughnessValue;
 
 		friend class SceneSerializer;
 		friend class HierarchyPanel;

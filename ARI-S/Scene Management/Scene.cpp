@@ -30,7 +30,10 @@ bool useToneMapping = true;
 
 bool useSH = false;
 bool useOldPBRMethod = false;
-std::string currEnvMap = "Sierra_Madre";
+std::string currEnvMap = "Newport_Loft";
+
+bool displayIrr = false;
+bool displayIrrSH = false;
 
 float envMapSize = 16.0f;
 float diffComponent = 1.0f;
@@ -127,6 +130,8 @@ namespace ARIS
         kernelData = new UniformBuffer<BlurKernel>(3);
         hammersleyData = new UniformBuffer<Discrepancy>(4);
         harmonicData = new UniformBuffer<HarmonicColors>(5);
+
+        outputIrrTex = nullptr;
     }
 
     void Scene::ReloadShaders()
@@ -628,6 +633,13 @@ namespace ARIS
         {
             auto [objTr, mesh] = obj.get<TransformComponent, MeshComponent>(entity);
 
+            geometryPass->Activate();
+            geometryPass->SetFloat("metalVal", mesh.GetMetallic());
+            geometryPass->SetFloat("roughVal", mesh.GetRoughness());
+
+            geometryPass->SetBool("controllable", mesh.GetControllableMetRough());
+            glUseProgram(0);
+
             // Update and render them normally
             objTr.Update();
             mesh.Draw(objTr.GetTransform(), editorCam.GetViewMatrix(), 
@@ -948,6 +960,13 @@ namespace ARIS
         ImGui::Checkbox("Use Old PBR Method", &useOldPBRMethod);
         ImGui::SameLine();
         ImGui::Checkbox("Use SH Method", &useSH);
+
+        ImGui::Checkbox("Display Irradiance Skybox", &displayIrr);
+
+        if (displayIrr && outputIrrTex)
+        {
+            ImGui::Checkbox("Display Sphere Harmonics Skybox", &displayIrrSH);
+        }
         
         if (ImGui::Button("Regenerate IBL Environment"))
         {
@@ -988,6 +1007,20 @@ namespace ARIS
         ImGui::Checkbox("Enable Specular", &useSpecular);
         ImGui::Checkbox("Enable Diffuse", &useDiffuse);
         ImGui::Checkbox("Enable Tone Mapping", &useToneMapping);
+
+        ImGui::Text("HDR Map");
+        if (hdrTexture)
+        {
+            ImGui::Image((void*)(intptr_t)hdrTexture->m_ID, ImVec2 { 300, 150 },
+                ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+        }
+
+        ImGui::Text("Sphere Harmonics texture");
+        if (outputIrrTex)
+        {
+            ImGui::Image((void*)(intptr_t)outputIrrTex->m_ID, ImVec2 { 300, 150 },
+                ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+        }
 
         ImGui::Separator();
 
@@ -1060,14 +1093,14 @@ namespace ARIS
 
         glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
 
-        //if (useSH)
-        //{
-        //    glBindTexture(GL_TEXTURE_CUBE_MAP, outputIrradiance->m_ID);
-        //}
-        //else
-        //{
-        //    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
-        //}
+        if (displayIrr && !displayIrrSH)
+        {
+            glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
+        }
+        else if (displayIrrSH && outputIrrTex)
+        {
+            glBindTexture(GL_TEXTURE_CUBE_MAP, outputIrradiance->m_ID);
+        }
 
 
         hdrEnvironment->SetInt("environmentMap", 0);

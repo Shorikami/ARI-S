@@ -18,6 +18,7 @@ uniform samplerCube filteredMap;
 uniform sampler2D brdfTable;
 
 uniform vec3 lightDir;
+uniform vec3 lightColor;
 uniform vec3 viewPos;
 
 uniform int vWidth;
@@ -257,7 +258,7 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, v
 		float mip = roughness == 0.0f ? 0.0f : 0.5f * log2(pow(1024.0f, 2) / hammersleyVals.N) - 0.5f * DistributionGGX(wk, H, roughness);
 		//float lod = 0.5f * log2((4096.0f * 2048.0f) / hammersleyVals.N) - (0.5f * log2(DistributionGGX(wk, H, roughness)/ 4.0f));
 		
-		vec3 Li = textureLod(envMap, wk, mip).rgb;
+		vec3 Li = pow(textureLod(envMap, wk, mip).rgb, vec3(2.2f));
 		
 		float G = GeometrySmith(N, V, H, roughness);
 		vec3 F = FresnelSchlickRoughness(dot(wk, H), f0, roughness);
@@ -296,13 +297,16 @@ vec3 LightCalc()
 	vec3 fragPos = texture(gPos, fragUV).rgb;
 	vec3 norm = texture(gNorm, fragUV).rgb;
 	
-	vec3 albedo = texture(gAlbedo, fragUV).rgb;
-	float metal = texture(gMetRough, fragUV).g;
-	float rough = texture(gMetRough, fragUV).r;
+	vec3 albedo = pow(texture(gAlbedo, fragUV).rgb, vec3(2.2f));
+	float metal = texture(gMetRough, fragUV).r;
+	float rough = texture(gMetRough, fragUV).g;
 	
 	vec3 V = normalize(viewPos - fragPos);
 	vec3 N = norm;
 	vec3 R = reflect(-V, N);
+	
+	vec3 L = normalize(-lightDir);
+    vec3 H = normalize(V + L);
 	
 	vec3 F0 = vec3(0.04f);
 	F0 = mix(F0, albedo, metal);
@@ -313,25 +317,31 @@ vec3 LightCalc()
 	vec3 kD = 1.0f - kS;
 	kD *= 1.0f - metal;
 	
+	vec3 Lo = vec3(0.0f);
+	float att = 1.0f;
+	vec3 radiance = lightColor * att;
+	
+	float NDF = DistributionGGX(N, H, rough);   
+	float gg = GeometrySmith(N, V, L, rough);    
+	vec3 ff  = FresnelSchlick(max(dot(H, V), 0.0), F0);        
+	
+	vec3 numerator  = NDF * gg * ff;
+	float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+	vec3 loSpec = numerator / denominator;
+	
 	// diffuse
-  vec3 irr = texture(irradianceMap, N).rgb;
+	vec3 irr = texture(irradianceMap, N).rgb;
   
-  if (useSH)
-  {
-     irr *= vec3(0.5f);
-  }
+	//if (useSH)
+	//{
+	//	irr = irr / (irr + vec3(1.0f));
+	//	irr = pow(irr, vec3(1.0f / 2.2f));
+	//}
   
-  //if (useSH)
-  //{
-  //  vec3 ir = CalculateIrradiance(N);
-  //  ir = ir / (ir + vec3(1.0f));
-  //  irr = pow(ir, vec3(2.2f));//= pow(ir, vec3(1.0f / 2.2f));
-  //}
-  
-  //else
-  //  irr = texture(irradianceMap, N).rgb;
-  
-  vec3 diff = kD * (albedo / PI);
+	//else
+	//  irr = texture(irradianceMap, N).rgb;
+	
+	vec3 diff = kD * (albedo / PI);
 	
 	// specular
 	vec3 finalSpec = vec3(0.0f);
@@ -358,11 +368,11 @@ vec3 LightCalc()
 	
 	float currDepth = shadowCoord.z;
 	float maximum = float(currDepth - 1.0f * pow(10, -3) <= blur.x);
-  float shadowValue = max(1.0f  - shadow, maximum);
+	float shadowValue = max(1.0f  - shadow, maximum);
 	
 	//if (!useDiffuse)
 	//	return finalSpec;
-  //
+
 	 if (!useSpecular)
 		finalSpec = vec3(0.0f);
 	//	
@@ -371,8 +381,7 @@ vec3 LightCalc()
 	
 	float ao = 1.0f;
   
-  vec3 ambient = (kD * irr * albedo + finalSpec) * ao;
-  //vec3 Lo = shadowValue * (diff) * 
+	vec3 ambient = (kD * irr * (albedo / PI) + finalSpec) * ao;
 	
 	return ambient;
 }
@@ -383,6 +392,7 @@ void main()
 					gl_FragCoord.y / vHeight);
 					
 	vec3 color = LightCalc();
+	//color = pow(color, vec3(1.0f / 2.2f));
 	
 	if (useToneMapping)
 	{

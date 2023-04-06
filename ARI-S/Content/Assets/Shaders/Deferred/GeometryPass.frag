@@ -14,6 +14,10 @@ in vec4 viewPos;
 
 uniform int metRoughCombine;
 
+uniform int controllable;
+uniform float metalVal;
+uniform float roughVal;
+
 uniform sampler2D diffTex1;
 uniform sampler2D specTex1;
 uniform sampler2D normTex1;
@@ -29,18 +33,26 @@ void main()
 	//gUVs = outTexCoord;
 	gAlbedo = texture(diffTex1, outTexCoord).rgb;
 	
-	if (metRoughCombine == 1)
+	if (controllable == 1)
 	{
-		// g = metallic
-		// b = roughness
-		gMetRough = texture(metalRoughTex1, outTexCoord).gb;
+		gMetRough = vec2(metalVal, roughVal);
 	}
 	else
 	{
-		vec3 metal = texture(metalTex1, outTexCoord).rrr;
-		vec3 roughness = texture(roughTex1, outTexCoord).rrr;
-		gMetRough = vec2(metal.r, roughness.r);
+		if (metRoughCombine == 1)
+		{
+			// g = metallic
+			// b = roughness
+			gMetRough = texture(metalRoughTex1, outTexCoord).gb;
+		}
+		else
+		{
+			vec3 metal = texture(metalTex1, outTexCoord).rrr;
+			vec3 roughness = texture(roughTex1, outTexCoord).rrr;
+			gMetRough = vec2(metal.r, roughness.r);
+		}
 	}
+
 	
 	//gSpecular = texture(specTex, outTexCoord).rrr;
 	entID = vEntityID;

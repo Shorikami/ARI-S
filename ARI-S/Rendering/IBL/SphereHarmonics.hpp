@@ -54,6 +54,8 @@ namespace ARIS
                         color += coeffs.results[i] * EvaluateBasisFunction(N, i);
                     }
 
+                    //color = color / (color + glm::vec3(1.0f));
+
                     int curr = (y * outW + x) * 3;
                     outImg[curr + 0] = color.x;
                     outImg[curr + 1] = color.y;
@@ -148,23 +150,15 @@ namespace ARIS
                 }
             }
 
-            std::vector<float> a;
-            a.push_back(PI);
-
-            a.push_back(0.667f * PI);
-            a.push_back(0.667f * PI);
-            a.push_back(0.667f * PI);
-
-            a.push_back(0.25f * PI);
-            a.push_back(0.25f * PI);
-            a.push_back(0.25f * PI);
-            a.push_back(0.25f * PI);
-            a.push_back(0.25f * PI);
-
-            for (unsigned i = 0; i < 9; ++i)
-            {
-                res.results[i] *= a[i];
-            }
+            res.results[0] *= PI;
+            res.results[1] *= 0.667f * PI;
+            res.results[2] *= 0.667f * PI;
+            res.results[3] *= 0.667f * PI;
+            res.results[4] *= 0.25f * PI;
+            res.results[5] *= 0.25f * PI;
+            res.results[6] *= 0.25f * PI;
+            res.results[7] *= 0.25f * PI;
+            res.results[8] *= 0.25f * PI;
 
             WriteToHDR("Content/Assets/Textures/HDR/", res);
 
