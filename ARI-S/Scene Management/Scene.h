@@ -128,6 +128,7 @@ namespace ARIS
 
         // PBS + IBL
         Texture* hdrTexture, * hdrCubemap, *filteredHDR, *irradianceTex, *brdfTex;
+        Texture* outputIrradiance, *outputIrrTex;
 
         // G-Buffer
         Framebuffer* gBuffer;

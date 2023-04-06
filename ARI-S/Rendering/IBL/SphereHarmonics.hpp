@@ -24,6 +24,45 @@ namespace ARIS
     class SphereHarmonics
     {
     public:
+        static void WriteToHDR(std::string dir, SH9Color coeffs)
+        {
+            int outW = 400;
+            int outH = 200;
+            std::vector<float> outImg = std::vector<float>(outW * outH * 3);
+            std::string outN = dir + "output.hdr";
+
+            float PI = 3.14159265f;
+
+        #pragma omp parallel for schedule(dynamic, 1) // Magic: Multi-thread y loop
+            for (int y = 0; y < outH; ++y)
+            {
+                for (int x = 0; x < outW; ++x)
+                {
+                    float yF = static_cast<float>(y);
+                    float xF = static_cast<float>(x);
+
+                    float theta = PI * (yF + 0.5f) / outH;
+                    float phi = 2.0f * PI * ((xF + 0.5f) / outW);
+                    float sineTerm = sinf(theta);
+
+                    glm::vec3 N = glm::vec3(cosf(phi) * sinf(theta), sinf(phi) * sinf(theta), cosf(theta));
+
+                    glm::vec3 color = glm::vec3(0.0f);
+
+                    for (int i = 0; i < 9; ++i)
+                    {
+                        color += coeffs.results[i] * EvaluateBasisFunction(N, i);
+                    }
+
+                    int curr = (y * outW + x) * 3;
+                    outImg[curr + 0] = color.x;
+                    outImg[curr + 1] = color.y;
+                    outImg[curr + 2] = color.z;
+                }
+            }
+
+            HDRLoader::WriteHDR(outN, outImg, outW, outH);
+        }
 
         static float EvaluateBasisFunction(const glm::vec3& N, int idx)
         {
@@ -127,7 +166,7 @@ namespace ARIS
                 res.results[i] *= a[i];
             }
 
-            //HDRLoader::WriteHDR("Content/Assets/Textures/HDR/Output.hdr", image, w, h);
+            WriteToHDR("Content/Assets/Textures/HDR/", res);
 
             return res;
         }

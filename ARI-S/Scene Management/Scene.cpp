@@ -30,7 +30,7 @@ bool useToneMapping = true;
 
 bool useSH = false;
 bool useOldPBRMethod = false;
-std::string currEnvMap = "Satara_Night";
+std::string currEnvMap = "Sierra_Madre";
 
 float envMapSize = 16.0f;
 float diffComponent = 1.0f;
@@ -225,7 +225,6 @@ namespace ARIS
     void Scene::GenerateIBL()
     {
         // IBL
-        skyboxShader = new Shader(false, "Skybox.vert", "Skybox.frag");
         hdrMapping = new Shader(false, "IBL/CubemapHDR.vert", "IBL/CubemapHDR.frag");
         hdrEnvironment = new Shader(false, "IBL/Environment.vert", "IBL/Environment.frag");
         irradiance = new Shader(false, "IBL/CubemapHDR.vert", "IBL/IrradianceConvolution.frag");
@@ -410,11 +409,51 @@ namespace ARIS
     {
         SH9Color coeffs = SphereHarmonics::GenerateLightingCoefficients(*hdrTexture);
 
-        for (unsigned i = 0; i < 9; ++i)
+        outputIrradiance = new Texture();
+        outputIrradiance->AllocateCubemap(2048, 2048, GL_RGBA, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_FLOAT);
+
+        outputIrrTex = new Texture("Content/Assets/Textures/HDR/output.hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
+
+        glm::mat4 hdrProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+        glm::mat4 hdrView[] =
         {
-            harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+        };
+
+        // Draw the HDR cubemap first...
+        hdrMapping->Activate();
+        hdrMapping->SetInt("hdrMap", 0);
+        hdrMapping->SetMat4("projection", hdrProj);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, outputIrrTex->m_ID);
+        glViewport(0, 0, 2048, 2048);
+
+        captureBuffer->Bind();
+
+        for (unsigned i = 0; i < 6; ++i)
+        {
+            hdrMapping->SetMat4("view", hdrView[i]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, outputIrradiance->m_ID, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(cubeVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
         }
-        harmonicData->SetData();
+        captureBuffer->Unbind();
+
+
+        //for (unsigned i = 0; i < 9; ++i)
+        //{
+        //    harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
+        //}
+        //harmonicData->SetData();
     }
 
     Scene::~Scene()
@@ -736,7 +775,14 @@ namespace ARIS
         //BindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
 
         glActiveTexture(GL_TEXTURE8);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
+        if (useSH)
+        {
+            glBindTexture(GL_TEXTURE_CUBE_MAP, outputIrradiance->m_ID);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
+        }
 
         glActiveTexture(GL_TEXTURE9);
         glBindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
@@ -913,7 +959,7 @@ namespace ARIS
             GenerateSphereHarmonics();
         }
         
-        const char* maps[] = { "Boxing_Ring", "Hansaplatz", "Newport_Loft", "Satara_Night", "Winter_Forest" };
+        const char* maps[] = { "Hamarikyu_Bridge", "Road_to_MonumentValley", "Newport_Loft", "Sierra_Madre", "Tropical_Beach"};
         static const char* currItem = currEnvMap.c_str();
         if (ImGui::BeginCombo("##envMap combo", currItem))
         {
@@ -1011,7 +1057,18 @@ namespace ARIS
         hdrEnvironment->SetMat4("view", view);
 
         glActiveTexture(GL_TEXTURE0);
+
         glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
+
+        //if (useSH)
+        //{
+        //    glBindTexture(GL_TEXTURE_CUBE_MAP, outputIrradiance->m_ID);
+        //}
+        //else
+        //{
+        //    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceTex->m_ID);
+        //}
+
 
         hdrEnvironment->SetInt("environmentMap", 0);
 

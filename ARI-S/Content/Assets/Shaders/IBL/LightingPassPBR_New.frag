@@ -296,7 +296,7 @@ vec3 LightCalc()
 	vec3 fragPos = texture(gPos, fragUV).rgb;
 	vec3 norm = texture(gNorm, fragUV).rgb;
 	
-	vec3 albedo = pow(texture(gAlbedo, fragUV).rgb, vec3(2.2f));
+	vec3 albedo = texture(gAlbedo, fragUV).rgb;
 	float metal = texture(gMetRough, fragUV).g;
 	float rough = texture(gMetRough, fragUV).r;
 	
@@ -314,14 +314,24 @@ vec3 LightCalc()
 	kD *= 1.0f - metal;
 	
 	// diffuse
-	vec3 irr = texture(irradianceMap, N).rgb;
-	
-	vec3 finalDiff = vec3(0.0f);
-	
-	if (useSH)
-		finalDiff = (albedo / PI) * CalculateIrradiance(N);
-	else
-		finalDiff = irr * albedo;
+  vec3 irr = texture(irradianceMap, N).rgb;
+  
+  if (useSH)
+  {
+     irr *= vec3(0.5f);
+  }
+  
+  //if (useSH)
+  //{
+  //  vec3 ir = CalculateIrradiance(N);
+  //  ir = ir / (ir + vec3(1.0f));
+  //  irr = pow(ir, vec3(2.2f));//= pow(ir, vec3(1.0f / 2.2f));
+  //}
+  
+  //else
+  //  irr = texture(irradianceMap, N).rgb;
+  
+  vec3 diff = kD * (albedo / PI);
 	
 	// specular
 	vec3 finalSpec = vec3(0.0f);
@@ -348,20 +358,23 @@ vec3 LightCalc()
 	
 	float currDepth = shadowCoord.z;
 	float maximum = float(currDepth - 1.0f * pow(10, -3) <= blur.x);
+  float shadowValue = max(1.0f  - shadow, maximum);
 	
-	if (!useDiffuse)
-		return finalSpec;
-
-	else if (!useSpecular)
-		return (max(1.0f  - shadow, maximum) * finalDiff);
-		
-	else if (!useSpecular && !useDiffuse)
-		return vec3(0.0f);
+	//if (!useDiffuse)
+	//	return finalSpec;
+  //
+	 if (!useSpecular)
+		finalSpec = vec3(0.0f);
+	//	
+	//else if (!useSpecular && !useDiffuse)
+	//	return vec3(0.0f);
 	
-	vec2 coords = vec2(gl_FragCoord.x, gl_FragCoord.y);
 	float ao = 1.0f;
+  
+  vec3 ambient = (kD * irr * albedo + finalSpec) * ao;
+  //vec3 Lo = shadowValue * (diff) * 
 	
-	return ((max(1.0f  - shadow, maximum) * finalDiff * kD) + finalSpec) * ao;
+	return ambient;
 }
 
 void main()

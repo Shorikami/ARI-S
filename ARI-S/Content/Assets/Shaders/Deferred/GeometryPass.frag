@@ -29,7 +29,7 @@ void main()
 	//gUVs = outTexCoord;
 	gAlbedo = texture(diffTex1, outTexCoord).rgb;
 	
-	if (metRoughCombine)
+	if (metRoughCombine == 1)
 	{
 		// g = metallic
 		// b = roughness
