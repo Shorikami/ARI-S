@@ -31,6 +31,8 @@ namespace ARIS
 
 		void BlockEvents(bool b) { m_BlockEvents = b; }
 
+		//static void RenderSliderFloat(float w, float h);
+
 	private:
 		void CustomizeColors();
 		void NewScene();

@@ -48,6 +48,8 @@ namespace ARIS
 
 		std::vector<Model*> m_ModelTable;
 		static ModelBuilder* m_Instance;
+
+		friend class HierarchyPanel;
 	};
 }
 

@@ -1,0 +1,49 @@
+Scene: Test
+Entities:
+  - Entity: 16413862174991996850
+    TagComponent:
+      Tag: Toramaru
+    TransformComponent:
+      Translation: [-4.62592316, 2.25690913, -9.1107254]
+      Rotation: [0, 0, 0]
+      Scale: [3, 3, 3]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\BA\Toramaru\scene.gltf
+      Diffuse Path: N/A
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+      Metal/Roughness Path: N/A
+      Metalness: 0
+      Roughness: 0
+  - Entity: 14880087472670614973
+    TagComponent:
+      Tag: Teapot
+    TransformComponent:
+      Translation: [0.310546368, 2.4337182, 1.19588566]
+      Rotation: [0.137235045, -2.42143869e-08, -0.126915783]
+      Scale: [0.0499999858, 0.0499998964, 0.0499998778]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\teapot.obj
+      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+      Metal/Roughness Path: N/A
+      Metalness: 0
+      Roughness: 0
+  - Entity: 16723573847826904780
+    TagComponent:
+      Tag: Light
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 10
+      Height: 10
+      Near: 0.100000001
+      Far: 25

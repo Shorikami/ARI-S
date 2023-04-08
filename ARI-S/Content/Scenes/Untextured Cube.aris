@@ -1,10 +1,10 @@
 Scene: Test
 Entities:
-  - Entity: 16723573847826904780
+  - Entity: 2190408164216259085
     TagComponent:
       Tag: Light
     TransformComponent:
-      Translation: [0, 0, 0]
+      Translation: [2.31998062, 1.5746336, -2.70239258]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     DirectionLightComponent:
@@ -13,17 +13,17 @@ Entities:
       Height: 10
       Near: 0.100000001
       Far: 25
-  - Entity: 14880087472670614973
+  - Entity: 13067446606624837850
     TagComponent:
-      Tag: Teapot
+      Tag: Cube
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
-      Scale: [0.0500000007, 0.0500000007, 0.0500000007]
+      Scale: [1, 1, 1]
     MeshComponent:
       Name: ""
-      Path: Content\Assets\Models\teapot.obj
-      Diffuse Path: Content\Assets\Textures\metal_roof_diff_512x512.png
+      Path: Content\Assets\Models\cube2.obj
+      Diffuse Path: N/A
       Normal Path: N/A
       Metallic Path: N/A
       Roughness Path: N/A

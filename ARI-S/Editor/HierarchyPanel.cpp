@@ -190,7 +190,7 @@ namespace ARIS
 		}
 		ImGui::End();
 
-		ImGui::Begin("Properties");
+		ImGui::Begin("Inspector");
 		if (m_SelectionContext)
 		{
 			DrawComponents(m_SelectionContext);
@@ -324,18 +324,30 @@ namespace ARIS
 			//	}
 			//	ImGui::EndCombo();
 			//}
-			ImGui::Checkbox("Enable Controllable Metallic + Roughness", &comp.m_ControllableMetalRoughness);
 
-			if (comp.m_ControllableMetalRoughness)
+			ImGui::Button("Model", ImVec2(128.0f, 0.0f));
+			if (ImGui::BeginDragDropTarget())
 			{
-				ImGui::SliderFloat("Metallic Value", &comp.m_MetallicValue, 0.0f, 1.0f);
-				ImGui::SliderFloat("Roughness Value", &comp.m_RoughnessValue, 0.0f, 1.0f);
-				ImGui::Separator();
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				{
+					const wchar_t* path = (const wchar_t*)payload->Data;
+					std::filesystem::path modelPath = std::filesystem::path(s_AssetPath) / path;
+					comp.m_Model = ModelBuilder::Get().LoadModel(modelPath.string());
+				}
+				ImGui::EndDragDropTarget();
 			}
-
-
+			ImGui::Separator();
 
 			ImGui::Button("Diffuse Texture", ImVec2(128.0f, 0.0f));
+			if (ImGui::IsItemHovered() && comp.m_DiffuseTex)
+			{
+				ImGui::BeginTooltip();
+				ImGui::Image((void*)(intptr_t)comp.m_DiffuseTex->m_ID, ImVec2{ 128, 128 },
+					ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+				ImGui::EndTooltip();
+			}
+
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
@@ -346,9 +358,9 @@ namespace ARIS
 
 					if (tex->m_IsLoaded)
 					{
-						for (Mesh m : comp.m_Model->GetMeshes())
+						for (Mesh& m : comp.m_Model->m_Meshes)
 						{
-							m.GetTextures().push_back(*tex);
+							m.m_Textures.push_back(*tex);
 						}
 						comp.m_DiffuseTex = tex;
 					}
@@ -356,13 +368,18 @@ namespace ARIS
 				ImGui::EndDragDropTarget();
 			}
 
-			//if (comp.m_DiffuseTex)
-			//{
-			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_DiffuseTex->m_ID, ImVec2{ 128, 128 },
-			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-			//}
+			ImGui::SameLine();
 
 			ImGui::Button("Normal Texture", ImVec2(128.0f, 0.0f));
+			if (ImGui::IsItemHovered() && comp.m_NormalTex)
+			{
+				ImGui::BeginTooltip();
+				ImGui::Image((void*)(intptr_t)comp.m_NormalTex->m_ID, ImVec2{ 128, 128 },
+					ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+				ImGui::EndTooltip();
+			}
+
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
@@ -373,9 +390,9 @@ namespace ARIS
 
 					if (tex->m_IsLoaded)
 					{
-						for (Mesh m : comp.m_Model->GetMeshes())
+						for (Mesh& m : comp.m_Model->m_Meshes)
 						{
-							m.GetTextures().push_back(*tex);
+							m.m_Textures.push_back(*tex);
 						}
 						comp.m_NormalTex = tex;
 					}
@@ -383,109 +400,119 @@ namespace ARIS
 				ImGui::EndDragDropTarget();
 			}
 
-			//if (comp.m_NormalTex)
-			//{
-			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_NormalTex->m_ID, ImVec2{ 128, 128 },
-			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-			//}
+			ImGui::Separator();
 
-			ImGui::Button("Metallic Texture", ImVec2(128.0f, 0.0f));
-			if (ImGui::BeginDragDropTarget())
+			ImGui::Checkbox("Manual Metalness/Roughness", &comp.m_ControllableMetalRoughness);
+
+			if (comp.m_ControllableMetalRoughness)
 			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				ImGui::PushItemWidth(100.0f);
+				ImGui::SliderFloat("Metalness", &comp.m_Metalness, 0.0f, 1.0f); 
+				ImGui::PopItemWidth();
+				
+				ImGui::SameLine();
+
+				ImGui::PushItemWidth(100.0f);
+				ImGui::SliderFloat("Roughness", &comp.m_Roughness, 0.0f, 1.0f);
+				ImGui::PopItemWidth();
+			}
+
+			else
+			{
+				ImGui::Button("Metallic Texture", ImVec2(128.0f, 0.0f));
+				if (ImGui::IsItemHovered() && comp.m_MetallicTex)
 				{
-					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
-					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
+					ImGui::BeginTooltip();
+					ImGui::Image((void*)(intptr_t)comp.m_MetallicTex->m_ID, ImVec2{ 128, 128 },
+						ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
-					if (tex->m_IsLoaded)
-					{
-						for (Mesh m : comp.m_Model->GetMeshes())
-						{
-							m.GetTextures().push_back(*tex);
-						}
-						comp.m_Metallic = tex;
-					}
+					ImGui::EndTooltip();
 				}
-				ImGui::EndDragDropTarget();
-			}
 
-			//if (comp.m_Metallic)
-			//{
-			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_Metallic->m_ID, ImVec2{ 128, 128 },
-			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-			//}
-
-
-			ImGui::Button("Roughness Texture", ImVec2(128.0f, 0.0f));
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				if (ImGui::BeginDragDropTarget())
 				{
-					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
-					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
-
-					if (tex->m_IsLoaded)
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
 					{
-						for (Mesh m : comp.m_Model->GetMeshes())
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+						Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
+
+						if (tex->m_IsLoaded)
 						{
-							m.GetTextures().push_back(*tex);
+							for (Mesh& m : comp.m_Model->m_Meshes)
+							{
+								m.m_Textures.push_back(*tex);
+							}
+							comp.m_MetallicTex = tex;
 						}
-						comp.m_Roughness = tex;
 					}
+					ImGui::EndDragDropTarget();
 				}
-				ImGui::EndDragDropTarget();
-			}
 
-			//if (comp.m_Roughness)
-			//{
-			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_Roughness->m_ID, ImVec2{ 128, 128 },
-			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-			//}
+				ImGui::SameLine();
 
-			ImGui::Button("Metallic/Roughness Texture", ImVec2(128.0f, 0.0f));
-			if (ImGui::BeginDragDropTarget())
-			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+				ImGui::Button("Roughness Texture", ImVec2(128.0f, 0.0f));
+				if (ImGui::IsItemHovered() && comp.m_RoughnessTex)
 				{
-					const wchar_t* path = (const wchar_t*)payload->Data;
-					std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
-					Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
+					ImGui::BeginTooltip();
+					ImGui::Image((void*)(intptr_t)comp.m_RoughnessTex->m_ID, ImVec2{ 128, 128 },
+						ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
-					if (tex->m_IsLoaded)
-					{
-						for (Mesh m : comp.m_Model->GetMeshes())
-						{
-							m.GetTextures().push_back(*tex);
-						}
-						comp.m_MetalRough = tex;
-					}
+					ImGui::EndTooltip();
 				}
-				ImGui::EndDragDropTarget();
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+						Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
+
+						if (tex->m_IsLoaded)
+						{
+							for (Mesh& m : comp.m_Model->m_Meshes)
+							{
+								m.m_Textures.push_back(*tex);
+							}
+							comp.m_RoughnessTex = tex;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				ImGui::Button("Metallic/Roughness Texture", ImVec2(128.0f, 0.0f));
+				if (ImGui::IsItemHovered() && comp.m_MetalRoughTex)
+				{
+					ImGui::BeginTooltip();
+					ImGui::Image((void*)(intptr_t)comp.m_MetalRoughTex->m_ID, ImVec2{ 128, 128 },
+						ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path texPath = std::filesystem::path(s_AssetPath) / path;
+						Texture* tex = new Texture(texPath.string(), GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
+
+						if (tex->m_IsLoaded)
+						{
+							for (Mesh& m : comp.m_Model->m_Meshes)
+							{
+								m.m_Textures.push_back(*tex);
+							}
+							comp.m_MetalRoughTex = tex;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
 			}
 
-			//if (comp.m_MetalRough)
-			//{
-			//	ImGui::SameLine(); ImGui::Image((void*)(intptr_t)comp.m_MetalRough->m_ID, ImVec2{ 128, 128 },
-			//		ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
-			//}
-
-			std::string vBuf = comp.m_VertexSrc, fBuf = comp.m_FragmentSrc;
-			if (ImGui::InputText("Vertex Shader Path", &vBuf, ImGuiInputTextFlags_EnterReturnsTrue))
-			{
-				comp.m_VertexSrc = std::string(vBuf);
-			}
-
-			if (ImGui::InputText("Fragment Shader Path", &fBuf, ImGuiInputTextFlags_EnterReturnsTrue))
-			{
-				comp.m_FragmentSrc = std::string(fBuf);
-			}
-
-			if (ImGui::Button("Reload Model Shader"))
-			{
-				comp.ReloadShader();
-			}
+			ImGui::Separator();
 		});
 
 		DrawComponent<PointLightComponent>("Point Light", e, [](auto& comp)

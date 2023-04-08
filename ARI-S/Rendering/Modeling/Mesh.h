@@ -65,6 +65,7 @@ namespace ARIS
 		friend class SceneSerializer;
 		friend class Model;
 		friend class ModelBuilder;
+		friend class HierarchyPanel;
 	};
 }
 

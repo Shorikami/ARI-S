@@ -18,8 +18,7 @@ IncludeDir["glm"] = "Libraries/glm"
 IncludeDir["ImGui"] = "Libraries/imgui"
 IncludeDir["entt"] = "Libraries/entt"
 IncludeDir["stb"] = "Libraries/stb"
-IncludeDir["tinygltf"] = "Libraries/tinygltf"
-IncludeDir["tinyobj"] = "Libraries/tinyobjloader"
+IncludeDir["debug_draw"] = "Libraries/debug-draw"
 IncludeDir["YAML_CPP"] = "Libraries/yaml-cpp/include"
 IncludeDir["ImGuizmo"] = "Libraries/ImGuizmo"
 IncludeDir["Assimp"] = "Libraries/assimp/include"
@@ -73,10 +72,7 @@ project "ARI-S"
 		
 		"Libraries/stb/**.h",
 		
-		"Libraries/tinygltf/**.h",
-		"Libraries/tinygltf/**.hpp",
-		
-		"Libraries/tinyobjloader/**.h",
+		"Libraries/debug-draw/**.hpp",
 		
 		"Libraries/ImGuizmo/**.h",
 		"Libraries/ImGuizmo/**.cpp"
@@ -102,11 +98,10 @@ project "ARI-S"
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.entt}",
 		"%{IncludeDir.stb}",
-		"%{IncludeDir.tinygltf}",
-		"%{IncludeDir.tinyobj}",
 		"%{IncludeDir.YAML_CPP}",
 		"%{IncludeDir.ImGuizmo}",
-		"%{IncludeDir.Assimp}"
+		"%{IncludeDir.Assimp}",
+		"%{IncludeDir.debug_draw}"
 	}
 	
 	links

@@ -15,6 +15,8 @@
 #include "Math/Cholesky.hpp"
 #include "IBL/SphereHarmonics.hpp"
 
+#include "../Rendering/DebugDraw.h"
+
 //#include "stb_image.h"
 
 unsigned currLights = 4;
@@ -389,22 +391,6 @@ namespace ARIS
         }
         
         hammersleyData->SetData();
-
-        //irrComp->Activate();
-        //
-        //GLint srcLoc = glGetUniformLocation(irrComp->m_ID, "src");
-        //glBindImageTexture(0, hdrCubemap->m_ID, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
-        //glUniform1i(srcLoc, 0);
-        //
-        //GLint dstLoc = glGetUniformLocation(irrComp->m_ID, "dst");
-        //glBindImageTexture(1, irrBlurOutput->m_ID, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-        //glUniform1i(dstLoc, 1);
-        //
-        //glDispatchCompute(512 / 16, 512 / 16, 6);
-        //
-        //glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        //
-        //glUseProgram(0);
     }
 
     void Scene::GenerateSphereHarmonics()
@@ -448,13 +434,6 @@ namespace ARIS
             glBindVertexArray(0);
         }
         captureBuffer->Unbind();
-
-
-        //for (unsigned i = 0; i < 9; ++i)
-        //{
-        //    harmonicData->GetData().shColor[i] = glm::vec4(coeffs.results[i], 1.0f);
-        //}
-        //harmonicData->SetData();
     }
 
     Scene::~Scene()
@@ -467,8 +446,6 @@ namespace ARIS
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-        //irrComp = new Shader(false, "IBL/IrradianceConvolution.cmpt");
 
         geometryPass = new Shader(false, "Deferred/GeometryPass.vert", "Deferred/GeometryPass.frag");
 
@@ -630,7 +607,7 @@ namespace ARIS
             auto [objTr, mesh] = obj.get<TransformComponent, MeshComponent>(entity);
 
             geometryPass->Activate();
-            geometryPass->SetFloat("metalVal", mesh.GetMetallic());
+            geometryPass->SetFloat("metalVal", mesh.GetMetalness());
             geometryPass->SetFloat("roughVal", mesh.GetRoughness());
 
             geometryPass->SetBool("controllable", mesh.GetControllableMetRough());
@@ -779,9 +756,6 @@ namespace ARIS
         glActiveTexture(GL_TEXTURE7);
         glBindTexture(GL_TEXTURE_2D, blurOutput->m_ID);
 
-        //ActiveTexture(GL_TEXTURE8);
-        //BindTexture(GL_TEXTURE_CUBE_MAP, filteredHDR->m_ID);
-
         glActiveTexture(GL_TEXTURE8);
         if (useSH)
         {
@@ -879,11 +853,10 @@ namespace ARIS
                     "vWidth", sceneWidth,
                     "vHeight", sceneHeight);
 
-                light.Draw(transform.GetTransform(), editorCam.GetViewMatrix(), editorCam.GetProjection());
+                light.Draw(transform.GetTranslation(), transform.GetTransform(), editorCam.GetViewMatrix(), editorCam.GetProjection());
             }
         }
 
-        //RenderSkybox(editorCam.GetViewMatrix(), editorCam.GetProjection());
         RenderHDRMap(editorCam.GetViewMatrix(), editorCam.GetProjection());
 
         // Render directional lights
@@ -897,6 +870,8 @@ namespace ARIS
                     editorCam.GetViewMatrix(), editorCam.GetProjection());
             }
         }
+
+        DebugWrapper::GetInstance().Render();
 
         // Intentional - this is for mouse picking
         // UPDATE: This was changed to the G-Buffer texture, but it's
@@ -942,14 +917,18 @@ namespace ARIS
 
     void Scene::OnImGuiRender()
     {
-        ImGui::Begin("Debugging Properties");
+        ImGui::Begin("Lighting");
 
         ImGui::Text("Moment Shadows");
         if (ImGui::Button("Reload Shaders"))
         {
             ReloadShaders();
         }
-        ImGui::SliderInt("Gaussian Blur Amount", &gaussianWeight, 1, 50);
+        
+        ImGui::PushItemWidth(100.0f);
+        ImGui::SliderInt("Gaussian Weight", &gaussianWeight, 1, 50);
+        ImGui::PopItemWidth();
+
         ImGui::Separator();
 
         ImGui::Text("PBR / IBL");
@@ -964,12 +943,13 @@ namespace ARIS
             ImGui::Checkbox("Display Sphere Harmonics Skybox", &displayIrrSH);
         }
         
-        if (ImGui::Button("Regenerate IBL Environment"))
+        if (ImGui::Button("Reload Environment", ImVec2(128.0f, 0.0f)))
         {
             GenerateIBL();
         }
+
         ImGui::SameLine();
-        if (ImGui::Button("Generate Sphere Harmonics"))
+        if (ImGui::Button("Generate Harmonics", ImVec2(128.0f, 0.0f)))
         {
             GenerateSphereHarmonics();
         }
@@ -995,13 +975,9 @@ namespace ARIS
         	ImGui::EndCombo();
         }
 
-        ImGui::SliderFloat("Environment Size", &envMapSize, 0.0f, 512.0f);
-        ImGui::SliderFloat("Diffuse Component", &diffComponent, 0.0f, 1.0f);
         ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f);
 
-        ImGui::Checkbox("Convert from Sphere to Cube", &sphToCube);
         ImGui::Checkbox("Enable Specular", &useSpecular);
-        ImGui::Checkbox("Enable Diffuse", &useDiffuse);
         ImGui::Checkbox("Enable Tone Mapping", &useToneMapping);
 
         ImGui::Text("HDR Map");

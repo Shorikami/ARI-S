@@ -6,6 +6,7 @@
 #include "Tools.h"
 
 #include "../Editor/Editor.h"
+#include "../Rendering/DebugDraw.h"
 
 #include <glad/glad.h>
 
@@ -29,11 +30,14 @@ namespace ARIS
 
 		m_Editor = new Editor();
 		PushOverlay(m_Editor);
+
+		DebugWrapper::GetInstance().Initialize();
 	}
 
 	Application::~Application()
 	{
 		glfwTerminate();
+		DebugWrapper::GetInstance().Destroy();
 	}
 
 	void Application::PushLayer(Layer* l)

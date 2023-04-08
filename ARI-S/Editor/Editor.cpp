@@ -20,6 +20,8 @@
 
 #include "Math/Math.h"
 
+#include "../Rendering/DebugDraw.h"
+
 namespace ARIS
 {
 	// TODO: Change later
@@ -101,6 +103,8 @@ namespace ARIS
 		//m_Framebuffer->Unbind();
 
 		m_EditorCamera.OnUpdate(dt);
+		DebugWrapper::GetInstance().Update(m_EditorCamera);
+
 		m_ActiveScene->UpdateEditor(dt, m_EditorCamera);
 
 
@@ -479,6 +483,17 @@ namespace ARIS
 	void Editor::CustomizeColors()
 	{
 		ImGui::GetStyle().WindowRounding = 0.0f;
+		ImGui::GetStyle().FramePadding = ImVec2(4.0f, 4.0f);
+		ImGui::GetStyle().ItemSpacing = ImVec2(8.0f, 10.0f);
+		ImGui::GetStyle().ScrollbarSize = 10.0f;
+		ImGui::GetStyle().FrameBorderSize = 1.0f;
+
+		ImGui::GetStyle().GrabMinSize = 8.0f;
+		ImGui::GetStyle().GrabRounding = 12.0f;
+
+		ImGui::GetStyle().FrameRounding = 12.0f;
+		ImGui::GetStyle().ScrollbarRounding = 12.0f;
+		ImGui::GetStyle().TabRounding = 4.0f;
 
 		auto& colors = ImGui::GetStyle().Colors;
 

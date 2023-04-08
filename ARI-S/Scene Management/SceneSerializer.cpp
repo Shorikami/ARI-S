@@ -163,8 +163,6 @@ namespace ARIS
 			auto& mc = e.GetComponent<MeshComponent>();
 			out << YAML::Key << "Name" << YAML::Value << mc.GetName();
 			out << YAML::Key << "Path" << YAML::Value << mc.GetPath();
-			out << YAML::Key << "Vertex Path" << YAML::Value << mc.GetVertexPath();
-			out << YAML::Key << "Fragment Path" << YAML::Value << mc.GetFragmentPath();
 
 			std::string texPath = std::string("N/A"), 
 						normPath = std::string("N/A"),
@@ -198,6 +196,9 @@ namespace ARIS
 			out << YAML::Key << "Metallic Path" << YAML::Value << metPath;
 			out << YAML::Key << "Roughness Path" << YAML::Value << roughPath;
 			out << YAML::Key << "Metal/Roughness Path" << YAML::Value << metRoughPath;
+
+			out << YAML::Key << "Metalness" << YAML::Value << mc.GetMetalness();
+			out << YAML::Key << "Roughness" << YAML::Value << mc.GetRoughness();
 
 			out << YAML::EndMap;
 		}
@@ -316,8 +317,9 @@ namespace ARIS
 					auto& t = deserializedEntity.AddComponent<MeshComponent>();
 					std::string name = mc["Name"].as<std::string>();
 					std::string path = mc["Path"].as<std::string>();
-					std::string vSrc = mc["Vertex Path"].as<std::string>();
-					std::string fSrc = mc["Fragment Path"].as<std::string>();
+
+					float metal = mc["Metalness"].as<float>();
+					float rough = mc["Roughness"].as<float>();
 
 					std::string diffTex = mc["Diffuse Path"].as<std::string>();
 					std::string normTex = mc["Normal Path"].as<std::string>();
@@ -327,6 +329,9 @@ namespace ARIS
 
 					t.m_Model = ModelBuilder::Get().LoadModel(path);
 					t.SetName(name);
+					t.m_Metalness = metal;
+					t.m_Roughness = rough;
+
 
 					if (diffTex != "N/A")
 					{
@@ -374,11 +379,11 @@ namespace ARIS
 
 					if (metTex != "N/A")
 					{
-						t.m_Metallic = new Texture(metTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
+						t.m_MetallicTex = new Texture(metTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_METALNESS);
 
 						for (Mesh& m : t.m_Model->m_Meshes)
 						{
-							m.m_Textures.push_back(*t.m_Metallic);
+							m.m_Textures.push_back(*t.m_MetallicTex);
 						}
 					}
 					//else
@@ -396,11 +401,11 @@ namespace ARIS
 
 					if (roughTex != "N/A")
 					{
-						t.m_Roughness = new Texture(roughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
+						t.m_RoughnessTex = new Texture(roughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_DIFFUSE_ROUGHNESS);
 
 						for (Mesh& m : t.m_Model->m_Meshes)
 						{
-							m.m_Textures.push_back(*t.m_Roughness);
+							m.m_Textures.push_back(*t.m_RoughnessTex);
 						}
 					}
 					//else
@@ -418,7 +423,7 @@ namespace ARIS
 
 					if (metalRoughTex != "N/A")
 					{
-						t.m_MetalRough = new Texture(metalRoughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
+						t.m_MetalRoughTex = new Texture(metalRoughTex, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
 
 						for (Mesh& m : t.m_Model->m_Meshes)
 						{
@@ -437,10 +442,6 @@ namespace ARIS
 					//		t.m_MetalRough = new Texture((*tt).m_Path, GL_LINEAR, GL_REPEAT, false, aiTextureType_UNKNOWN);
 					//	}
 					//}
-
-					t.m_VertexSrc = vSrc;
-					t.m_FragmentSrc = fSrc;
-					t.ReloadShader();
 				}
 
 				auto lc = e["PointLightComponent"];

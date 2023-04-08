@@ -1,5 +1,3 @@
-#version 450 core
-
 out vec4 fragColor;
 
 in vec3 fragPos;
@@ -20,48 +18,6 @@ uniform float intensity;
 
 uniform int vWidth;
 uniform int vHeight;
-
-const float PI = 3.14159265359f;
-
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float a = roughness;
-    float k = pow(a, 2) / 2.0f;
-
-    float nom   = NdotV;
-    float denom = NdotV * (1.0f - k) + k;
-
-    return nom / denom;
-}
-
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0f);
-    float NdotL = max(dot(N, L), 0.0f);
-    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-float DistributionGGX(vec3 N, vec3 H, float roughness)
-{
-    float a = pow(roughness, 2);
-    float a2 = pow(a, 2);
-    float NdotH = max(dot(N, H), 0.0f);
-    float NdotH2 = NdotH*NdotH;
-
-    float nom   = a2;
-    float denom = (NdotH2 * (a2 - 1.0f) + 1.0f);
-    denom = PI * denom * denom;
-
-    return nom / denom;
-}
-
-vec3 FresnelSchlick(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
 
 vec3 LightCalc()
 {
@@ -136,10 +92,10 @@ void main()
     // arbitrary scale for the distance check because the
     // influence sphere scales based on the original radius
     // (in this case it's 0.08f)
-	//if (dist > range)
-	//{
-	//	discard;
-	//}
+	if (dist > range)
+	{
+		discard;
+	}
 
 	fragColor = vec4(LightCalc(), 1.0f);
 }

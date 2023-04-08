@@ -39,6 +39,9 @@ namespace ARIS
 		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, 
 			Shader other = Shader(), bool useDefault = true, int entityID = -1)
 		{
+			if (!m_Model)
+				return;
+
 			Shader shaderInUse = useDefault ? m_Shader : other;
 			shaderInUse.Activate();
 
@@ -58,20 +61,11 @@ namespace ARIS
 			m_Model->Draw(shaderInUse, entityID);
 		}
 
-		void ReloadShader()
-		{
-			m_Shader.m_ID = 0;
-			m_Shader.Generate(false, m_VertexSrc.c_str(), m_FragmentSrc.c_str());
-		}
-
-		std::string GetVertexPath() const { return m_VertexSrc; }
-		std::string GetFragmentPath() const { return m_FragmentSrc; }
-
 		Texture* GetDiffuseTex() { return m_DiffuseTex; }
 		Texture* GetNormalTex() { return m_NormalTex; }
-		Texture* GetMetallicTex() { return m_Metallic; }
-		Texture* GetRoughnessTex() { return m_Roughness; }
-		Texture* GetMetalRough() { return m_MetalRough; }
+		Texture* GetMetallicTex() { return m_MetallicTex; }
+		Texture* GetRoughnessTex() { return m_RoughnessTex; }
+		Texture* GetMetalRough() { return m_MetalRoughTex; }
 
 		std::string GetName() const { return m_Model->GetName(); }
 		std::string GetPath() const { return m_Model->GetPath(); }
@@ -81,26 +75,24 @@ namespace ARIS
 
 		bool& GetControllableMetRough() { return m_ControllableMetalRoughness; }
 
-		float& GetMetallic() { return m_MetallicValue; }
-		float& GetRoughness() { return m_RoughnessValue; }
+		float& GetMetalness() { return m_Metalness; }
+		float& GetRoughness() { return m_Roughness; }
 
 	private:
 		Model* m_Model;
 		Shader m_Shader;
 
-		std::string m_VertexSrc = std::string(), m_FragmentSrc = std::string();
-
 		Texture* m_DiffuseTex;
 		Texture* m_NormalTex;
-		Texture* m_Metallic;
-		Texture* m_Roughness;
-		Texture* m_MetalRough;
+		Texture* m_MetallicTex;
+		Texture* m_RoughnessTex;
+		Texture* m_MetalRoughTex;
 
 		glm::vec4 m_Ambient, m_Albedo, m_Specular;
 
 		bool m_ControllableMetalRoughness;
-		float m_MetallicValue;
-		float m_RoughnessValue;
+		float m_Metalness;
+		float m_Roughness;
 
 		friend class SceneSerializer;
 		friend class HierarchyPanel;

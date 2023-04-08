@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "ModelBuilder.h"
+#include "../Rendering/DebugDraw.h"
 
 namespace ARIS
 {
@@ -22,7 +23,7 @@ namespace ARIS
 			, m_Range(10.0f)
 		{
 			m_Light = ModelBuilder::Get().CreateSphere(1.0f, 16);
-			m_Shader = std::make_shared<Shader>(false, "IBL/LocalLightPBR.vert", "IBL/LocalLightPBR.frag");
+			m_Shader = std::make_shared<Shader>(true, "IBL/LocalLightPBR.vert", "IBL/LocalLightPBR.frag", nullptr, "IBL/FormulasIBL.gh");
 		}
 
 		PointLightComponent(const PointLightComponent& other) = default;
@@ -51,7 +52,7 @@ namespace ARIS
 			UpdateShader(args...);
 		}
 
-		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 projection)
+		void Draw(glm::vec3 position, glm::mat4 model, glm::mat4 view, glm::mat4 projection)
 		{
 			m_Shader->Activate();
 
@@ -59,18 +60,18 @@ namespace ARIS
 			m_Shader->SetMat4("view", view);
 			m_Shader->SetMat4("projection", projection);
 		
+			// render the PBR effect on objects
 			m_Light->Draw(*m_Shader.get());
+
+			// render the actual light (debug)
+			dd::sphere(glm::value_ptr(position), glm::value_ptr(m_Color), 0.1f);
+			dd::sphere(glm::value_ptr(position), glm::value_ptr(m_Color), m_Range);
 		}
 
 		void ReloadShader()
 		{
 			m_Shader->m_ID = 0;
-			m_Shader->Generate(false, m_Shader->m_VertPath.c_str(), m_Shader->m_FragPath.c_str());
-		}
-
-		void Update(glm::vec3 position, glm::vec3 rotation)
-		{
-
+			m_Shader->Generate(true, m_Shader->m_VertPath.c_str(), m_Shader->m_FragPath.c_str(), nullptr, "IBL/FormulasIBL.gh");
 		}
 
 		glm::vec4 GetColor() const { return m_Color; }

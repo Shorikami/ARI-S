@@ -10,6 +10,7 @@
 #include "Texture.h"
 #include "Shader.h"
 #include "ModelBuilder.h"
+#include "../Rendering/DebugDraw.h"
 
 namespace ARIS
 {
@@ -22,26 +23,6 @@ namespace ARIS
 			, m_Projection(glm::mat4(1.0f))
 		{
 			m_Shader = std::make_shared<Shader>(false, "LineShader.vert", "LineShader.frag");
-
-			std::vector<glm::vec3> vertices =
-			{
-				glm::vec3(0.0f),
-				glm::vec3(0.0f)
-			};
-
-			glGenVertexArrays(1, &m_VAO);
-			glGenBuffers(1, &m_VBO);
-			glBindVertexArray(m_VAO);
-
-			glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
-
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-			glEnableVertexAttribArray(0);
-
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glBindVertexArray(0);
-
 		}
 
 		DirectionLightComponent(const DirectionLightComponent& other) = default;
@@ -112,28 +93,8 @@ namespace ARIS
 
 		void Draw(glm::vec3 position, glm::vec3 forward, glm::mat4 view, glm::mat4 proj)
 		{
-			m_Shader->Activate();
-
-			m_Shader->SetMat4("view", view);
-			m_Shader->SetMat4("projection", proj);
-
-			glBindVertexArray(m_VAO);
-			glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-
-			std::vector<glm::vec3> newNorm =
-			{
-				position,
-				position + (forward * 2.0f)
-			};
-
-			glBufferSubData(GL_ARRAY_BUFFER, 0, newNorm.size() * sizeof(glm::vec3), newNorm.data());
-			
-			glDrawArrays(GL_LINES, 0, 2);
-
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-			glBindVertexArray(0);
-			glUseProgram(0);
+			dd::vertexNormal(glm::value_ptr(position), glm::value_ptr(forward), 1.0f);
+			dd::circle(glm::value_ptr(position), glm::value_ptr(forward), glm::value_ptr(glm::vec4(m_Color)), 0.5f, 36.0f);
 		}
 
 		glm::vec4 GetColor() const { return m_Color; }
@@ -150,9 +111,6 @@ namespace ARIS
 
 	private:
 		std::shared_ptr<Shader> m_Shader;
-
-		GLuint m_VAO;
-		GLuint m_VBO;
 
 		glm::vec4 m_Color = glm::vec4(1.0f);
 
