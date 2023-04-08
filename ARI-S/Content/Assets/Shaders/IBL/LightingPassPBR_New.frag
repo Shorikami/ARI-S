@@ -1,5 +1,3 @@
-#version 450 core
-
 layout (location = 0) out vec4 fragColor;
 layout (location = 1) out float entityID;
 
@@ -116,8 +114,6 @@ float Shadow(vec4 v, float bias)
 
 // ----------------------------------------------
 // PBS/IBL --------------------------------------
-const float PI = 3.14159265359f;
-
 uniform float envMapSize;
 uniform float diffComponent;
 uniform float exposure;
@@ -142,53 +138,6 @@ layout(std140, binding = 5) uniform SphereHarmonics
 {
   vec4 shColor[9];
 };
-
-// -------
-
-float DistributionGGX(vec3 N, vec3 H, float roughness)
-{
-    float a = roughness*roughness;
-    float a2 = a*a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH*NdotH;
-
-    float nom   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-
-    return nom / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r*r) / 8.0;
-
-    float nom   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
-    return nom / denom;
-}
-
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-vec3 FresnelSchlick(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
-{
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
 
 // -----------------------------------------------------------------------------------------
 
@@ -219,18 +168,6 @@ float EvaluateBasisFunction(vec3 N, int idx)
     return 0.0f;
 }
 
-vec3 CalculateIrradiance(vec3 N)
-{
-	vec3 res = vec3(0.0f);
-	
-	for (int i = 0; i < 9; ++i)
-	{
-		res += vec3(shColor[i]) * EvaluateBasisFunction(N, i);
-	}
-	
-	return res;
-}
-
 vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, vec3 f0)
 {	
 	vec3 sum = vec3(0.0f);
@@ -255,8 +192,7 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, v
 		
 		vec3 H = normalize(wk + V);
 		
-		float mip = roughness == 0.0f ? 0.0f : 0.5f * log2(pow(1024.0f, 2) / hammersleyVals.N) - 0.5f * DistributionGGX(wk, H, roughness);
-		//float lod = 0.5f * log2((4096.0f * 2048.0f) / hammersleyVals.N) - (0.5f * log2(DistributionGGX(wk, H, roughness)/ 4.0f));
+		float mip = roughness == 0.0f ? 0.0f : (0.5f * log2((400.0f * 200.0f) / hammersleyVals.N)) - (0.5f * DistributionGGX(wk, H, roughness) / 4.0f);
 		
 		vec3 Li = pow(textureLod(envMap, wk, mip).rgb, vec3(2.2f));
 		
@@ -268,7 +204,6 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, v
 		
 		sum += res;
 	}
-	
 	
 	sum /= hammersleyVals.N;
 	
@@ -287,8 +222,6 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, v
 
 // ----------------------------------------------
 // ----------------------------------------------
-
-
 
 vec3 LightCalc()
 {
@@ -323,23 +256,14 @@ vec3 LightCalc()
 	
 	float NDF = DistributionGGX(N, H, rough);   
 	float gg = GeometrySmith(N, V, L, rough);    
-	vec3 ff  = FresnelSchlick(max(dot(H, V), 0.0), F0);        
+	vec3 ff  = FresnelSchlick(max(dot(H, V), 0.0f), F0);        
 	
 	vec3 numerator  = NDF * gg * ff;
-	float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+	float denominator = 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f) + 0.0001f;
 	vec3 loSpec = numerator / denominator;
 	
 	// diffuse
 	vec3 irr = texture(irradianceMap, N).rgb;
-  
-	//if (useSH)
-	//{
-	//	irr = irr / (irr + vec3(1.0f));
-	//	irr = pow(irr, vec3(1.0f / 2.2f));
-	//}
-  
-	//else
-	//  irr = texture(irradianceMap, N).rgb;
 	
 	vec3 diff = kD * (albedo / PI);
 	
@@ -369,15 +293,9 @@ vec3 LightCalc()
 	float currDepth = shadowCoord.z;
 	float maximum = float(currDepth - 1.0f * pow(10, -3) <= blur.x);
 	float shadowValue = max(1.0f  - shadow, maximum);
-	
-	//if (!useDiffuse)
-	//	return finalSpec;
 
 	 if (!useSpecular)
 		finalSpec = vec3(0.0f);
-	//	
-	//else if (!useSpecular && !useDiffuse)
-	//	return vec3(0.0f);
 	
 	float ao = 1.0f;
   
@@ -392,8 +310,7 @@ void main()
 					gl_FragCoord.y / vHeight);
 					
 	vec3 color = LightCalc();
-	//color = pow(color, vec3(1.0f / 2.2f));
-	
+
 	if (useToneMapping)
 	{
 		color = (exposure * color) / ((exposure * color) + vec3(1.0f));

@@ -140,7 +140,7 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(false, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag");
+        lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
@@ -236,10 +236,7 @@ namespace ARIS
         mapFilter = new Shader(true, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag", nullptr, "IBL/FormulasIBL.gh");
         brdf = new Shader(true, "IBL/BRDF.vert", "IBL/BRDF.frag", nullptr, "IBL/FormulasIBL.gh");
 
-        if (!useOldPBRMethod)
-            lightingPass = new Shader(false, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag");
-        else
-            lightingPass = new Shader(false, "IBL/LightingPassPBR.vert", "IBL/LightingPassPBR.frag");
+        lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
 
         hdrTexture = new Texture("Content/Assets/Textures/HDR/" + currEnvMap + ".hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
 
@@ -430,7 +427,6 @@ namespace ARIS
             glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
         };
 
-        // Draw the HDR cubemap first...
         hdrMapping->Activate();
         hdrMapping->SetInt("hdrMap", 0);
         hdrMapping->SetMat4("projection", hdrProj);

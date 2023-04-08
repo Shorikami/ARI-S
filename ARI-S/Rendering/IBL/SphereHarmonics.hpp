@@ -54,8 +54,6 @@ namespace ARIS
                         color += coeffs.results[i] * EvaluateBasisFunction(N, i);
                     }
 
-                    //color = color / (color + glm::vec3(1.0f));
-
                     int curr = (y * outW + x) * 3;
                     outImg[curr + 0] = color.x;
                     outImg[curr + 1] = color.y;
@@ -127,7 +125,7 @@ namespace ARIS
             float thetaStep = PI / static_cast<float>(h);
             float phiStep = 2.0f * PI / static_cast<float>(w);
 
-    #pragma omp parallel for schedule(dynamic, 1) // Magic: Multi-thread y loop
+    #pragma omp parallel for schedule(dynamic, 1)
             for (int yy = 0; yy < h; ++yy)
             {
                 for (int xx = 0; xx < w; ++xx)
