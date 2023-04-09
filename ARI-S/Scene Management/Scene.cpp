@@ -137,8 +137,8 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(false, "Shadows/Basic/LightingPass.vert", "Shadows/Basic/LightingPass.frag");
-        shadowPass = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
+        lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
+        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
 
@@ -233,8 +233,7 @@ namespace ARIS
         mapFilter = new Shader(true, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag", nullptr, "IBL/FormulasIBL.gh");
         brdf = new Shader(true, "IBL/BRDF.vert", "IBL/BRDF.frag", nullptr, "IBL/FormulasIBL.gh");
 
-        //lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
-        lightingPass = new Shader(false, "Shadows/Basic/LightingPass.vert", "Shadows/Basic/LightingPass.frag");
+        lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
 
         hdrTexture = new Texture("Content/Assets/Textures/HDR/" + currEnvMap + ".hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
 
@@ -447,7 +446,7 @@ namespace ARIS
 
         localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
 
-        shadowPass = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
+        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
@@ -621,7 +620,7 @@ namespace ARIS
 
         // Shadow Pass
         // IMPORTANT TO DO THIS: Color will blend with BG if this is anything else but vec4(0)
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         sBuffer->Activate();
   
         glCullFace(GL_FRONT);
@@ -651,14 +650,7 @@ namespace ARIS
                 // Update and render them relative to the light
                 objTr.Update();
 
-                float near_plane = 1.0f, far_plane = 7.5f;
-                glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-
-                glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-                                                    glm::vec3(0.0f, 0.0f, 0.0f),
-                                                    glm::vec3(0.0f, 1.0f, 0.0f));
-
-                mesh.Draw(objTr.GetTransform(), lightView, lightProjection, *shadowPass, false);
+                mesh.Draw(objTr.GetTransform(), light.GetViewMatrix(), light.GetProjectionMatrix(), *shadowPass, false);
             }
         }
         sBuffer->Unbind();
@@ -809,7 +801,7 @@ namespace ARIS
             lightingPass->SetInt("brdfTable", 10);
             lightingPass->SetInt("envMap", 11);
 
-            lightingPass->SetVec3("lightDir", glm::vec3(-2.0f, 4.0f, -1.0f));
+            lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("lightColor", glm::vec3(light.GetColor()));
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
 
@@ -875,13 +867,6 @@ namespace ARIS
             for (auto entity : view)
             {
                 auto [transform, light] = view.get<TransformComponent, DirectionLightComponent>(entity);
-
-                float near_plane = 1.0f, far_plane = 7.5f;
-                glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-
-                glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-                    glm::vec3(0.0f, 0.0f, 0.0f),
-                    glm::vec3(0.0f, 1.0f, 0.0f));
 
                 light.Draw(transform.GetTranslation(), transform.Forward(), lightProjection, lightView);
             }

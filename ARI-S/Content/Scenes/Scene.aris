@@ -1,22 +1,18 @@
 Scene: Test
 Entities:
-  - Entity: 9002720634645940316
+  - Entity: 2190408164216259085
     TagComponent:
-      Tag: Ground
+      Tag: Light
     TransformComponent:
-      Translation: [-1.31730795, -1.11590099, 0]
-      Rotation: [0, 0, 0]
-      Scale: [30, 1, 30]
-    MeshComponent:
-      Name: ""
-      Path: Content\Assets\Models\Plane.obj
-      Diffuse Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface-albedo.png
-      Normal Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface_Normal-ogl.png
-      Metallic Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface_Metallic.png
-      Roughness Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface_Roughness.png
-      Metal/Roughness Path: N/A
-      Metalness: 0
-      Roughness: 0
+      Translation: [2.18985057, 12.5640526, -10.4715958]
+      Rotation: [-2.80474377, 0.128107175, 6.86612511]
+      Scale: [1, 0.999999881, 0.99999994]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 10
+      Height: 10.4259996
+      Near: 1.62
+      Far: 29.8579998
   - Entity: 13067446606624837850
     TagComponent:
       Tag: Teapot
@@ -34,16 +30,20 @@ Entities:
       Metal/Roughness Path: N/A
       Metalness: 0
       Roughness: 0
-  - Entity: 2190408164216259085
+  - Entity: 9002720634645940316
     TagComponent:
-      Tag: Light
+      Tag: Ground
     TransformComponent:
-      Translation: [2.25429821, 1.57463467, -6.62369299]
-      Rotation: [3.38419318, -0.0167485606, 3.14159226]
-      Scale: [1, 1, 1]
-    DirectionLightComponent:
-      Color: [1, 1, 1, 1]
-      Width: 10
-      Height: 10.4259996
-      Near: 1.62
-      Far: 29.8579998
+      Translation: [-1.31730795, -1.11590099, 0]
+      Rotation: [0, 0, 0]
+      Scale: [30, 1, 30]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\Plane.obj
+      Diffuse Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface-albedo.png
+      Normal Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface_Normal-ogl.png
+      Metallic Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface_Metallic.png
+      Roughness Path: Content\Assets\Textures\PBR\planet_surface_Normal-bl\planet_surface_Roughness.png
+      Metal/Roughness Path: N/A
+      Metalness: 0
+      Roughness: 0

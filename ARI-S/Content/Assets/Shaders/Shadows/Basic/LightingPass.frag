@@ -15,6 +15,21 @@ uniform mat4 worldToLightMat;
 
 uniform sampler2D uShadowMap;
 
+float Shadow(vec4 v)
+{
+	vec3 coords = v.xyz / v.w;
+	v = v * 0.5f + 0.5f;
+	
+	float closest = texture(uShadowMap, v.xy).r;
+	float curr = v.z;
+	
+	float shadow = closest;
+	
+	if (curr > 1.0f)
+		shadow = 0.0f;
+		
+	return shadow;
+}
 
 vec3 LightCalc()
 {
@@ -25,9 +40,9 @@ vec3 LightCalc()
 	vec3 diff = texture(gAlbedo, fragUV).rgb;
 
 	// diffuse
-	vec3 dir = normalize(lightDir - fragPos);
-	float nDotL = max(dot(norm, dir), 0.0);
-	vec3 finalDiff = nDotL * vec3(1.0f);
+	vec3 dir = normalize(-lightDir);
+	float nDotL = max(dot(norm, dir), 0.0f);
+	vec3 finalDiff = nDotL * diff;
 	
 	// specular
 	vec3 viewDir = normalize(viewPos - fragPos);
@@ -39,14 +54,9 @@ vec3 LightCalc()
 	
 	// shadows
 	vec4 shadowCoord = worldToLightMat * vec4(fragPos, 1.0f);
-	vec2 shadowIdx = shadowCoord.xy / shadowCoord.w;
-	shadowIdx = shadowIdx * 0.5f + 0.5f;
+	float shadow = Shadow(shadowCoord);
 	
-	float lightDepth = texture(uShadowMap, shadowCoord.xy).r;
-	float pixelDepth = shadowCoord.z;
-	float shadow = pixelDepth > lightDepth ? 1.0f : 0.0f;
-	
-	return vec3(1 - shadow);
+	return (1.0f - shadow) * diff;
 }
 
 void main()

@@ -302,7 +302,7 @@ vec3 LightCalc()
 	vec3 ambient = (kD * irr * (albedo / PI) + finalSpec) * ao;
 	Lo = ((shadowValue * diff) + loSpec) * radiance * max(dot(N, L), 0.0f);
 	
-	return Lo;
+	return ambient;
 }
 
 void main()

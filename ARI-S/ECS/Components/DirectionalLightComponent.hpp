@@ -70,7 +70,7 @@ namespace ARIS
 
 		void Draw(glm::vec3 position, glm::vec3 forward, glm::mat4 p, glm::mat4 v)
 		{
-			dd::frustum(glm::value_ptr(glm::inverse(p * v)), glm::value_ptr(m_Color));
+			dd::frustum(glm::value_ptr(glm::inverse(m_Projection * m_View)), glm::value_ptr(m_Color));
 			//dd::vertexNormal(glm::value_ptr(position), glm::value_ptr(forward), 1.0f);
 			//dd::circle(glm::value_ptr(position), glm::value_ptr(forward), glm::value_ptr(glm::vec4(m_Color)), 0.5f, 36.0f);
 		}
