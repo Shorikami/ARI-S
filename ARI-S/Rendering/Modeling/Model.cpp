@@ -50,11 +50,20 @@ namespace ARIS
         }
     }
 
+    void Model::Update(glm::mat4 modelMat)
+    {
+        for (unsigned i = 0; i < m_Meshes.size(); ++i)
+        {
+            m_Meshes[i].Update(modelMat);
+        }
+    }
+
     void Model::Draw(Shader& shader, int entID)
     {
         for (unsigned i = 0; i < m_Meshes.size(); ++i)
         {
             m_Meshes[i].Draw(shader, entID);
+            m_Meshes[i].DrawBoundingBox();
         }
     }
 }

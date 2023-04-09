@@ -1,6 +1,6 @@
 #include <arpch.h>
 #include "Mesh.h"
-
+#include "../Rendering/DebugDraw.h"
 
 namespace ARIS
 {
@@ -9,6 +9,10 @@ namespace ARIS
 		, m_VertexData(std::vector<Vertex>())
 		, m_Indices(std::vector<unsigned int>())
 		, m_Textures(std::vector<Texture>())
+		, m_MaxBB(glm::vec3(0.0f))
+		, m_MinBB(glm::vec3(0.0f))
+		, m_InitialMax(glm::vec3(0.0f))
+		, m_InitialMin(glm::vec3(0.0f))
 	{
 	}
 
@@ -17,11 +21,16 @@ namespace ARIS
 		DestroyArrays();
 	}
 
-	Mesh::Mesh(std::vector<Vertex> v, std::vector<unsigned int> i, std::vector<Texture> t, std::string name)
+	Mesh::Mesh(std::vector<Vertex> v, std::vector<unsigned int> i, std::vector<Texture> t, 
+				glm::vec3 maxBB, glm::vec3 minBB, std::string name)
 		: m_MeshName(name)
 		, m_VertexData(v)
 		, m_Indices(i)
 		, m_Textures(t)
+		, m_MaxBB(maxBB)
+		, m_MinBB(minBB)
+		, m_InitialMax(maxBB)
+		, m_InitialMin(minBB)
 	{
 		BuildArrays();
 	}
@@ -33,6 +42,9 @@ namespace ARIS
 		m_Indices = other.m_Indices;
 		m_Textures = other.m_Textures;
 
+		m_InitialMax = m_MaxBB = other.m_MaxBB;
+		m_InitialMin = m_MinBB = other.m_MinBB;
+
 		BuildArrays();
 	}
 
@@ -42,6 +54,9 @@ namespace ARIS
 		m_VertexData = other.m_VertexData;
 		m_Indices = other.m_Indices;
 		m_Textures = other.m_Textures;
+
+		m_InitialMax = m_MaxBB = other.m_MaxBB;
+		m_InitialMin = m_MinBB = other.m_MinBB;
 
 		BuildArrays();
 	}
@@ -113,6 +128,17 @@ namespace ARIS
 		m_VertexArray.Clear();
 
 		glActiveTexture(0);
+	}
+
+	void Mesh::Update(glm::mat4 modelMat)
+	{
+		m_MaxBB = modelMat * glm::vec4(m_InitialMax, 1.0f);
+		m_MinBB = modelMat * glm::vec4(m_InitialMin, 1.0f);
+	}
+
+	void Mesh::DrawBoundingBox()
+	{
+		dd::aabb(glm::value_ptr(m_MinBB), glm::value_ptr(m_MaxBB), glm::value_ptr(glm::vec4(1.0f)));
 	}
 
 	void Mesh::BuildArrays()

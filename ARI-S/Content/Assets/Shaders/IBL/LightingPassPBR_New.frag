@@ -265,7 +265,7 @@ vec3 LightCalc()
 	// diffuse
 	vec3 irr = texture(irradianceMap, N).rgb;
 	
-	vec3 diff = kD * (albedo / PI);
+	vec3 diff = (albedo / PI);
 	
 	// specular
 	vec3 finalSpec = vec3(0.0f);
@@ -300,8 +300,9 @@ vec3 LightCalc()
 	float ao = 1.0f;
   
 	vec3 ambient = (kD * irr * (albedo / PI) + finalSpec) * ao;
+	Lo = ((shadowValue * diff) + loSpec) * radiance * max(dot(N, L), 0.0f);
 	
-	return ambient;
+	return Lo;
 }
 
 void main()

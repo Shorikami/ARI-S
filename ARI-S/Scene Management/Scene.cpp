@@ -25,8 +25,6 @@ int currLocalLights = NUM_LIGHTS;
 int kernelSize = 10;
 int gaussianWeight = 10;
 
-bool sphToCube = true;
-bool useDiffuse = true;
 bool useSpecular = true;
 bool useToneMapping = true;
 
@@ -36,9 +34,6 @@ std::string currEnvMap = "Newport_Loft";
 
 bool displayIrr = false;
 bool displayIrrSH = false;
-
-float envMapSize = 16.0f;
-float diffComponent = 1.0f;
 float exposure = 1.0f;
 
 float aoScale = 1.0f;
@@ -142,8 +137,8 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         
-        lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
-        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        lightingPass = new Shader(false, "Shadows/Basic/LightingPass.vert", "Shadows/Basic/LightingPass.frag");
+        shadowPass = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
     }
 
@@ -238,7 +233,8 @@ namespace ARIS
         mapFilter = new Shader(true, "IBL/CubemapHDR.vert", "IBL/MapFilter.frag", nullptr, "IBL/FormulasIBL.gh");
         brdf = new Shader(true, "IBL/BRDF.vert", "IBL/BRDF.frag", nullptr, "IBL/FormulasIBL.gh");
 
-        lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
+        //lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
+        lightingPass = new Shader(false, "Shadows/Basic/LightingPass.vert", "Shadows/Basic/LightingPass.frag");
 
         hdrTexture = new Texture("Content/Assets/Textures/HDR/" + currEnvMap + ".hdr", GL_LINEAR, GL_CLAMP_TO_EDGE, true);
 
@@ -451,7 +447,7 @@ namespace ARIS
 
         localLight = new Shader(false, "Deferred/LocalLight.vert", "Deferred/LocalLight.frag");
 
-        shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
+        shadowPass = new Shader(false, "Shadows/Basic/Shadows.vert", "Shadows/Basic/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
@@ -615,6 +611,8 @@ namespace ARIS
 
             // Update and render them normally
             objTr.Update();
+            mesh.Update(objTr.GetTransform());
+
             mesh.Draw(objTr.GetTransform(), editorCam.GetViewMatrix(), 
                 editorCam.GetProjection(), *geometryPass, false, (int)entity);
         }
@@ -652,7 +650,15 @@ namespace ARIS
 
                 // Update and render them relative to the light
                 objTr.Update();
-                mesh.Draw(objTr.GetTransform(), light.GetViewMatrix(), light.GetProjectionMatrix(), *shadowPass, false);
+
+                float near_plane = 1.0f, far_plane = 7.5f;
+                glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+
+                glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+                                                    glm::vec3(0.0f, 0.0f, 0.0f),
+                                                    glm::vec3(0.0f, 1.0f, 0.0f));
+
+                mesh.Draw(objTr.GetTransform(), lightView, lightProjection, *shadowPass, false);
             }
         }
         sBuffer->Unbind();
@@ -778,6 +784,13 @@ namespace ARIS
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
             * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
+        float near_plane = 1.0f, far_plane = 7.5f;
+        glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+
+        glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f));
+
         // For all lights...(TODO: correct?)
         auto lView = m_Registry.view<TransformComponent, DirectionLightComponent>();
         for (auto entity : lView)
@@ -789,23 +802,19 @@ namespace ARIS
             light.Update(transform.GetTranslation(), transform.GetRotation());
 
             lightingPass->SetInt("uShadowMap", 7);
-            lightingPass->SetMat4("worldToLightMat", matB * (light.GetProjectionMatrix() * light.GetViewMatrix()));
+            lightingPass->SetMat4("worldToLightMat", matB * (lightProjection * lightView));
 
             lightingPass->SetInt("irradianceMap", 8);
             lightingPass->SetInt("filteredMap", 9);
             lightingPass->SetInt("brdfTable", 10);
             lightingPass->SetInt("envMap", 11);
 
-            lightingPass->SetVec3("lightDir", transform.Forward());
+            lightingPass->SetVec3("lightDir", glm::vec3(-2.0f, 4.0f, -1.0f));
+            lightingPass->SetVec3("lightColor", glm::vec3(light.GetColor()));
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
 
-            lightingPass->SetFloat("envMapSize", envMapSize);
-            lightingPass->SetFloat("diffComponent", diffComponent);
             lightingPass->SetFloat("exposure", exposure);
-
-            lightingPass->SetBool("sphereToCube", sphToCube);
             lightingPass->SetBool("useSpecular", useSpecular);
-            lightingPass->SetBool("useDiffuse", useDiffuse);
             lightingPass->SetBool("useToneMapping", useToneMapping);
 
             lightingPass->SetBool("useSH", useSH);
@@ -853,7 +862,8 @@ namespace ARIS
                     "vWidth", sceneWidth,
                     "vHeight", sceneHeight);
 
-                light.Draw(transform.GetTranslation(), transform.GetTransform(), editorCam.GetViewMatrix(), editorCam.GetProjection());
+                light.Draw(transform.GetTranslation(), transform.GetTransform(), 
+                    editorCam.GetViewMatrix(), editorCam.GetProjection());
             }
         }
 
@@ -866,8 +876,14 @@ namespace ARIS
             {
                 auto [transform, light] = view.get<TransformComponent, DirectionLightComponent>(entity);
 
-                light.Draw(transform.GetTranslation(), transform.Forward(),
-                    editorCam.GetViewMatrix(), editorCam.GetProjection());
+                float near_plane = 1.0f, far_plane = 7.5f;
+                glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+
+                glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+                    glm::vec3(0.0f, 0.0f, 0.0f),
+                    glm::vec3(0.0f, 1.0f, 0.0f));
+
+                light.Draw(transform.GetTranslation(), transform.Forward(), lightProjection, lightView);
             }
         }
 

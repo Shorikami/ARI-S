@@ -36,6 +36,14 @@ namespace ARIS
 			m_Model->InitializeID(id);
 		}
 
+		void Update(glm::mat4 modelMat)
+		{
+			if (!m_Model)
+				return;
+
+			m_Model->Update(modelMat);
+		}
+
 		void Draw(glm::mat4 model, glm::mat4 view, glm::mat4 proj, 
 			Shader other = Shader(), bool useDefault = true, int entityID = -1)
 		{

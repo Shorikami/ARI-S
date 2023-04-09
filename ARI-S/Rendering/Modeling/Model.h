@@ -24,6 +24,7 @@ namespace ARIS
 
 		void InitializeID(int entityID);
 
+		void Update(glm::mat4 modelMat);
 		void Draw(Shader& shader, int entID = -1);
 
 		std::string GetName() const { return m_Name; }

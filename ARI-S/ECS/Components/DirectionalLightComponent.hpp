@@ -51,35 +51,12 @@ namespace ARIS
 			UpdateShader(args...);
 		}
 
-		//void ReloadShader()
-		//{
-		//	m_Shader->m_ID = 0;
-		//	m_Shader->Generate(false, m_VertexSrc.c_str(), m_FragmentSrc.c_str());
-		//}
-
 		void Update(glm::vec3 position, glm::vec3 rotation)
 		{
-			//glm::vec3 dir = glm::vec3(0.0f);
-			//dir.x = cos(rotation.x) * cos(rotation.y);
-			//dir.y = sin(rotation.y);
-			//dir.z = sin(rotation.x) * cos(rotation.y);
-			//dir = glm::normalize(dir);
-			//
-			//m_View = glm::lookAt(position, position + dir, glm::vec3(0.0f, 1.0f, 0.0f));
 
-			//std::cout << "{ " << rotation.x << " " << rotation.y << " " << rotation.z << " }" << std::endl;
-
-			glm::quat orientation = glm::quat(glm::vec3(-rotation.x, -rotation.y, 0.0f));
+			glm::quat orientation = glm::quat(glm::vec3(rotation.x, rotation.y, 0.0f));
 			m_View = glm::translate(glm::mat4(1.0f), position) * glm::toMat4(orientation);
 			m_View = glm::inverse(m_View);
-
-			//m_View = 
-			//{
-			//	glm::vec4(right.x, up.x, forward.x, 0.0f),
-			//	glm::vec4(right.y, up.y, forward.y, 0.0f),
-			//	glm::vec4(right.z, up.z, forward.z, 0.0f),
-			//	glm::vec4(-glm::dot(right, position), -glm::dot(up, position), -glm::dot(forward, position), 1.0f)
-			//};
 
 			if (m_UsePerspective)
 			{
@@ -91,10 +68,11 @@ namespace ARIS
 			}
 		}
 
-		void Draw(glm::vec3 position, glm::vec3 forward, glm::mat4 view, glm::mat4 proj)
+		void Draw(glm::vec3 position, glm::vec3 forward, glm::mat4 p, glm::mat4 v)
 		{
-			dd::vertexNormal(glm::value_ptr(position), glm::value_ptr(forward), 1.0f);
-			dd::circle(glm::value_ptr(position), glm::value_ptr(forward), glm::value_ptr(glm::vec4(m_Color)), 0.5f, 36.0f);
+			dd::frustum(glm::value_ptr(glm::inverse(p * v)), glm::value_ptr(m_Color));
+			//dd::vertexNormal(glm::value_ptr(position), glm::value_ptr(forward), 1.0f);
+			//dd::circle(glm::value_ptr(position), glm::value_ptr(forward), glm::value_ptr(glm::vec4(m_Color)), 0.5f, 36.0f);
 		}
 
 		glm::vec4 GetColor() const { return m_Color; }

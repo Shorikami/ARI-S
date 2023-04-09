@@ -33,12 +33,15 @@ namespace ARIS
 		Mesh();
 		~Mesh();
 
-		Mesh(std::vector<Vertex> v, std::vector<unsigned int> i, std::vector<Texture> t, std::string name = "Unnamed");
+		Mesh(std::vector<Vertex> v, std::vector<unsigned int> i, 
+			std::vector<Texture> t, glm::vec3 maxBB, glm::vec3 minBB, std::string name = "Unnamed");
 
 		Mesh(const Mesh& other);
 		void operator=(const Mesh& other);
 
+		void Update(glm::mat4 modelMat);
 		void Draw(Shader& s, int entID = -1);
+		void DrawBoundingBox();
 
 		void BuildArrays();
 		void DestroyArrays();
@@ -53,12 +56,21 @@ namespace ARIS
 
 		std::vector<Texture> GetTextures() { return m_Textures; }
 
+		glm::vec3 GetBoundingBoxCenter() { return (m_MaxBB - m_MinBB) / 2.0f; }
+		glm::vec3 GetBoundingBoxMax() { return m_MaxBB; }
+		glm::vec3 GetBoundingBoxMin() { return m_MinBB; }
+
 	private:
 		std::string m_MeshName;
 
 		std::vector<Vertex> m_VertexData;
 		std::vector<unsigned int> m_Indices;
 		std::vector<Texture> m_Textures;
+
+		glm::vec3 m_MinBB;
+		glm::vec3 m_MaxBB;
+
+		glm::vec3 m_InitialMax, m_InitialMin;
 
 		VertexArray m_VertexArray;
 
