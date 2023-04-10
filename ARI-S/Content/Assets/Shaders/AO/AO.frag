@@ -25,6 +25,8 @@ int Heaviside(float val)
 float CalculateAO(vec2 coords, vec2 floatCoords, vec3 pos, vec3 norm, float depth)
 {
 	float sum = 0.0f;
+	float c = 0.1f * aoInfluenceRange;
+	float delta = 0.001f;
 	
 	for (int i = 0; i < aoSamplePoints; ++i)
 	{
@@ -35,13 +37,24 @@ float CalculateAO(vec2 coords, vec2 floatCoords, vec3 pos, vec3 norm, float dept
 		float theta = 2.0f * PI * a * ((7.0f * aoSamplePoints) / 9.0f) + phi;
 		
 		vec2 read = vec2(cos(theta), sin(theta)) * h;
-		
 		vec2 readFrom = floatCoords + read;
-		vec3 readPos = texture(gPos, readFrom).rgb;
 		
+		vec3 pI = texture(gPos, readFrom).rgb;
+		
+		// ----
+		
+		vec3 wi = pI - pos;
+		
+		float step = Heaviside(aoInfluenceRange - length(wi));
+		float numerator = max(0.0f, (dot(norm, wi) - delta * depth));
+		float denominator = max(pow(c, 2), dot(wi, wi));
+		
+		sum += (numerator / denominator);
 	}
 	
-	return max(0.0f, 1.0f);
+	sum *= (2 * PI * c) / aoSamplePoints;
+	
+	return sum;
 }
 
 
@@ -58,6 +71,7 @@ void main()
 	float depth = texture(gDepth, uv).r;
 	
 	float occlusion = CalculateAO(coords, uv, fragPos, norm, depth);
+	float finalAO = max(0.0f, pow(1 - (aoScale * occlusion), aoContrast));
 
-	fragColor = vec4(vec3(occlusion), 1.0f);
+	fragColor = vec4(vec3(finalAO), 1.0f);
 }

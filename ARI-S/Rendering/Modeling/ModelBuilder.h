@@ -40,14 +40,19 @@ namespace ARIS
 
 		static Model* CreateSphere(float radius, unsigned divisions);
 
+		bool m_DisplayBoxes = false;
+
 	private:
 		void GenerateModel(std::string path, Model& model);
 		void ProcessNode(aiNode* node, const aiScene* scene, Model& model);
 		Mesh ProcessMesh(aiMesh* mesh, const aiScene* scene, Model& model);
 		std::vector<Texture> LoadMaterialTextures(aiMaterial* mat, aiTextureType type, Model& model);
 
+		
+
 		std::vector<Model*> m_ModelTable;
 		static ModelBuilder* m_Instance;
+
 
 		friend class HierarchyPanel;
 	};

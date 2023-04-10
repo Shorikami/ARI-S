@@ -230,6 +230,37 @@ namespace ARIS
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Preferences"))
+			{
+				ImGui::Text("Displaying Buffer");
+				ImGui::SameLine();
+				const char* fbos[] = { "SceneFBO", "GPosition", "GNormals", "GAlbedo", 
+					"GAMR", "EntityID", "GDepth", "ShadowMap", "ShadowBlur", "AoMap", "AoBlur" };
+				static const char* currItem = m_DisplayBuffer.c_str();
+				if (ImGui::BeginCombo("##fbo combo", currItem))
+				{
+					for (int n = 0; n < IM_ARRAYSIZE(fbos); ++n)
+					{
+						bool selected = (std::strcmp(fbos[n], currItem) == 0);
+						if (ImGui::Selectable(fbos[n], selected))
+						{
+							m_DisplayBuffer = fbos[n];
+							currItem = fbos[n];
+						}
+						if (selected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+
+					ImGui::EndCombo();
+				}
+
+				ImGui::Checkbox("Display Debug Shapes", &ModelBuilder::Get().m_DisplayBoxes);
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenuBar();
 		}
 		ImGui::End();
@@ -253,7 +284,17 @@ namespace ARIS
 		ImVec2 vpPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { vpPanelSize.x, vpPanelSize.y };
 		
-		uint32_t fbTex = m_ActiveScene->GetSceneFBO()->GetColorAttachment(0).m_ID;
+
+		uint32_t fbTex = 0;
+		if (m_DisplayBuffer.compare("SceneFBO") == 0)
+		{
+			fbTex = m_ActiveScene->GetBuffer(m_DisplayBuffer)->GetColorAttachment(0).m_ID;
+		}
+		else
+		{
+			fbTex = m_ActiveScene->GetDisplayTexture(m_DisplayBuffer)->m_ID;
+		}
+		
 		ImGui::Image((void*)(intptr_t)fbTex, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, 
 			ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		

@@ -63,7 +63,9 @@ namespace ARIS
         for (unsigned i = 0; i < m_Meshes.size(); ++i)
         {
             m_Meshes[i].Draw(shader, entID);
-            m_Meshes[i].DrawBoundingBox();
+
+            if (ModelBuilder::Get().m_DisplayBoxes)
+                m_Meshes[i].DrawBoundingBox();
         }
     }
 }

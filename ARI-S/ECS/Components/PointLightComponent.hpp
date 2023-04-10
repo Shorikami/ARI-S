@@ -65,7 +65,11 @@ namespace ARIS
 
 			// render the actual light (debug)
 			dd::sphere(glm::value_ptr(position), glm::value_ptr(m_Color), 0.1f);
-			dd::sphere(glm::value_ptr(position), glm::value_ptr(m_Color), m_Range);
+
+			if (ModelBuilder::Get().m_DisplayBoxes)
+			{
+				dd::sphere(glm::value_ptr(position), glm::value_ptr(m_Color), m_Range);
+			}
 		}
 
 		void ReloadShader()

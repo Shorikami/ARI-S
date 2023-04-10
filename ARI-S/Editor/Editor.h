@@ -43,6 +43,8 @@ namespace ARIS
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
+		std::string GetDisplayBuffer() const { return m_DisplayBuffer; }
+
 	private:
 		Framebuffer* m_Framebuffer;
 		glm::vec2 m_ViewportSize = glm::vec2(0.0f);
@@ -62,6 +64,9 @@ namespace ARIS
 
 		HierarchyPanel m_HierarchyPanel;
 		ContentBrowser m_ContentBrowser;
+
+		// must be initialized with scene FBO
+		std::string m_DisplayBuffer = std::string("SceneFBO");
 	};
 }
 

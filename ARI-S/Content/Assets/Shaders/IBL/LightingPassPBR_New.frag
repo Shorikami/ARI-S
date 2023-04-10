@@ -15,6 +15,8 @@ uniform samplerCube irradianceMap;
 uniform samplerCube filteredMap;
 uniform sampler2D brdfTable;
 
+uniform sampler2D aoMap;
+
 uniform vec3 lightDir;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
@@ -120,6 +122,7 @@ uniform float exposure;
 
 uniform bool sphereToCube;
 uniform bool useSpecular;
+uniform bool useOcclusion;
 uniform bool useDiffuse;
 uniform bool useToneMapping;
 
@@ -214,13 +217,6 @@ vec3 MonteCarloApprox(vec3 N, vec3 V, vec3 R, vec3 A, vec3 B, float roughness, v
 // ----------------------------------------------
 
 // ----------------------------------------------
-// AMBIENT OCCLUSION-----------------------------
-
-
-
-
-
-// ----------------------------------------------
 // ----------------------------------------------
 
 vec3 LightCalc()
@@ -297,7 +293,10 @@ vec3 LightCalc()
 	 if (!useSpecular)
 		finalSpec = vec3(0.0f);
 	
-	float ao = 1.0f;
+	float ao = texture(aoMap, fragUV).r;
+	
+	if (!useOcclusion)
+		ao = 1.0f;
   
 	vec3 ambient = (kD * irr * (albedo / PI) + finalSpec) * ao;
 	Lo = ((shadowValue * diff) + loSpec) * radiance * max(dot(N, L), 0.0f);

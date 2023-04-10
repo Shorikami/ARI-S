@@ -23,9 +23,12 @@ unsigned currLights = 4;
 int currLocalLights = NUM_LIGHTS;
 
 int kernelSize = 10;
+
 int gaussianWeight = 10;
+int aoWeight = 10;
 
 bool useSpecular = true;
+bool useOcclusion = true;
 bool useToneMapping = true;
 
 bool useSH = false;
@@ -40,6 +43,7 @@ float aoScale = 1.0f;
 float aoContrast = 1.0f;
 int aoSamplePoints = 20;
 float aoInfluenceRange = 0.1f;
+bool blurAO = true;
 
 namespace ARIS
 {
@@ -127,6 +131,7 @@ namespace ARIS
         kernelData = new UniformBuffer<BlurKernel>(3);
         hammersleyData = new UniformBuffer<Discrepancy>(4);
         harmonicData = new UniformBuffer<HarmonicColors>(5);
+        aoKernelData = new UniformBuffer<BlurKernel>(6);
 
         outputIrrTex = nullptr;
     }
@@ -136,10 +141,14 @@ namespace ARIS
         delete lightingPass;
         delete shadowPass;
         delete computeBlur;
+        delete aoPass;
+        delete aoBlur;
         
         lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
+        aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
+        aoBlur = new Shader(false, "AO/BilateralBlur.cmpt");
     }
 
     void Scene::GenerateBasicShapes()
@@ -450,37 +459,46 @@ namespace ARIS
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
-        aoBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
+        aoBlur = new Shader(false, "AO/BilateralBlur.cmpt");
 
         // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
+        std::string names[4] = { "GPosition", "GNormals", "GAlbedo", "GAMR" };
+
         for (unsigned i = 0; i < 4; ++i)
         {
             gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr,
                 GL_NEAREST, GL_CLAMP_TO_EDGE));
+            m_DisplayTextures[names[i]] = gTextures[i];
         }
 
         // Single-channel red texture (for entity ID and mouse-clicking; this will be
         // shared with the scene FBO)
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_R32F, GL_RED, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE));
+        m_DisplayTextures["EntityID"] = gTextures[4];
 
         // gBuffer depth texture
         gTextures.push_back(new Texture(_windowWidth, _windowHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, nullptr,
             GL_NEAREST, GL_REPEAT, GL_FLOAT));
+        m_DisplayTextures["GDepth"] = gTextures[5];
 
         // shadow map
         sDepthMap = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_UNSIGNED_BYTE);
+        m_DisplayTextures["ShadowMap"] = sDepthMap;
 
         // AO map
         aoMap = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
+        m_DisplayTextures["AoMap"] = aoMap;
 
         // filtered AO map
         aoBlurOutput = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
+        m_DisplayTextures["AoBlur"] = aoBlurOutput;
 
         // filtered shadow map
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
             GL_NEAREST, GL_CLAMP_TO_BORDER, GL_FLOAT);
+        m_DisplayTextures["ShadowBlur"] = blurOutput;
 
         // gBuffer FBO
         gBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -503,6 +521,8 @@ namespace ARIS
 
         // Scene FBO (for the editor)
         m_SceneFBO = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_Framebuffers["SceneFBO"] = m_SceneFBO;
+
         m_SceneFBO->Bind();
         m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA32F, GL_RGBA, GL_UNSIGNED_BYTE);
         m_SceneFBO->AllocateAttachTexture(GL_COLOR_ATTACHMENT1, GL_R32F, GL_RED, GL_UNSIGNED_BYTE);
@@ -521,6 +541,8 @@ namespace ARIS
 
         // Shadow FBO 
         sBuffer = new Framebuffer(2048, 2048, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_Framebuffers["ShadowFBO"] = sBuffer;
+
         sBuffer->Bind();
 
         sBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *sDepthMap);
@@ -538,6 +560,8 @@ namespace ARIS
 
         // AO FBO
         aoBuffer = new Framebuffer(_windowWidth, _windowHeight, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        m_Framebuffers["AoFBO"] = aoBuffer;
+
         aoBuffer->Bind();
 
         aoBuffer->AttachTexture(GL_COLOR_ATTACHMENT0, *aoMap);
@@ -693,6 +717,7 @@ namespace ARIS
         
         // Blur the shader using a convolution filter
         memset(kernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
+        memset(aoKernelData->GetData().weights, 0, sizeof(glm::vec4) * 101);
 
         // Build the kernel weights
         for (int i = 0; i <= kernelSize * kernelSize; ++i)
@@ -702,22 +727,30 @@ namespace ARIS
             int idx = i - halfWidth;
             kernelData->GetData().weights[i].x =
                 Gaussian(idx, static_cast<float>(gaussianWeight));
+
+            aoKernelData->GetData().weights[i].x =
+                Gaussian(idx, static_cast<float>(aoWeight));
         }
 
         // Normalize the kernel weights so all values sum up to 1
         float sum = 0.0f;
+        float aoSum = 0.0f;
         for (int i = 0; i <= kernelSize * kernelSize; ++i)
         {
             sum += kernelData->GetData().weights[i].x;
+            aoSum += aoKernelData->GetData().weights[i].x;
         }
 
         for (int i = 0; i <= kernelSize * kernelSize; ++i)
         {
             kernelData->GetData().weights[i].x /= sum;
+            aoKernelData->GetData().weights[i].x /= aoSum;
         }
 
         kernelData->SetData();
+        aoKernelData->SetData();
 
+        // Run the shadow compute shader
         computeBlur->Activate();
         computeBlur->SetInt("halfKernel", (kernelSize * kernelSize) / 2);
 
@@ -734,6 +767,45 @@ namespace ARIS
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         glUseProgram(0);
+        // --------------
+
+        // Run the AO compute shader
+        aoBlur->Activate();
+
+        // Kernel
+        aoBlur->SetInt("halfKernel", (kernelSize* kernelSize) / 2);
+        
+        // Texture width/height
+        aoBlur->SetInt("vWidth", 1600);
+        aoBlur->SetInt("vHeight", 900);
+
+        // Input/output
+        srcLoc = glGetUniformLocation(aoBlur->m_ID, "src");
+        glBindImageTexture(0, aoMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+        glUniform1i(srcLoc, 0);
+
+        dstLoc = glGetUniformLocation(aoBlur->m_ID, "dst");
+        glBindImageTexture(1, aoBlurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+        glUniform1i(dstLoc, 1);
+
+        // Normal, depth G-buffer textures
+        GLint nBufLoc = glGetUniformLocation(aoBlur->m_ID, "normalBuf");
+        glBindImageTexture(2, gTextures[1]->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+        glUniform1i(nBufLoc, 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, gTextures[5]->m_ID);
+
+        //GLint dBufLoc = glGetUniformLocation(aoBlur->m_ID, "depthBuf");
+        //glBindImageTexture(3, gTextures[5]->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_DEPTH_COMPONENT24);
+        //glUniform1i(dBufLoc, 3);
+
+        // Dispatch
+        glDispatchCompute(2048 / 128, 2048, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glUseProgram(0);
+        // --------------
 
         // Render the scene normally
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -773,6 +845,18 @@ namespace ARIS
         glActiveTexture(GL_TEXTURE11);
         glBindTexture(GL_TEXTURE_CUBE_MAP, hdrCubemap->m_ID);
 
+
+        glActiveTexture(GL_TEXTURE12);
+
+        if (blurAO)
+        {
+            glBindTexture(GL_TEXTURE_2D, aoBlurOutput->m_ID);
+        }
+        else
+        {
+            glBindTexture(GL_TEXTURE_2D, aoMap->m_ID);
+        }
+
         glm::mat4 matB = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f))
             * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
 
@@ -801,12 +885,15 @@ namespace ARIS
             lightingPass->SetInt("brdfTable", 10);
             lightingPass->SetInt("envMap", 11);
 
+            lightingPass->SetInt("aoMap", 12);
+
             lightingPass->SetVec3("lightDir", transform.Forward());
             lightingPass->SetVec3("lightColor", glm::vec3(light.GetColor()));
             lightingPass->SetVec3("viewPos", editorCam.GetPosition());
 
             lightingPass->SetFloat("exposure", exposure);
             lightingPass->SetBool("useSpecular", useSpecular);
+            lightingPass->SetBool("useOcclusion", useOcclusion);
             lightingPass->SetBool("useToneMapping", useToneMapping);
 
             lightingPass->SetBool("useSH", useSH);
@@ -979,6 +1066,7 @@ namespace ARIS
         ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f);
 
         ImGui::Checkbox("Enable Specular", &useSpecular);
+        ImGui::Checkbox("Enable Occlusion", &useOcclusion);
         ImGui::Checkbox("Enable Tone Mapping", &useToneMapping);
 
         ImGui::Text("HDR Map");
@@ -998,6 +1086,16 @@ namespace ARIS
         ImGui::Separator();
 
         ImGui::Text("Ambient Occlusion");
+        ImGui::Checkbox("Blur Occlusion", &blurAO);
+
+        ImGui::PushItemWidth(100.0f);
+        ImGui::SliderInt("Blur Weight", &aoWeight, 1, 50);
+        ImGui::PopItemWidth();
+
+        ImGui::SliderFloat("Occlusion Scale", &aoScale, 0.1f, 5.0f);
+        ImGui::SliderFloat("Occlusion Contrast", &aoContrast, 0.1f, 5.0f);
+        ImGui::SliderInt("Occlusion Samples", &aoSamplePoints, 1, 40);
+        ImGui::SliderFloat("Occlusion Range", &aoInfluenceRange, 0.1f, 1.0f);
 
         ImGui::Separator();
 

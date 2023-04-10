@@ -1,0 +1,66 @@
+Scene: Test
+Entities:
+  - Entity: 9051500063432365629
+    TagComponent:
+      Tag: Sphere
+    TransformComponent:
+      Translation: [1.43995953, -0.220484704, 4.54831219]
+      Rotation: [0, 0, 0]
+      Scale: [0.0018999998, 0.0018999998, 0.0018999998]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\sphere-cylcoords-1k.obj
+      Diffuse Path: Content\Assets\Textures\PBR\gold-scuffed-bl\gold-scuffed_basecolor-boosted.png
+      Normal Path: Content\Assets\Textures\PBR\gold-scuffed-bl\gold-scuffed_normal.png
+      Metallic Path: Content\Assets\Textures\PBR\gold-scuffed-bl\gold-scuffed_metallic.png
+      Roughness Path: Content\Assets\Textures\PBR\gold-scuffed-bl\gold-scuffed_roughness.png
+      Metal/Roughness Path: N/A
+      Metalness: 0
+      Roughness: 0
+  - Entity: 11388593864436155184
+    TagComponent:
+      Tag: Lantern
+    TransformComponent:
+      Translation: [-1.49864471, -0.392573595, 3.60732508]
+      Rotation: [0, -0.270525724, 0]
+      Scale: [0.100000024, 0.100000001, 0.100000024]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\Lantern\Lantern.gltf
+      Diffuse Path: N/A
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+      Metal/Roughness Path: N/A
+      Metalness: 0
+      Roughness: 0
+  - Entity: 1086779661540530188
+    TagComponent:
+      Tag: Directional Light
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    DirectionLightComponent:
+      Color: [1, 1, 1, 1]
+      Width: 10
+      Height: 10
+      Near: 0.100000001
+      Far: 25
+  - Entity: 10024719634285195916
+    TagComponent:
+      Tag: Toramaru
+    TransformComponent:
+      Translation: [0.9356004, -0.34951517, 4.6838541]
+      Rotation: [-3.14159203, -1.23506999, 3.14159226]
+      Scale: [1.00000012, 1, 1.00000012]
+    MeshComponent:
+      Name: ""
+      Path: Content\Assets\Models\BA\Toramaru\scene.gltf
+      Diffuse Path: N/A
+      Normal Path: N/A
+      Metallic Path: N/A
+      Roughness Path: N/A
+      Metal/Roughness Path: N/A
+      Metalness: 0
+      Roughness: 0

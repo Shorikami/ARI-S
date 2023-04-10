@@ -59,6 +59,9 @@ namespace ARIS
 
         Framebuffer*& GetSceneFBO() { return m_SceneFBO; }
         Framebuffer*& GetGBuffer() { return gBuffer; }
+        Framebuffer*& GetBuffer(std::string name) { return m_Framebuffers[name]; }
+
+        Texture*& GetDisplayTexture(std::string name) { return m_DisplayTextures[name]; }
 
     public:
         void OnImGuiRender() override;
@@ -103,6 +106,7 @@ namespace ARIS
         UniformBuffer<BlurKernel>* kernelData;
         UniformBuffer<Discrepancy>* hammersleyData;
         UniformBuffer<HarmonicColors>* harmonicData;
+        UniformBuffer<BlurKernel>* aoKernelData;
 
         Shader* geometryPass, * lightingPass, * localLight, * flatShader;
         
@@ -138,6 +142,9 @@ namespace ARIS
 
         // AO buffer
         Framebuffer* aoBuffer;
+
+        std::unordered_map<std::string, Framebuffer*> m_Framebuffers;
+        std::unordered_map<std::string, Texture*> m_DisplayTextures;
 
         // Environment map buffer
         Framebuffer* captureBuffer;
