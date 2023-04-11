@@ -235,7 +235,7 @@ namespace ARIS
 				ImGui::Text("Displaying Buffer");
 				ImGui::SameLine();
 				const char* fbos[] = { "SceneFBO", "GPosition", "GNormals", "GAlbedo", 
-					"GAMR", "EntityID", "GDepth", "ShadowMap", "ShadowBlur", "AoMap", "AoBlur" };
+					"GAMR", "EntityID", "GDepth", "ShadowMap", "ShadowBlur", "AoMap", "AoBlurX", "AoBlurXY"};
 				static const char* currItem = m_DisplayBuffer.c_str();
 				if (ImGui::BeginCombo("##fbo combo", currItem))
 				{

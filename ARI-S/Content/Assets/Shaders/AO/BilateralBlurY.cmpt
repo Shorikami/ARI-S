@@ -1,0 +1,92 @@
+#version 430
+layout(local_size_x = 1, local_size_y = 128, local_size_z = 1) in;
+
+layout(std140, binding = 6) uniform AoKernel
+{
+  vec4 weights[101];
+};
+
+uniform int halfKernel;
+
+uniform int vWidth;
+uniform int vHeight;
+
+const float PI = 3.14159265359f;
+
+layout (rgba16f) uniform readonly image2D normalBuf;
+layout (binding = 3) uniform sampler2D depthBuf;
+
+layout (rgba16f) uniform readonly image2D src;
+layout (rgba16f) uniform writeonly image2D dst;
+
+
+int cache = 128 + 2 * halfKernel;
+int load = (cache + (128 - 1)) / 128;
+
+shared vec4 v[128 + 101];
+
+float CalculateRange(ivec2 xi, ivec2 x)
+{
+	vec4 nI = imageLoad(normalBuf, xi);
+	vec4 N = imageLoad(normalBuf, x);
+	
+	float dI =  texture(depthBuf, xi / vec2(vWidth, vHeight)).r;
+	float D =  texture(depthBuf, x / vec2(vWidth, vHeight)).r;
+	
+	float variance = 0.01f;
+	
+	return max(dot(nI, N), 0.0f) * 1.0f / sqrt(2 * PI * variance) * exp(-pow(dI - D, 2) / (2.0f * variance));
+}
+
+void main()
+{
+	ivec2 size = imageSize(src);
+	ivec2 gPos = ivec2(gl_GlobalInvocationID.xy);
+	int origin = int(gl_WorkGroupID.y) * 128 - halfKernel;
+	
+	for (int i = 0; i < load; ++i)
+	{
+		int local = int(gl_LocalInvocationID.y) * load + i;
+		
+		// Check to see if within bounds
+		if (local < cache)
+		{
+			int py = origin + local;
+			
+			if (py >= 0 && py < size.y)
+			{
+				v[local] = imageLoad(src, ivec2(gPos.x, py));
+			}
+		}
+	}
+	
+	barrier();
+	
+	vec4 sum = vec4(0.0f);
+	vec4 totalWeight = vec4(0.0f);
+	
+	for (int i = 0; i <= 2 * halfKernel; ++i)
+	{
+		ivec2 py = gPos + ivec2(0, i - halfKernel);
+		
+		// Prevents blinking artifacts on edges of shadow map
+		if (py.y < 0) py.y = 0;
+		if (py.y >= size.y) py.y = size.y - 1;
+		
+		int localPos = py.y - origin;
+		
+		// Compute sum
+		vec4 spatial = weights[i].x * v[localPos];
+		float range = CalculateRange(py, gPos);
+		
+		vec4 weight = spatial * range;
+		
+		sum += weight * v[localPos];
+		totalWeight += weight;
+	}
+	
+	sum /= totalWeight;
+
+	// Store sum at gpos in dst image
+	imageStore(dst, gPos, sum);
+}

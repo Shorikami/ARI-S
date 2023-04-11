@@ -111,7 +111,7 @@ namespace ARIS
         Shader* geometryPass, * lightingPass, * localLight, * flatShader;
         
         Shader* shadowPass, *computeBlur;
-        Shader* aoPass, * aoBlur;
+        Shader* aoPass, * aoBlurX, * aoBlurY;
 
         Shader* skyboxShader;
 
@@ -125,7 +125,7 @@ namespace ARIS
         Texture* sDepthMap, * blurOutput;
 
         // AO
-        Texture* aoMap, * aoBlurOutput;
+        Texture* aoMap, * aoBlurOutputX, * aoBlurOutputXY;
 
         // Skybox
         Texture* skybox;

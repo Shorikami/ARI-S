@@ -142,13 +142,15 @@ namespace ARIS
         delete shadowPass;
         delete computeBlur;
         delete aoPass;
-        delete aoBlur;
+        delete aoBlurX;
+        delete aoBlurY;
         
         lightingPass = new Shader(true, "IBL/LightingPassPBR_New.vert", "IBL/LightingPassPBR_New.frag", nullptr, "IBL/FormulasIBL.gh");
         shadowPass = new Shader(false, "Shadows/Moment/Shadows.vert", "Shadows/Moment/Shadows.frag");
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
         aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
-        aoBlur = new Shader(false, "AO/BilateralBlur.cmpt");
+        aoBlurX = new Shader(false, "AO/BilateralBlurX.cmpt");
+        aoBlurY = new Shader(false, "AO/BilateralBlurY.cmpt");
     }
 
     void Scene::GenerateBasicShapes()
@@ -459,7 +461,8 @@ namespace ARIS
         computeBlur = new Shader(false, "Shadows/ConvolutionBlur.cmpt");
 
         aoPass = new Shader(false, "AO/AO.vert", "AO/AO.frag");
-        aoBlur = new Shader(false, "AO/BilateralBlur.cmpt");
+        aoBlurX = new Shader(false, "AO/BilateralBlurX.cmpt");
+        aoBlurY = new Shader(false, "AO/BilateralBlurY.cmpt");
 
         // gBuffer textures (position, normals, albedo (diffuse), metallic/roughness)
         std::string names[4] = { "GPosition", "GNormals", "GAlbedo", "GAMR" };
@@ -492,8 +495,11 @@ namespace ARIS
         m_DisplayTextures["AoMap"] = aoMap;
 
         // filtered AO map
-        aoBlurOutput = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
-        m_DisplayTextures["AoBlur"] = aoBlurOutput;
+        aoBlurOutputX = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
+        m_DisplayTextures["AoBlurX"] = aoBlurOutputX;
+
+        aoBlurOutputXY = new Texture(_windowWidth, _windowHeight, GL_RGBA16F, GL_RGBA, nullptr, GL_NEAREST, GL_CLAMP_TO_EDGE);
+        m_DisplayTextures["AoBlurXY"] = aoBlurOutputXY;
 
         // filtered shadow map
         blurOutput = new Texture(2048, 2048, GL_RGBA32F, GL_RGBA, nullptr,
@@ -770,38 +776,67 @@ namespace ARIS
         // --------------
 
         // Run the AO compute shader
-        aoBlur->Activate();
+        aoBlurX->Activate();
 
         // Kernel
-        aoBlur->SetInt("halfKernel", (kernelSize* kernelSize) / 2);
+        aoBlurX->SetInt("halfKernel", (kernelSize* kernelSize) / 2);
         
         // Texture width/height
-        aoBlur->SetInt("vWidth", 1600);
-        aoBlur->SetInt("vHeight", 900);
+        aoBlurX->SetInt("vWidth", 1600);
+        aoBlurX->SetInt("vHeight", 900);
 
         // Input/output
-        srcLoc = glGetUniformLocation(aoBlur->m_ID, "src");
+        srcLoc = glGetUniformLocation(aoBlurX->m_ID, "src");
         glBindImageTexture(0, aoMap->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
         glUniform1i(srcLoc, 0);
 
-        dstLoc = glGetUniformLocation(aoBlur->m_ID, "dst");
-        glBindImageTexture(1, aoBlurOutput->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+        dstLoc = glGetUniformLocation(aoBlurX->m_ID, "dst");
+        glBindImageTexture(1, aoBlurOutputX->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
         glUniform1i(dstLoc, 1);
 
         // Normal, depth G-buffer textures
-        GLint nBufLoc = glGetUniformLocation(aoBlur->m_ID, "normalBuf");
+        GLint nBufLoc = glGetUniformLocation(aoBlurX->m_ID, "normalBuf");
         glBindImageTexture(2, gTextures[1]->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
         glUniform1i(nBufLoc, 2);
 
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, gTextures[5]->m_ID);
 
-        //GLint dBufLoc = glGetUniformLocation(aoBlur->m_ID, "depthBuf");
-        //glBindImageTexture(3, gTextures[5]->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_DEPTH_COMPONENT24);
-        //glUniform1i(dBufLoc, 3);
-
         // Dispatch
         glDispatchCompute(2048 / 128, 2048, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        glUseProgram(0);
+
+        // Run the AO compute shader
+        aoBlurY->Activate();
+
+        // Kernel
+        aoBlurY->SetInt("halfKernel", (kernelSize * kernelSize) / 2);
+
+        // Texture width/height
+        aoBlurY->SetInt("vWidth", 1600);
+        aoBlurY->SetInt("vHeight", 900);
+
+        // Input/output
+        srcLoc = glGetUniformLocation(aoBlurY->m_ID, "src");
+        glBindImageTexture(0, aoBlurOutputX->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+        glUniform1i(srcLoc, 0);
+
+        dstLoc = glGetUniformLocation(aoBlurY->m_ID, "dst");
+        glBindImageTexture(1, aoBlurOutputXY->m_ID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+        glUniform1i(dstLoc, 1);
+
+        // Normal, depth G-buffer textures
+        nBufLoc = glGetUniformLocation(aoBlurY->m_ID, "normalBuf");
+        glBindImageTexture(2, gTextures[1]->m_ID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+        glUniform1i(nBufLoc, 2);
+
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, gTextures[5]->m_ID);
+
+        // Dispatch
+        glDispatchCompute(2048, 2048 / 128, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         glUseProgram(0);
@@ -850,7 +885,7 @@ namespace ARIS
 
         if (blurAO)
         {
-            glBindTexture(GL_TEXTURE_2D, aoBlurOutput->m_ID);
+            glBindTexture(GL_TEXTURE_2D, aoBlurOutputXY->m_ID);
         }
         else
         {
